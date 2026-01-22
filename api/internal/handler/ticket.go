@@ -19,40 +19,30 @@ func NewTicketHandler(ticketRepo *model.TicketRepository) *TicketHandler {
 }
 
 type CreateTicketRequest struct {
-	Title       string                 `json:"title"`
-	Description string                 `json:"description"`
-	Status      string                 `json:"status"`
-	Priority    string                 `json:"priority"`
-	AssignedTo  *uuid.UUID             `json:"assigned_to,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	Priority    string     `json:"priority"`
+	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 }
 
 type UpdateTicketRequest struct {
-	Title       string                 `json:"title"`
-	Description string                 `json:"description"`
-	Status      string                 `json:"status"`
-	Priority    string                 `json:"priority"`
-	AssignedTo  *uuid.UUID             `json:"assigned_to,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	Priority    string     `json:"priority"`
+	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 }
 
 func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
-	userID, ok := auth.GetUserID(r.Context())
+	_, ok := auth.GetUserID(r.Context())
 	if !ok {
 		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return
 	}
 
-	userRole, _ := auth.GetUserRole(r.Context())
-
-	var tickets []*model.Ticket
-	var err error
-
-	if userRole == model.RoleAdmin {
-		tickets, err = h.ticketRepo.List(r.Context(), nil)
-	} else {
-		tickets, err = h.ticketRepo.List(r.Context(), &userID)
-	}
+	// All users can see all tickets
+	tickets, err := h.ticketRepo.List(r.Context(), nil)
 
 	if err != nil {
 		http.Error(w, `{"error":"failed to list tickets"}`, http.StatusInternalServerError)
@@ -81,14 +71,7 @@ func (h *TicketHandler) GetTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, _ := auth.GetUserID(r.Context())
-	userRole, _ := auth.GetUserRole(r.Context())
-
-	if userRole != model.RoleAdmin && ticket.UserID != userID {
-		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
-		return
-	}
-
+	// All authenticated users can view any ticket
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
 }
@@ -126,7 +109,6 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		Status:      req.Status,
 		Priority:    req.Priority,
 		AssignedTo:  req.AssignedTo,
-		Metadata:    req.Metadata,
 	}
 
 	if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
@@ -153,14 +135,7 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, _ := auth.GetUserID(r.Context())
-	userRole, _ := auth.GetUserRole(r.Context())
-
-	if userRole != model.RoleAdmin && ticket.UserID != userID {
-		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
-		return
-	}
-
+	// All authenticated users can update any ticket
 	var req UpdateTicketRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
@@ -182,9 +157,6 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	if req.AssignedTo != nil {
 		ticket.AssignedTo = req.AssignedTo
 	}
-	if req.Metadata != nil {
-		ticket.Metadata = req.Metadata
-	}
 
 	if err := h.ticketRepo.Update(r.Context(), ticket); err != nil {
 		http.Error(w, `{"error":"failed to update ticket"}`, http.StatusInternalServerError)
@@ -196,24 +168,17 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TicketHandler) DeleteTicket(w http.ResponseWriter, r *http.Request) {
+	// Only admins can delete tickets
+	userRole, _ := auth.GetUserRole(r.Context())
+	if userRole != model.RoleAdmin {
+		http.Error(w, `{"error":"only admins can delete tickets"}`, http.StatusForbidden)
+		return
+	}
+
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
 		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
-		return
-	}
-
-	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
-	if err != nil {
-		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
-		return
-	}
-
-	userID, _ := auth.GetUserID(r.Context())
-	userRole, _ := auth.GetUserRole(r.Context())
-
-	if userRole != model.RoleAdmin && ticket.UserID != userID {
-		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
 		return
 	}
 

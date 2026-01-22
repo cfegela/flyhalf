@@ -62,6 +62,7 @@ func (rt *Router) Setup() http.Handler {
 				r.Use(rt.authMiddleware.Authenticate)
 				r.Post("/logout", rt.authHandler.Logout)
 				r.Get("/me", rt.authHandler.Me)
+				r.Put("/password", rt.authHandler.ChangePassword)
 			})
 		})
 

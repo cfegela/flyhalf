@@ -39,7 +39,11 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	migrations := []string{
 		`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
 
-		`CREATE TYPE user_role AS ENUM ('admin', 'user')`,
+		`DO $$ BEGIN
+			CREATE TYPE user_role AS ENUM ('admin', 'user');
+		EXCEPTION
+			WHEN duplicate_object THEN null;
+		END $$`,
 
 		`CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -75,13 +79,14 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 			status VARCHAR(50) NOT NULL DEFAULT 'open',
 			priority VARCHAR(50) NOT NULL DEFAULT 'medium',
 			assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
-			metadata JSONB,
 			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
 
 		`CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status)`,
+
+		`ALTER TABLE tickets DROP COLUMN IF EXISTS metadata`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_assigned_to ON tickets(assigned_to)`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`,
 	}

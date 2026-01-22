@@ -74,9 +74,11 @@ export async function ticketsListView() {
                                             <a href="#/tickets/${ticket.id}/edit" class="btn btn-secondary action-btn">
                                                 Edit
                                             </a>
+                                            ${auth.isAdmin() ? `
                                             <button class="btn btn-danger action-btn delete-btn" data-id="${ticket.id}">
                                                 Delete
                                             </button>
+                                            ` : ''}
                                         </div>
                                     </td>
                                 </tr>
@@ -134,7 +136,7 @@ export async function ticketDetailView(params) {
                     <h1 class="page-title">${escapeHtml(ticket.title)}</h1>
                     <div class="actions">
                         <a href="#/tickets/${id}/edit" class="btn btn-primary">Edit</a>
-                        <button class="btn btn-danger" id="delete-btn">Delete</button>
+                        ${auth.isAdmin() ? '<button class="btn btn-danger" id="delete-btn">Delete</button>' : ''}
                     </div>
                 </div>
                 <div class="card">
@@ -167,12 +169,6 @@ export async function ticketDetailView(params) {
                                 <p>${ticket.assigned_to}</p>
                             </div>
                         ` : ''}
-                        ${ticket.metadata ? `
-                            <div>
-                                <label class="form-label">Metadata</label>
-                                <pre style="background: var(--bg-gray); padding: 1rem; border-radius: 0.375rem; overflow-x: auto;">${JSON.stringify(ticket.metadata, null, 2)}</pre>
-                            </div>
-                        ` : ''}
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
                             <div>
                                 <label class="form-label">Created</label>
@@ -189,15 +185,17 @@ export async function ticketDetailView(params) {
         `;
 
         const deleteBtn = container.querySelector('#delete-btn');
-        deleteBtn.addEventListener('click', async () => {
-            if (confirm('Are you sure you want to delete this ticket?')) {
-                try {
-                    await api.deleteTicket(id);
-                    router.navigate('/tickets');
-                } catch (error) {
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this ticket?')) {
+                    try {
+                        await api.deleteTicket(id);
+                        router.navigate('/tickets');
+                    } catch (error) {
+                    }
                 }
-            }
-        });
+            });
+        }
     } catch (error) {
         container.innerHTML = `
             <div class="card">
@@ -268,14 +266,6 @@ export async function ticketFormView(params) {
                             </select>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="metadata">Metadata (JSON)</label>
-                        <textarea
-                            id="metadata"
-                            class="form-textarea"
-                            placeholder='{"key": "value"}'
-                        >${ticket && ticket.metadata ? JSON.stringify(ticket.metadata, null, 2) : ''}</textarea>
-                    </div>
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Ticket
@@ -295,18 +285,8 @@ export async function ticketFormView(params) {
         const description = form.description.value.trim();
         const status = form.status.value;
         const priority = form.priority.value;
-        const metadataStr = form.metadata.value.trim();
 
-        let metadata = null;
-        if (metadataStr) {
-            try {
-                metadata = JSON.parse(metadataStr);
-            } catch (error) {
-                return;
-            }
-        }
-
-        const data = { title, description, status, priority, metadata };
+        const data = { title, description, status, priority };
 
         const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
@@ -317,8 +297,8 @@ export async function ticketFormView(params) {
                 await api.updateTicket(id, data);
                 router.navigate(`/tickets/${id}`);
             } else {
-                const newTicket = await api.createTicket(data);
-                router.navigate(`/tickets/${newTicket.id}`);
+                await api.createTicket(data);
+                router.navigate('/tickets');
             }
         } catch (error) {
             submitBtn.disabled = false;

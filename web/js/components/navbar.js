@@ -35,7 +35,7 @@ class Navbar {
                 <div class="navbar-menu">
                     <a href="#/tickets" class="navbar-link">Tickets</a>
                     ${isAdmin ? '<a href="#/admin/users" class="navbar-link">Users</a>' : ''}
-                    <span class="navbar-link">${user.first_name} ${user.last_name}</span>
+                    <a href="#/settings" class="navbar-link">${user.first_name} ${user.last_name}</a>
                     <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
                 </div>
             </div>

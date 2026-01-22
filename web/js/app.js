@@ -12,6 +12,7 @@ import {
     userDetailView,
     userFormView
 } from './views/admin.js';
+import { settingsView } from './views/settings.js';
 
 async function initApp() {
     initNavbar();
@@ -22,6 +23,7 @@ async function initApp() {
     router.addRoute('/tickets/new', (params) => ticketFormView(['new']), { requireAuth: true });
     router.addRoute('/tickets/:id/edit', (params) => ticketFormView([params[0], 'edit']), { requireAuth: true });
     router.addRoute('/tickets/:id', ticketDetailView, { requireAuth: true });
+    router.addRoute('/settings', settingsView, { requireAuth: true });
     router.addRoute('/admin/users', usersListView, { requireAuth: true, requireAdmin: true });
     router.addRoute('/admin/users/new', (params) => userFormView(['admin', 'new']), { requireAuth: true, requireAdmin: true });
     router.addRoute('/admin/users/:id/edit', (params) => userFormView(['admin', params[0], 'edit']), { requireAuth: true, requireAdmin: true });

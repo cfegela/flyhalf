@@ -85,6 +85,16 @@ class APIClient {
         return this.request('/auth/me');
     }
 
+    async changePassword(currentPassword, newPassword) {
+        return this.request('/auth/password', {
+            method: 'PUT',
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword
+            }),
+        });
+    }
+
     async getTickets() {
         return this.request('/tickets');
     }
