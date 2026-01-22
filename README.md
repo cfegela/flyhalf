@@ -16,13 +16,14 @@ Full-stack ticketing and task management application with Go API, vanilla JavaSc
 - Role-based access control (admin/user)
 - CRUD operations for tickets with status and priority tracking
 - All users can view and edit all tickets (collaborative workspace)
-- Admin-only ticket deletion for data protection
+- Users can delete tickets they created; admins can delete any ticket
+- Forced password change for newly created users
 - Admin user management
 - Ticket assignment and priority management
 - User settings page with account information
 - Password change functionality
 - Responsive UI with modern CSS
-- Client-side routing with hash-based navigation
+- Client-side routing with hash-based navigation that preserves state on refresh
 - Secure HttpOnly cookies for refresh tokens
 
 ## Permission Model
@@ -31,20 +32,21 @@ Full-stack ticketing and task management application with Go API, vanilla JavaSc
 - ✅ View all tickets
 - ✅ Create new tickets
 - ✅ Edit any ticket
+- ✅ Delete tickets they created
 - ✅ Change own password
 - ✅ View own account settings
-- ❌ Delete tickets
+- ❌ Delete tickets created by others
 - ❌ Manage users
 
 ### Administrators (role: 'admin')
 - ✅ All user permissions
-- ✅ Delete any ticket
-- ✅ Create new users
+- ✅ Delete any ticket (including those created by others)
+- ✅ Create new users (with forced password change)
 - ✅ Edit user accounts
 - ✅ Delete users
 - ✅ Deactivate/activate users
 
-This collaborative permission model allows all team members to view and update tickets while protecting data integrity by restricting deletion to administrators.
+This collaborative permission model allows all team members to view and update tickets while protecting data integrity. Users can manage their own tickets completely, but cannot delete tickets created by others.
 
 ## Project Structure
 
@@ -146,17 +148,18 @@ The application provides the following pages:
 
 ### For All Users
 - **Login Page** - Email/password authentication
+- **Force Password Change** - Required for newly created users on first login
 - **Tickets List** - View all tickets with status and priority badges
-- **Ticket Detail** - View full ticket information
+- **Ticket Detail** - View full ticket information with delete button (enabled only for own tickets)
 - **Create/Edit Ticket** - Form to create or modify tickets
 - **Settings** - View account information and change password
 
 ### Admin Only
 - **User Management** - List all users
-- **Create/Edit User** - Manage user accounts
+- **Create/Edit User** - Manage user accounts (new users must change password on first login)
 - **User Detail** - View user information
 - **Delete Users** - Remove user accounts
-- **Delete Tickets** - Remove tickets from the system
+- **Delete Any Ticket** - Delete button enabled for all tickets
 
 ### Navigation
 - Click the **Flyhalf** logo to return to the tickets list
@@ -164,6 +167,14 @@ The application provides the following pages:
 - **Tickets** link shows all tickets
 - **Users** link (admins only) for user management
 - **Logout** button to end session
+- Page state preserved on browser refresh
+
+### New User Workflow
+1. Admin creates user with temporary password
+2. User receives credentials and logs in
+3. **Immediately redirected** to forced password change page
+4. Must change password before accessing application
+5. After password change, redirected to tickets page
 
 ## API Documentation
 
@@ -190,9 +201,9 @@ http://localhost:8081/api/v1
 | POST | `/tickets` | Create ticket | Yes | Any |
 | GET | `/tickets/{id}` | Get ticket by ID | Yes | Any |
 | PUT | `/tickets/{id}` | Update ticket | Yes | Any |
-| DELETE | `/tickets/{id}` | Delete ticket | Yes | Admin only |
+| DELETE | `/tickets/{id}` | Delete ticket | Yes | Creator or Admin |
 
-**Note**: All authenticated users can view and edit all tickets. Only administrators can delete tickets.
+**Note**: All authenticated users can view and edit all tickets. Users can delete tickets they created; admins can delete any ticket.
 
 ### Admin Endpoints
 
