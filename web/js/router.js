@@ -63,6 +63,15 @@ class Router {
             return;
         }
 
+        // Check if user must change password (unless already on password change page)
+        if (route.options.requireAuth && auth.isAuthenticated() && !route.options.allowPasswordChange) {
+            const user = auth.getUser();
+            if (user && user.must_change_password) {
+                this.navigate('/force-password-change');
+                return;
+            }
+        }
+
         if (route.options.requireAdmin && !auth.isAdmin()) {
             this.navigate('/');
             return;

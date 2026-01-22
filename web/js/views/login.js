@@ -59,7 +59,12 @@ export async function loginView() {
 
         try {
             await auth.login(email, password);
-            router.navigate('/');
+            const user = auth.getUser();
+            if (user && user.must_change_password) {
+                router.navigate('/force-password-change');
+            } else {
+                router.navigate('/');
+            }
         } catch (error) {
             console.error('Login failed:', error);
             submitBtn.disabled = false;

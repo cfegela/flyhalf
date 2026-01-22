@@ -59,6 +59,8 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 		`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
 
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false`,
+
 		`CREATE TABLE IF NOT EXISTS refresh_tokens (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

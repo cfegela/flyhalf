@@ -12,12 +12,13 @@ import {
     userDetailView,
     userFormView
 } from './views/admin.js';
-import { settingsView } from './views/settings.js';
+import { settingsView, forcePasswordChangeView } from './views/settings.js';
 
 async function initApp() {
     initNavbar();
 
     router.addRoute('/login', loginView, { guestOnly: true });
+    router.addRoute('/force-password-change', forcePasswordChangeView, { requireAuth: true, allowPasswordChange: true });
     router.addRoute('/', ticketsListView, { requireAuth: true });
     router.addRoute('/tickets', ticketsListView, { requireAuth: true });
     router.addRoute('/tickets/new', (params) => ticketFormView(['new']), { requireAuth: true });

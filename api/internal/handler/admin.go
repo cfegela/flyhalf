@@ -92,12 +92,13 @@ func (h *AdminHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := &model.User{
-		Email:        req.Email,
-		PasswordHash: passwordHash,
-		Role:         req.Role,
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
-		IsActive:     true,
+		Email:              req.Email,
+		PasswordHash:       passwordHash,
+		Role:               req.Role,
+		FirstName:          req.FirstName,
+		LastName:           req.LastName,
+		IsActive:           true,
+		MustChangePassword: true,
 	}
 
 	if err := h.userRepo.Create(r.Context(), user); err != nil {
