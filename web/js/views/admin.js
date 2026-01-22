@@ -1,6 +1,5 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
-import { toast } from '../components/toast.js';
 
 export async function usersListView() {
     const container = document.getElementById('view-container');
@@ -90,10 +89,8 @@ export async function usersListView() {
                 if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
                     try {
                         await api.deleteUser(id);
-                        toast.success('User deleted successfully');
                         usersListView();
                     } catch (error) {
-                        toast.error('Failed to delete user: ' + error.message);
                     }
                 }
             });
@@ -177,10 +174,8 @@ export async function userDetailView(params) {
             if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
                 try {
                     await api.deleteUser(id);
-                    toast.success('User deleted successfully');
                     router.navigate('/admin/users');
                 } catch (error) {
-                    toast.error('Failed to delete user: ' + error.message);
                 }
             }
         });
@@ -205,7 +200,6 @@ export async function userFormView(params) {
         try {
             user = await api.getUser(id);
         } catch (error) {
-            toast.error('Failed to load user: ' + error.message);
             router.navigate('/admin/users');
             return;
         }
@@ -312,7 +306,6 @@ export async function userFormView(params) {
         } else {
             const password = form.password.value;
             if (password.length < 8) {
-                toast.error('Password must be at least 8 characters');
                 return;
             }
             data.password = password;
@@ -325,15 +318,12 @@ export async function userFormView(params) {
         try {
             if (isEdit) {
                 await api.updateUser(id, data);
-                toast.success('User updated successfully');
                 router.navigate(`/admin/users/${id}`);
             } else {
                 const newUser = await api.createUser(data);
-                toast.success('User created successfully');
                 router.navigate(`/admin/users/${newUser.id}`);
             }
         } catch (error) {
-            toast.error(`Failed to ${isEdit ? 'update' : 'create'} user: ` + error.message);
             submitBtn.disabled = false;
             submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} User`;
         }

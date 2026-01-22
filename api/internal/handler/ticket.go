@@ -1,0 +1,226 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/cfegela/flyhalf/internal/auth"
+	"github.com/cfegela/flyhalf/internal/model"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+)
+
+type TicketHandler struct {
+	ticketRepo *model.TicketRepository
+}
+
+func NewTicketHandler(ticketRepo *model.TicketRepository) *TicketHandler {
+	return &TicketHandler{ticketRepo: ticketRepo}
+}
+
+type CreateTicketRequest struct {
+	Title       string                 `json:"title"`
+	Description string                 `json:"description"`
+	Status      string                 `json:"status"`
+	Priority    string                 `json:"priority"`
+	AssignedTo  *uuid.UUID             `json:"assigned_to,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+type UpdateTicketRequest struct {
+	Title       string                 `json:"title"`
+	Description string                 `json:"description"`
+	Status      string                 `json:"status"`
+	Priority    string                 `json:"priority"`
+	AssignedTo  *uuid.UUID             `json:"assigned_to,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	userRole, _ := auth.GetUserRole(r.Context())
+
+	var tickets []*model.Ticket
+	var err error
+
+	if userRole == model.RoleAdmin {
+		tickets, err = h.ticketRepo.List(r.Context(), nil)
+	} else {
+		tickets, err = h.ticketRepo.List(r.Context(), &userID)
+	}
+
+	if err != nil {
+		http.Error(w, `{"error":"failed to list tickets"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if tickets == nil {
+		tickets = []*model.Ticket{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(tickets)
+}
+
+func (h *TicketHandler) GetTicket(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	userID, _ := auth.GetUserID(r.Context())
+	userRole, _ := auth.GetUserRole(r.Context())
+
+	if userRole != model.RoleAdmin && ticket.UserID != userID {
+		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}
+
+func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	var req CreateTicketRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.Title == "" {
+		http.Error(w, `{"error":"title is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.Status == "" {
+		req.Status = "open"
+	}
+
+	if req.Priority == "" {
+		req.Priority = "medium"
+	}
+
+	ticket := &model.Ticket{
+		UserID:      userID,
+		Title:       req.Title,
+		Description: req.Description,
+		Status:      req.Status,
+		Priority:    req.Priority,
+		AssignedTo:  req.AssignedTo,
+		Metadata:    req.Metadata,
+	}
+
+	if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
+		http.Error(w, `{"error":"failed to create ticket"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(ticket)
+}
+
+func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	userID, _ := auth.GetUserID(r.Context())
+	userRole, _ := auth.GetUserRole(r.Context())
+
+	if userRole != model.RoleAdmin && ticket.UserID != userID {
+		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+		return
+	}
+
+	var req UpdateTicketRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.Title != "" {
+		ticket.Title = req.Title
+	}
+	if req.Description != "" {
+		ticket.Description = req.Description
+	}
+	if req.Status != "" {
+		ticket.Status = req.Status
+	}
+	if req.Priority != "" {
+		ticket.Priority = req.Priority
+	}
+	if req.AssignedTo != nil {
+		ticket.AssignedTo = req.AssignedTo
+	}
+	if req.Metadata != nil {
+		ticket.Metadata = req.Metadata
+	}
+
+	if err := h.ticketRepo.Update(r.Context(), ticket); err != nil {
+		http.Error(w, `{"error":"failed to update ticket"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}
+
+func (h *TicketHandler) DeleteTicket(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	userID, _ := auth.GetUserID(r.Context())
+	userRole, _ := auth.GetUserRole(r.Context())
+
+	if userRole != model.RoleAdmin && ticket.UserID != userID {
+		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+		return
+	}
+
+	if err := h.ticketRepo.Delete(r.Context(), id); err != nil {
+		http.Error(w, `{"error":"failed to delete ticket"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

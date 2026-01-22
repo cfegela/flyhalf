@@ -1,6 +1,6 @@
 # Flyhalf
 
-Full-stack web application with Go API, vanilla JavaScript SPA, PostgreSQL database, and JWT authentication with role-based authorization.
+Full-stack ticketing and task management application with Go API, vanilla JavaScript SPA, PostgreSQL database, and JWT authentication with role-based authorization.
 
 ## Tech Stack
 
@@ -14,8 +14,9 @@ Full-stack web application with Go API, vanilla JavaScript SPA, PostgreSQL datab
 
 - JWT-based authentication with token refresh
 - Role-based access control (admin/user)
-- CRUD operations for resources
+- CRUD operations for tickets with status and priority tracking
 - Admin user management
+- Ticket assignment and priority management
 - Responsive UI with modern CSS
 - Toast notifications
 - Client-side routing
@@ -131,15 +132,15 @@ http://localhost:8081/api/v1
 | POST | `/auth/logout` | Logout and revoke tokens | Yes |
 | GET | `/auth/me` | Get current user info | Yes |
 
-### Resource Endpoints
+### Ticket Endpoints
 
 | Method | Endpoint | Description | Auth Required | Role |
 |--------|----------|-------------|---------------|------|
-| GET | `/resources` | List resources | Yes | Any |
-| POST | `/resources` | Create resource | Yes | Any |
-| GET | `/resources/{id}` | Get resource by ID | Yes | Any |
-| PUT | `/resources/{id}` | Update resource | Yes | Owner or Admin |
-| DELETE | `/resources/{id}` | Delete resource | Yes | Owner or Admin |
+| GET | `/tickets` | List tickets | Yes | Any |
+| POST | `/tickets` | Create ticket | Yes | Any |
+| GET | `/tickets/{id}` | Get ticket by ID | Yes | Any |
+| PUT | `/tickets/{id}` | Update ticket | Yes | Owner or Admin |
+| DELETE | `/tickets/{id}` | Delete ticket | Yes | Owner or Admin |
 
 ### Admin Endpoints
 
@@ -211,12 +212,14 @@ Frontend: No package manager needed - just add ES module imports!
 - `revoked_at` (timestamp, nullable)
 - `created_at` (timestamp)
 
-### Resources Table
+### Tickets Table
 - `id` (UUID, primary key)
-- `user_id` (FK to users)
+- `user_id` (FK to users - ticket creator)
 - `title` (not null)
 - `description` (text)
-- `status` (varchar)
+- `status` (varchar: open, in_progress, resolved, closed)
+- `priority` (varchar: low, medium, high, urgent)
+- `assigned_to` (UUID, FK to users, nullable)
 - `metadata` (JSONB)
 - `created_at`, `updated_at` (timestamps)
 

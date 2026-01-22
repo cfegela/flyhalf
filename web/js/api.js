@@ -85,30 +85,30 @@ class APIClient {
         return this.request('/auth/me');
     }
 
-    async getResources() {
-        return this.request('/resources');
+    async getTickets() {
+        return this.request('/tickets');
     }
 
-    async getResource(id) {
-        return this.request(`/resources/${id}`);
+    async getTicket(id) {
+        return this.request(`/tickets/${id}`);
     }
 
-    async createResource(resource) {
-        return this.request('/resources', {
+    async createTicket(ticket) {
+        return this.request('/tickets', {
             method: 'POST',
-            body: JSON.stringify(resource),
+            body: JSON.stringify(ticket),
         });
     }
 
-    async updateResource(id, resource) {
-        return this.request(`/resources/${id}`, {
+    async updateTicket(id, ticket) {
+        return this.request(`/tickets/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(resource),
+            body: JSON.stringify(ticket),
         });
     }
 
-    async deleteResource(id) {
-        return this.request(`/resources/${id}`, {
+    async deleteTicket(id) {
+        return this.request(`/tickets/${id}`, {
             method: 'DELETE',
         });
     }

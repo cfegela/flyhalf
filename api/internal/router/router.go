@@ -13,26 +13,26 @@ import (
 )
 
 type Router struct {
-	authHandler     *handler.AuthHandler
-	adminHandler    *handler.AdminHandler
-	resourceHandler *handler.ResourceHandler
-	authMiddleware  *auth.AuthMiddleware
-	cfg             *config.Config
+	authHandler   *handler.AuthHandler
+	adminHandler  *handler.AdminHandler
+	ticketHandler *handler.TicketHandler
+	authMiddleware *auth.AuthMiddleware
+	cfg           *config.Config
 }
 
 func New(
 	authHandler *handler.AuthHandler,
 	adminHandler *handler.AdminHandler,
-	resourceHandler *handler.ResourceHandler,
+	ticketHandler *handler.TicketHandler,
 	authMiddleware *auth.AuthMiddleware,
 	cfg *config.Config,
 ) *Router {
 	return &Router{
-		authHandler:     authHandler,
-		adminHandler:    adminHandler,
-		resourceHandler: resourceHandler,
-		authMiddleware:  authMiddleware,
-		cfg:             cfg,
+		authHandler:   authHandler,
+		adminHandler:  adminHandler,
+		ticketHandler: ticketHandler,
+		authMiddleware: authMiddleware,
+		cfg:           cfg,
 	}
 }
 
@@ -65,14 +65,14 @@ func (rt *Router) Setup() http.Handler {
 			})
 		})
 
-		r.Route("/resources", func(r chi.Router) {
+		r.Route("/tickets", func(r chi.Router) {
 			r.Use(rt.authMiddleware.Authenticate)
 
-			r.Get("/", rt.resourceHandler.ListResources)
-			r.Post("/", rt.resourceHandler.CreateResource)
-			r.Get("/{id}", rt.resourceHandler.GetResource)
-			r.Put("/{id}", rt.resourceHandler.UpdateResource)
-			r.Delete("/{id}", rt.resourceHandler.DeleteResource)
+			r.Get("/", rt.ticketHandler.ListTickets)
+			r.Post("/", rt.ticketHandler.CreateTicket)
+			r.Get("/{id}", rt.ticketHandler.GetTicket)
+			r.Put("/{id}", rt.ticketHandler.UpdateTicket)
+			r.Delete("/{id}", rt.ticketHandler.DeleteTicket)
 		})
 
 		r.Route("/admin", func(r chi.Router) {

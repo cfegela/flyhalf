@@ -2,12 +2,11 @@ import { auth } from './auth.js';
 import { router } from './router.js';
 import { initNavbar } from './components/navbar.js';
 import { loginView } from './views/login.js';
-import { dashboardView } from './views/dashboard.js';
 import {
-    resourcesListView,
-    resourceDetailView,
-    resourceFormView
-} from './views/resources.js';
+    ticketsListView,
+    ticketDetailView,
+    ticketFormView
+} from './views/tickets.js';
 import {
     usersListView,
     userDetailView,
@@ -18,15 +17,15 @@ async function initApp() {
     initNavbar();
 
     router.addRoute('/login', loginView, { guestOnly: true });
-    router.addRoute('/', dashboardView, { requireAuth: true });
-    router.addRoute('/resources', resourcesListView, { requireAuth: true });
-    router.addRoute('/resources/new', () => resourceFormView(['new']), { requireAuth: true });
-    router.addRoute('/resources/:id', resourceDetailView, { requireAuth: true });
-    router.addRoute('/resources/:id/edit', resourceFormView, { requireAuth: true });
+    router.addRoute('/', ticketsListView, { requireAuth: true });
+    router.addRoute('/tickets', ticketsListView, { requireAuth: true });
+    router.addRoute('/tickets/new', (params) => ticketFormView(['new']), { requireAuth: true });
+    router.addRoute('/tickets/:id/edit', (params) => ticketFormView([params[0], 'edit']), { requireAuth: true });
+    router.addRoute('/tickets/:id', ticketDetailView, { requireAuth: true });
     router.addRoute('/admin/users', usersListView, { requireAuth: true, requireAdmin: true });
-    router.addRoute('/admin/users/new', () => userFormView(['admin', 'new']), { requireAuth: true, requireAdmin: true });
-    router.addRoute('/admin/users/:id', userDetailView, { requireAuth: true, requireAdmin: true });
-    router.addRoute('/admin/users/:id/edit', userFormView, { requireAuth: true, requireAdmin: true });
+    router.addRoute('/admin/users/new', (params) => userFormView(['admin', 'new']), { requireAuth: true, requireAdmin: true });
+    router.addRoute('/admin/users/:id/edit', (params) => userFormView(['admin', params[0], 'edit']), { requireAuth: true, requireAdmin: true });
+    router.addRoute('/admin/users/:id', (params) => userDetailView(['admin', params[0]]), { requireAuth: true, requireAdmin: true });
 
     await auth.init();
 

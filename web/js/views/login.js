@@ -1,6 +1,5 @@
 import { auth } from '../auth.js';
 import { router } from '../router.js';
-import { toast } from '../components/toast.js';
 
 export async function loginView() {
     const container = document.getElementById('view-container');
@@ -51,7 +50,6 @@ export async function loginView() {
         const password = form.password.value;
 
         if (!email || !password) {
-            toast.error('Please fill in all fields');
             return;
         }
 
@@ -61,10 +59,9 @@ export async function loginView() {
 
         try {
             await auth.login(email, password);
-            toast.success('Logged in successfully');
             router.navigate('/');
         } catch (error) {
-            toast.error('Login failed: ' + error.message);
+            console.error('Login failed:', error);
             submitBtn.disabled = false;
             submitBtn.textContent = 'Sign In';
         }

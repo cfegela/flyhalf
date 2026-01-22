@@ -1,6 +1,5 @@
 import { auth } from '../auth.js';
 import { router } from '../router.js';
-import { toast } from './toast.js';
 
 class Navbar {
     constructor() {
@@ -14,10 +13,9 @@ class Navbar {
         e.preventDefault();
         try {
             await auth.logout();
-            toast.success('Logged out successfully');
             router.navigate('/login');
         } catch (error) {
-            toast.error('Logout failed: ' + error.message);
+            console.error('Logout failed:', error);
         }
     }
 
@@ -35,8 +33,7 @@ class Navbar {
             <div class="navbar">
                 <a href="#/" class="navbar-brand">Flyhalf</a>
                 <div class="navbar-menu">
-                    <a href="#/" class="navbar-link">Dashboard</a>
-                    <a href="#/resources" class="navbar-link">Resources</a>
+                    <a href="#/tickets" class="navbar-link">Tickets</a>
                     ${isAdmin ? '<a href="#/admin/users" class="navbar-link">Users</a>' : ''}
                     <span class="navbar-link">${user.first_name} ${user.last_name}</span>
                     <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>

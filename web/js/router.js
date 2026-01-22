@@ -14,6 +14,35 @@ class Router {
         this.routes.push({ path, handler, options });
     }
 
+    matchRoute(urlPath) {
+        for (const route of this.routes) {
+            const routeParts = route.path.split('/').filter(Boolean);
+            const urlParts = urlPath.split('/').filter(Boolean);
+
+            if (routeParts.length !== urlParts.length) {
+                continue;
+            }
+
+            const params = [];
+            let isMatch = true;
+
+            for (let i = 0; i < routeParts.length; i++) {
+                if (routeParts[i].startsWith(':')) {
+                    params.push(urlParts[i]);
+                } else if (routeParts[i] !== urlParts[i]) {
+                    isMatch = false;
+                    break;
+                }
+            }
+
+            if (isMatch) {
+                return { route, params };
+            }
+        }
+
+        return null;
+    }
+
     async navigate(path) {
         if (path) {
             window.location.hash = path;
@@ -21,19 +50,14 @@ class Router {
         }
 
         const hash = window.location.hash.slice(1) || '/';
-        const [routePath, ...paramParts] = hash.split('/').filter(Boolean);
-        const fullPath = '/' + (routePath || '');
+        const match = this.matchRoute(hash);
 
-        let route = this.routes.find(r => r.path === fullPath);
-
-        if (!route) {
-            route = this.routes.find(r => r.path === '/404');
-        }
-
-        if (!route) {
+        if (!match) {
             this.viewContainer.innerHTML = '<div class="empty-state"><h2>Page not found</h2></div>';
             return;
         }
+
+        const { route, params } = match;
 
         if (route.options.requireAuth && !auth.isAuthenticated()) {
             this.navigate('/login');
@@ -51,8 +75,6 @@ class Router {
         }
 
         this.currentRoute = route;
-
-        const params = paramParts.length > 0 ? paramParts : [];
         await route.handler(params);
     }
 

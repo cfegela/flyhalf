@@ -49,16 +49,16 @@ func run() error {
 	log.Println("Database migrations completed successfully")
 
 	userRepo := model.NewUserRepository(pool)
-	resourceRepo := model.NewResourceRepository(pool)
+	ticketRepo := model.NewTicketRepository(pool)
 
 	jwtService := auth.NewJWTService(&cfg.JWT)
 	authMiddleware := auth.NewAuthMiddleware(jwtService)
 
 	authHandler := handler.NewAuthHandler(userRepo, jwtService)
 	adminHandler := handler.NewAdminHandler(userRepo)
-	resourceHandler := handler.NewResourceHandler(resourceRepo)
+	ticketHandler := handler.NewTicketHandler(ticketRepo)
 
-	rt := router.New(authHandler, adminHandler, resourceHandler, authMiddleware, cfg)
+	rt := router.New(authHandler, adminHandler, ticketHandler, authMiddleware, cfg)
 	httpHandler := rt.Setup()
 
 	srv := &http.Server{

@@ -67,19 +67,23 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens(token_hash)`,
 
-		`CREATE TABLE IF NOT EXISTS resources (
+		`CREATE TABLE IF NOT EXISTS tickets (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			title VARCHAR(255) NOT NULL,
 			description TEXT,
-			status VARCHAR(50) NOT NULL DEFAULT 'active',
+			status VARCHAR(50) NOT NULL DEFAULT 'open',
+			priority VARCHAR(50) NOT NULL DEFAULT 'medium',
+			assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
 			metadata JSONB,
 			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
 
-		`CREATE INDEX IF NOT EXISTS idx_resources_user_id ON resources(user_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_resources_status ON resources(status)`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status)`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_assigned_to ON tickets(assigned_to)`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`,
 	}
 
 	for _, migration := range migrations {
