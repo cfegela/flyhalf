@@ -4,7 +4,7 @@ Full-stack ticketing and task management application with Go API, vanilla JavaSc
 
 ## Tech Stack
 
-- **Backend**: Go 1.23 with chi router, pgx (PostgreSQL driver), golang-jwt
+- **Backend**: Go 1.24 with chi router, pgx (PostgreSQL driver), golang-jwt
 - **Frontend**: Vanilla JavaScript SPA with ES modules (no build step required)
 - **Database**: PostgreSQL 16
 - **Authentication**: JWT access tokens (15min) + refresh tokens (7 days, HttpOnly cookie)
@@ -15,12 +15,36 @@ Full-stack ticketing and task management application with Go API, vanilla JavaSc
 - JWT-based authentication with token refresh
 - Role-based access control (admin/user)
 - CRUD operations for tickets with status and priority tracking
+- All users can view and edit all tickets (collaborative workspace)
+- Admin-only ticket deletion for data protection
 - Admin user management
 - Ticket assignment and priority management
+- User settings page with account information
+- Password change functionality
 - Responsive UI with modern CSS
-- Toast notifications
-- Client-side routing
+- Client-side routing with hash-based navigation
 - Secure HttpOnly cookies for refresh tokens
+
+## Permission Model
+
+### Regular Users (role: 'user')
+- ✅ View all tickets
+- ✅ Create new tickets
+- ✅ Edit any ticket
+- ✅ Change own password
+- ✅ View own account settings
+- ❌ Delete tickets
+- ❌ Manage users
+
+### Administrators (role: 'admin')
+- ✅ All user permissions
+- ✅ Delete any ticket
+- ✅ Create new users
+- ✅ Edit user accounts
+- ✅ Delete users
+- ✅ Deactivate/activate users
+
+This collaborative permission model allows all team members to view and update tickets while protecting data integrity by restricting deletion to administrators.
 
 ## Project Structure
 
@@ -116,6 +140,31 @@ http://localhost:3000
 
 Log in with the admin credentials above.
 
+## User Interface
+
+The application provides the following pages:
+
+### For All Users
+- **Login Page** - Email/password authentication
+- **Tickets List** - View all tickets with status and priority badges
+- **Ticket Detail** - View full ticket information
+- **Create/Edit Ticket** - Form to create or modify tickets
+- **Settings** - View account information and change password
+
+### Admin Only
+- **User Management** - List all users
+- **Create/Edit User** - Manage user accounts
+- **User Detail** - View user information
+- **Delete Users** - Remove user accounts
+- **Delete Tickets** - Remove tickets from the system
+
+### Navigation
+- Click the **Flyhalf** logo to return to the tickets list
+- Click your **username** in the navbar to access settings
+- **Tickets** link shows all tickets
+- **Users** link (admins only) for user management
+- **Logout** button to end session
+
 ## API Documentation
 
 ### Base URL
@@ -131,16 +180,19 @@ http://localhost:8081/api/v1
 | POST | `/auth/refresh` | Refresh access token | No (requires refresh token cookie) |
 | POST | `/auth/logout` | Logout and revoke tokens | Yes |
 | GET | `/auth/me` | Get current user info | Yes |
+| PUT | `/auth/password` | Change password | Yes |
 
 ### Ticket Endpoints
 
 | Method | Endpoint | Description | Auth Required | Role |
 |--------|----------|-------------|---------------|------|
-| GET | `/tickets` | List tickets | Yes | Any |
+| GET | `/tickets` | List all tickets | Yes | Any |
 | POST | `/tickets` | Create ticket | Yes | Any |
 | GET | `/tickets/{id}` | Get ticket by ID | Yes | Any |
-| PUT | `/tickets/{id}` | Update ticket | Yes | Owner or Admin |
-| DELETE | `/tickets/{id}` | Delete ticket | Yes | Owner or Admin |
+| PUT | `/tickets/{id}` | Update ticket | Yes | Any |
+| DELETE | `/tickets/{id}` | Delete ticket | Yes | Admin only |
+
+**Note**: All authenticated users can view and edit all tickets. Only administrators can delete tickets.
 
 ### Admin Endpoints
 
@@ -220,7 +272,6 @@ Frontend: No package manager needed - just add ES module imports!
 - `status` (varchar: open, in_progress, resolved, closed)
 - `priority` (varchar: low, medium, high, urgent)
 - `assigned_to` (UUID, FK to users, nullable)
-- `metadata` (JSONB)
 - `created_at`, `updated_at` (timestamps)
 
 ## Security
