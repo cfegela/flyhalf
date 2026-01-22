@@ -126,6 +126,12 @@ nav {
     background-color: var(--bg-gray);
 }
 
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .card {
     background: white;
     border-radius: 0.5rem;

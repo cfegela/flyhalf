@@ -168,17 +168,25 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TicketHandler) DeleteTicket(w http.ResponseWriter, r *http.Request) {
-	// Only admins can delete tickets
-	userRole, _ := auth.GetUserRole(r.Context())
-	if userRole != model.RoleAdmin {
-		http.Error(w, `{"error":"only admins can delete tickets"}`, http.StatusForbidden)
-		return
-	}
-
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
 		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	userID, _ := auth.GetUserID(r.Context())
+	userRole, _ := auth.GetUserRole(r.Context())
+
+	// Allow deletion if user is admin OR if user created the ticket
+	if userRole != model.RoleAdmin && ticket.UserID != userID {
+		http.Error(w, `{"error":"you can only delete tickets you created"}`, http.StatusForbidden)
 		return
 	}
 

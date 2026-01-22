@@ -74,11 +74,11 @@ export async function ticketsListView() {
                                             <a href="#/tickets/${ticket.id}/edit" class="btn btn-secondary action-btn">
                                                 Edit
                                             </a>
-                                            ${auth.isAdmin() ? `
-                                            <button class="btn btn-danger action-btn delete-btn" data-id="${ticket.id}">
+                                            <button class="btn btn-danger action-btn delete-btn"
+                                                    data-id="${ticket.id}"
+                                                    ${auth.isAdmin() || ticket.user_id === auth.getUser().id ? '' : 'disabled'}>
                                                 Delete
                                             </button>
-                                            ` : ''}
                                         </div>
                                     </td>
                                 </tr>
@@ -92,6 +92,7 @@ export async function ticketsListView() {
         const deleteButtons = ticketsContainer.querySelectorAll('.delete-btn');
         deleteButtons.forEach(btn => {
             btn.addEventListener('click', async (e) => {
+                if (e.target.disabled) return;
                 const id = e.target.dataset.id;
                 if (confirm('Are you sure you want to delete this ticket?')) {
                     try {
@@ -136,7 +137,7 @@ export async function ticketDetailView(params) {
                     <h1 class="page-title">${escapeHtml(ticket.title)}</h1>
                     <div class="actions">
                         <a href="#/tickets/${id}/edit" class="btn btn-primary">Edit</a>
-                        ${auth.isAdmin() ? '<button class="btn btn-danger" id="delete-btn">Delete</button>' : ''}
+                        <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || ticket.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
                 <div class="card">
@@ -185,17 +186,16 @@ export async function ticketDetailView(params) {
         `;
 
         const deleteBtn = container.querySelector('#delete-btn');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', async () => {
-                if (confirm('Are you sure you want to delete this ticket?')) {
-                    try {
-                        await api.deleteTicket(id);
-                        router.navigate('/tickets');
-                    } catch (error) {
-                    }
+        deleteBtn.addEventListener('click', async () => {
+            if (deleteBtn.disabled) return;
+            if (confirm('Are you sure you want to delete this ticket?')) {
+                try {
+                    await api.deleteTicket(id);
+                    router.navigate('/tickets');
+                } catch (error) {
                 }
-            });
-        }
+            }
+        });
     } catch (error) {
         container.innerHTML = `
             <div class="card">
