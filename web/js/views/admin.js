@@ -320,8 +320,8 @@ export async function userFormView(params) {
                 await api.updateUser(id, data);
                 router.navigate(`/admin/users/${id}`);
             } else {
-                const newUser = await api.createUser(data);
-                router.navigate(`/admin/users/${newUser.id}`);
+                await api.createUser(data);
+                router.navigate('/admin/users');
             }
         } catch (error) {
             submitBtn.disabled = false;

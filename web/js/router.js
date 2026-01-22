@@ -7,7 +7,6 @@ class Router {
         this.viewContainer = document.getElementById('view-container');
 
         window.addEventListener('hashchange', () => this.navigate());
-        window.addEventListener('load', () => this.navigate());
     }
 
     addRoute(path, handler, options = {}) {
