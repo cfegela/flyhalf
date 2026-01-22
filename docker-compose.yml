@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: flyhalf-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-flyhalf}
+      POSTGRES_USER: ${DB_USER:-flyhalf}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-flyhalf_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-flyhalf}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flyhalf-network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: development
+    container_name: flyhalf-api
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      DB_HOST: postgres
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-flyhalf}
+      DB_PASSWORD: ${DB_PASSWORD:-flyhalf_dev_password}
+      DB_NAME: ${DB_NAME:-flyhalf}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRY_MIN: ${JWT_ACCESS_EXPIRY_MIN:-15}
+      JWT_REFRESH_EXPIRY_DAY: ${JWT_REFRESH_EXPIRY_DAY:-7}
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - flyhalf-network
+
+  web:
+    image: nginx:alpine
+    container_name: flyhalf-web
+    ports:
+      - "3000:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+    networks:
+      - flyhalf-network
+
+volumes:
+  postgres_data:
+
+networks:
+  flyhalf-network:
+    driver: bridge

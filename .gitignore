@@ -1,0 +1,31 @@
+# Environment variables
+.env
+
+# Go
+api/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+api/build-errors.log
+
+# Docker
+*.pid
