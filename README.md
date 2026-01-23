@@ -35,6 +35,12 @@ Full-stack ticketing, epic, and sprint management application with Go API, vanil
   - End date automatically calculated as 2 weeks after start date
   - Assign tickets to sprints for sprint planning
   - Sprint detail view shows all tickets assigned to that sprint
+  - **Sprint Board**: Interactive kanban board with drag-and-drop functionality
+    - Three columns: Committed (open), Underway (in-progress/blocked/needs-review), Completed (closed)
+    - Drag tickets between columns to update their status
+    - Real-time status updates via API
+    - Tickets sorted by priority within each column
+    - Responsive design with mobile support
   - Full list and detail views
 - All users can view and edit all tickets and epics (collaborative workspace)
 - Users can delete tickets/epics they created; admins can delete any ticket/epic
@@ -55,6 +61,7 @@ Full-stack ticketing, epic, and sprint management application with Go API, vanil
 - ✅ Delete tickets, epics, and sprints they created
 - ✅ Assign tickets to epics and sprints
 - ✅ Promote tickets to top of list
+- ✅ Use sprint board with drag-and-drop to update ticket status
 - ✅ Change own password
 - ✅ View own account settings
 - ❌ Delete tickets/epics/sprints created by others
@@ -184,6 +191,13 @@ The application provides the following pages:
 - **Create/Edit Epic** - Form to create or modify epics (name and description)
 - **Sprints List** - View all sprints with name, start date, and end date columns
 - **Sprint Detail** - View sprint dates with table of all tickets assigned to the sprint
+  - "View Board" button to access the interactive kanban board
+- **Sprint Board** - Interactive kanban board for sprint management
+  - Three columns: Committed, Underway, Completed
+  - Drag-and-drop tickets between columns to update status
+  - Ticket cards show: ID, title, description (truncated), status badge, and view link
+  - Ticket counts displayed in each column header
+  - "Back to Details" button to return to sprint detail view
 - **Create/Edit Sprint** - Form to create or modify sprints (name and start date, end date auto-calculated)
 - **Settings** - View account information and change password
 
@@ -200,6 +214,7 @@ The application provides the following pages:
 - **Tickets** link shows all tickets
 - **Epics** link shows all epics
 - **Sprints** link shows all sprints
+  - From sprint detail page, click "View Board" to access the interactive kanban board
 - **Users** link (admins only) for user management
 - **Logout** button to end session
 - Page state preserved on browser refresh
@@ -248,6 +263,12 @@ http://localhost:8081/api/v1
 - `epic_id` (UUID, optional) - Assign ticket to an epic
 - `sprint_id` (UUID, optional) - Assign ticket to a sprint
 - `priority` (integer) - Automatically managed by promote feature
+
+**Sprint Board Status Mapping**:
+- Tickets with status `open` appear in the **Committed** column
+- Tickets with status `in-progress`, `blocked`, or `needs-review` appear in the **Underway** column
+- Tickets with status `closed` appear in the **Completed** column
+- Dragging a ticket to a column updates its status accordingly (Committed→open, Underway→in-progress, Completed→closed)
 
 ### Epic Endpoints
 

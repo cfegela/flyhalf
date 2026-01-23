@@ -321,6 +321,192 @@ tr:hover {
     font-size: 0.875rem;
 }
 
+/* Sprint Board Styles */
+.sprint-board-container {
+    width: 100%;
+}
+
+.sprint-dates {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.board-column {
+    background: var(--bg-gray);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.board-column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.board-column-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ticket-count {
+    background-color: white;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+.board-column-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    padding: 0.25rem;
+}
+
+.board-column-content.drag-over {
+    background-color: rgba(37, 99, 235, 0.05);
+    border: 2px dashed var(--primary);
+    border-radius: 0.5rem;
+}
+
+.board-ticket {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    cursor: move;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.board-ticket:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border);
+}
+
+.board-ticket.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+.board-ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.board-ticket-id {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+.board-ticket-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.board-ticket-description {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.board-ticket-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+
+.priority-badge {
+    font-size: 0.75rem;
+    color: var(--warning);
+    font-weight: 600;
+}
+
+.board-ticket-link {
+    font-size: 0.75rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.board-ticket-link:hover {
+    text-decoration: underline;
+}
+
+.board-empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Badge status colors */
+.badge-new {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.badge-open {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-in-progress {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-blocked {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-needs-review {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+.badge-closed {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.error-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
 @media (max-width: 768px) {
     .navbar-menu {
         gap: 0.75rem;
@@ -335,5 +521,13 @@ tr:hover {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+    }
+
+    .board {
+        grid-template-columns: 1fr;
+    }
+
+    .board-column {
+        min-height: 300px;
     }
 }

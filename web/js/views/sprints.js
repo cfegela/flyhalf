@@ -133,7 +133,8 @@ export async function sprintDetailView(params) {
                 <div class="page-header">
                     <h1 class="page-title">${escapeHtml(sprint.name)}</h1>
                     <div class="actions">
-                        <a href="#/sprints/${id}/edit" class="btn btn-primary">Edit</a>
+                        <a href="#/sprints/${id}/board" class="btn btn-primary">View Board</a>
+                        <a href="#/sprints/${id}/edit" class="btn btn-secondary">Edit</a>
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || sprint.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
