@@ -17,19 +17,22 @@ Full-stack ticketing, epic, and sprint management application with Go API, vanil
 - JWT-based authentication with token refresh
 - Role-based access control (admin/user)
 - **Ticket Management**:
-  - CRUD operations with 6 status options (new, open, in-progress, blocked, needs-review, closed)
-  - New tickets automatically default to "new" status
-  - New tickets highlighted with blue background and sorted to top
+  - CRUD operations with 5 status options (open, in-progress, blocked, needs-review, closed)
+  - New tickets automatically default to "open" status
+  - New tickets appear at bottom of list (priority 0, promoted tickets at top)
   - Priority system with "Promote to Top" button to bump tickets to top of list
+  - Optional ticket sizing (Small=1, Medium=2, Large=3, X-Large=5, Danger=8)
   - Ticket assignment to users with assignee display in ticket list
-  - Assign tickets to epics for organization
+  - Assign tickets to epics for organization (epic names shown as acronyms in list)
   - Assign tickets to sprints for sprint planning
+  - Required title and description fields
   - 6-character unique ID for each ticket
   - Simplified list view with detail-level actions (edit/delete available in detail view only)
 - **Epic Management**:
-  - CRUD operations for epics (name and description)
+  - CRUD operations for epics with required name and description fields
   - Organize tickets by assigning them to epics
   - Epic detail view shows all tickets assigned to that epic
+  - Epic names displayed as acronyms in ticket list (uppercase letters only)
   - Full list and detail views
   - Simplified list view with detail-level actions (edit/delete available in detail view only)
 - **Sprint Management**:
@@ -182,21 +185,21 @@ The application provides the following pages:
 ### For All Users
 - **Login Page** - Email/password authentication
 - **Force Password Change** - Required for newly created users on first login
-- **Tickets List** - View all tickets with 6-character ID, title, status badges, assignee, epic, and sprint
-  - New tickets highlighted with blue background
-  - New tickets sorted to top of list
+- **Tickets List** - View all tickets with title, status badges, size, assignee, epic (shown as acronym), and sprint
+  - Sorted by priority (promoted tickets at top), then by creation date (oldest first)
+  - New unpromoted tickets appear at bottom of list
   - "Promote to Top" button to bump tickets to top priority
   - Click "View" to access ticket details, edit, and delete actions
-- **Ticket Detail** - View full ticket information including assignee, epic, and sprint assignment with edit and delete buttons
+- **Ticket Detail** - View full ticket information including size, assignee, epic, and sprint assignment with edit and delete buttons
   - Edit and delete buttons enabled only for ticket creator or admin
 - **Create/Edit Ticket** - Form to create or modify tickets
-  - Create: Title, description, and optional assignee selection (status defaults to "new")
-  - Edit: Additional fields for status (6 options), assignee, epic assignment, and sprint assignment
+  - Create: Required title and description, optional size and assignee selection (status defaults to "open")
+  - Edit: Additional fields for status (5 options: open, in-progress, blocked, needs-review, closed), epic assignment, and sprint assignment
 - **Epics List** - View all epics with name column
   - Click "View" to access epic details, edit, and delete actions
 - **Epic Detail** - View epic name and description with table of all tickets assigned to the epic
   - Edit and delete buttons available in detail view
-- **Create/Edit Epic** - Form to create or modify epics (name and description)
+- **Create/Edit Epic** - Form to create or modify epics with required name and description fields
 - **Sprints List** - View all sprints with name, start date, and end date columns
   - "Board" and "View" buttons for accessing sprint board and details
 - **Sprint Detail** - View sprint dates with table of all tickets assigned to the sprint
@@ -271,11 +274,13 @@ http://localhost:8081/api/v1
 
 **Ticket Fields**:
 - `title` (string, required)
-- `description` (string, optional)
-- `status` (string: new, open, in-progress, blocked, needs-review, closed)
+- `description` (string, required)
+- `status` (string: open, in-progress, blocked, needs-review, closed, default: 'open')
+- `assigned_to` (UUID, optional) - Assign ticket to a user
 - `epic_id` (UUID, optional) - Assign ticket to an epic
 - `sprint_id` (UUID, optional) - Assign ticket to a sprint
-- `priority` (integer) - Automatically managed by promote feature
+- `size` (integer, optional: 1=Small, 2=Medium, 3=Large, 5=X-Large, 8=Danger)
+- `priority` (integer, default: 0) - Automatically managed by promote feature
 
 **Sprint Board Status Mapping**:
 - Tickets with status `open` appear in the **Committed** column
@@ -297,7 +302,7 @@ http://localhost:8081/api/v1
 
 **Epic Fields**:
 - `name` (string, required)
-- `description` (string, optional)
+- `description` (string, required)
 
 ### Sprint Endpoints
 
@@ -399,7 +404,7 @@ Frontend: No package manager needed - just add ES module imports!
 - `id` (UUID, primary key)
 - `user_id` (FK to users - epic creator)
 - `name` (varchar(255), not null)
-- `description` (text, nullable)
+- `description` (text, not null)
 - `created_at`, `updated_at` (timestamps)
 
 ### Sprints Table
@@ -414,11 +419,12 @@ Frontend: No package manager needed - just add ES module imports!
 - `id` (UUID, primary key)
 - `user_id` (FK to users - ticket creator)
 - `title` (varchar(255), not null)
-- `description` (text, nullable)
-- `status` (varchar(50): new, open, in-progress, blocked, needs-review, closed, default: 'new')
+- `description` (text, not null)
+- `status` (varchar(50): open, in-progress, blocked, needs-review, closed, default: 'open')
 - `assigned_to` (UUID, FK to users, nullable)
 - `epic_id` (UUID, FK to epics, nullable)
 - `sprint_id` (UUID, FK to sprints, nullable)
+- `size` (integer, nullable: 1=Small, 2=Medium, 3=Large, 5=X-Large, 8=Danger)
 - `priority` (integer, default: 0)
 - `created_at`, `updated_at` (timestamps)
 

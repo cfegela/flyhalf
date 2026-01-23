@@ -93,7 +93,7 @@ export async function ticketsListView() {
                                         ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
                                     </td>
                                     <td>
-                                        ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : '-'}
+                                        ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;" title="${escapeHtml(epic.name)}">${getEpicAcronym(epic.name)}</a>` : '-'}
                                     </td>
                                     <td>
                                         ${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
@@ -474,5 +474,10 @@ function getSizeLabel(size) {
         case 8: return 'Danger';
         default: return '-';
     }
+}
+
+function getEpicAcronym(epicName) {
+    // Remove spaces and lowercase letters, keeping only uppercase letters
+    return epicName.replace(/[a-z\s]/g, '');
 }
 
