@@ -117,13 +117,13 @@ nav {
 }
 
 .btn-secondary {
-    background-color: white;
+    background-color: #e5e7eb; /* Light gray background for WCAG AA compliance */
     color: var(--text-primary);
     border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
-    background-color: var(--bg-gray);
+    background-color: #d1d5db; /* Slightly darker gray on hover */
 }
 
 .btn:disabled {
