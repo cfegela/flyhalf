@@ -49,7 +49,7 @@ export async function epicsListView() {
                             ${epics.map(epic => `
                                 <tr>
                                     <td>
-                                        <strong>${escapeHtml(epic.name)}</strong>
+                                        <strong>${escapeHtml(epic.name)} (${getEpicAcronym(epic.name)})</strong>
                                     </td>
                                     <td>
                                         <div class="actions">
@@ -285,4 +285,9 @@ function getStatusBadgeClass(status) {
         case 'closed': return 'badge-closed';
         default: return 'badge-open';
     }
+}
+
+function getEpicAcronym(epicName) {
+    // Remove spaces and lowercase letters, keeping only uppercase letters
+    return epicName.replace(/[a-z\s]/g, '');
 }
