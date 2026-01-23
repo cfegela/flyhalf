@@ -91,6 +91,17 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		`CREATE INDEX IF NOT EXISTS idx_tickets_assigned_to ON tickets(assigned_to)`,
 		`DROP INDEX IF EXISTS idx_tickets_priority`,
 		`ALTER TABLE tickets DROP COLUMN IF EXISTS priority`,
+
+		`CREATE TABLE IF NOT EXISTS epics (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			name VARCHAR(255) NOT NULL,
+			description TEXT,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_epics_user_id ON epics(user_id)`,
 	}
 
 	for _, migration := range migrations {

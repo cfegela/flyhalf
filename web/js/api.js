@@ -123,6 +123,34 @@ class APIClient {
         });
     }
 
+    async getEpics() {
+        return this.request('/epics');
+    }
+
+    async getEpic(id) {
+        return this.request(`/epics/${id}`);
+    }
+
+    async createEpic(epic) {
+        return this.request('/epics', {
+            method: 'POST',
+            body: JSON.stringify(epic),
+        });
+    }
+
+    async updateEpic(id, epic) {
+        return this.request(`/epics/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(epic),
+        });
+    }
+
+    async deleteEpic(id) {
+        return this.request(`/epics/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
     async getUsers() {
         return this.request('/admin/users');
     }

@@ -8,6 +8,11 @@ import {
     ticketFormView
 } from './views/tickets.js';
 import {
+    epicsListView,
+    epicDetailView,
+    epicFormView
+} from './views/epics.js';
+import {
     usersListView,
     userDetailView,
     userFormView
@@ -24,6 +29,10 @@ async function initApp() {
     router.addRoute('/tickets/new', (params) => ticketFormView(['new']), { requireAuth: true });
     router.addRoute('/tickets/:id/edit', (params) => ticketFormView([params[0], 'edit']), { requireAuth: true });
     router.addRoute('/tickets/:id', ticketDetailView, { requireAuth: true });
+    router.addRoute('/epics', epicsListView, { requireAuth: true });
+    router.addRoute('/epics/new', (params) => epicFormView(['new']), { requireAuth: true });
+    router.addRoute('/epics/:id/edit', (params) => epicFormView([params[0], 'edit']), { requireAuth: true });
+    router.addRoute('/epics/:id', epicDetailView, { requireAuth: true });
     router.addRoute('/settings', settingsView, { requireAuth: true });
     router.addRoute('/admin/users', usersListView, { requireAuth: true, requireAdmin: true });
     router.addRoute('/admin/users/new', (params) => userFormView(['admin', 'new']), { requireAuth: true, requireAdmin: true });

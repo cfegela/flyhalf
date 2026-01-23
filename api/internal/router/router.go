@@ -13,26 +13,29 @@ import (
 )
 
 type Router struct {
-	authHandler   *handler.AuthHandler
-	adminHandler  *handler.AdminHandler
-	ticketHandler *handler.TicketHandler
+	authHandler    *handler.AuthHandler
+	adminHandler   *handler.AdminHandler
+	ticketHandler  *handler.TicketHandler
+	epicHandler    *handler.EpicHandler
 	authMiddleware *auth.AuthMiddleware
-	cfg           *config.Config
+	cfg            *config.Config
 }
 
 func New(
 	authHandler *handler.AuthHandler,
 	adminHandler *handler.AdminHandler,
 	ticketHandler *handler.TicketHandler,
+	epicHandler *handler.EpicHandler,
 	authMiddleware *auth.AuthMiddleware,
 	cfg *config.Config,
 ) *Router {
 	return &Router{
-		authHandler:   authHandler,
-		adminHandler:  adminHandler,
-		ticketHandler: ticketHandler,
+		authHandler:    authHandler,
+		adminHandler:   adminHandler,
+		ticketHandler:  ticketHandler,
+		epicHandler:    epicHandler,
 		authMiddleware: authMiddleware,
-		cfg:           cfg,
+		cfg:            cfg,
 	}
 }
 
@@ -74,6 +77,16 @@ func (rt *Router) Setup() http.Handler {
 			r.Get("/{id}", rt.ticketHandler.GetTicket)
 			r.Put("/{id}", rt.ticketHandler.UpdateTicket)
 			r.Delete("/{id}", rt.ticketHandler.DeleteTicket)
+		})
+
+		r.Route("/epics", func(r chi.Router) {
+			r.Use(rt.authMiddleware.Authenticate)
+
+			r.Get("/", rt.epicHandler.ListEpics)
+			r.Post("/", rt.epicHandler.CreateEpic)
+			r.Get("/{id}", rt.epicHandler.GetEpic)
+			r.Put("/{id}", rt.epicHandler.UpdateEpic)
+			r.Delete("/{id}", rt.epicHandler.DeleteEpic)
 		})
 
 		r.Route("/admin", func(r chi.Router) {
