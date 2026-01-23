@@ -115,6 +115,10 @@ export async function epicDetailView(params) {
 
     try {
         const epic = await api.getEpic(id);
+        const allTickets = await api.getTickets();
+
+        // Filter tickets for this epic
+        const epicTickets = allTickets.filter(ticket => ticket.epic_id === id);
 
         container.innerHTML = `
             <div>
@@ -132,6 +136,52 @@ export async function epicDetailView(params) {
                             <p>${escapeHtml(epic.description) || 'No description'}</p>
                         </div>
                     </div>
+                </div>
+                <div class="card" style="margin-top: 1.5rem;">
+                    <h2 style="margin-bottom: 1rem;">Tickets</h2>
+                    ${epicTickets.length === 0 ? `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🎫</div>
+                            <p>No tickets assigned to this epic</p>
+                        </div>
+                    ` : `
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${epicTickets.map(ticket => `
+                                        <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
+                                            <td>
+                                                <strong>${ticket.id.substring(0, 6)}</strong>
+                                            </td>
+                                            <td>
+                                                <strong>${escapeHtml(ticket.title)}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge ${getStatusBadgeClass(ticket.status)}">
+                                                    ${escapeHtml(ticket.status)}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="actions">
+                                                    <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
+                                                        View
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `}
                 </div>
             </div>
         `;
@@ -245,4 +295,16 @@ function escapeHtml(text) {
 function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'new': return 'badge-primary';
+        case 'open': return 'badge-primary';
+        case 'in-progress': return 'badge-warning';
+        case 'blocked': return 'badge-danger';
+        case 'needs-review': return 'badge-warning';
+        case 'closed': return 'badge-success';
+        default: return 'badge-primary';
+    }
 }
