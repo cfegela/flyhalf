@@ -7,6 +7,9 @@ class Navbar {
         this.render();
 
         auth.subscribe(() => this.render());
+
+        // Update active link whenever the hash changes
+        window.addEventListener('hashchange', () => this.updateActiveLink());
     }
 
     async handleLogout(e) {
@@ -57,7 +60,15 @@ class Navbar {
 
         links.forEach(link => {
             const href = link.getAttribute('href');
-            if (href === hash || (hash === '#/' && href === '#/')) {
+
+            // Check if current hash matches this link
+            // For home link, only match exact '/' or '#/'
+            // For other links, match if hash starts with the link path
+            const isActive = href === '#/'
+                ? (hash === '#/' || hash === '#')
+                : hash.startsWith(href);
+
+            if (isActive) {
                 link.classList.add('active');
             } else {
                 link.classList.remove('active');
