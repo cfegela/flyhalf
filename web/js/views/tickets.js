@@ -76,6 +76,11 @@ export async function ticketsListView() {
                                     </td>
                                     <td>
                                         <div class="actions">
+                                            <button class="btn btn-primary action-btn promote-btn"
+                                                    data-id="${ticket.id}"
+                                                    title="Promote to top">
+                                                ↑
+                                            </button>
                                             <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
@@ -109,6 +114,18 @@ export async function ticketsListView() {
                         ticketsListView();
                     } catch (error) {
                     }
+                }
+            });
+        });
+
+        const promoteButtons = ticketsContainer.querySelectorAll('.promote-btn');
+        promoteButtons.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.target.dataset.id;
+                try {
+                    await api.promoteTicket(id);
+                    ticketsListView();
+                } catch (error) {
                 }
             });
         });

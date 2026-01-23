@@ -92,6 +92,9 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		`DROP INDEX IF EXISTS idx_tickets_priority`,
 		`ALTER TABLE tickets DROP COLUMN IF EXISTS priority`,
 
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS priority INTEGER NOT NULL DEFAULT 0`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`,
+
 		`CREATE TABLE IF NOT EXISTS epics (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

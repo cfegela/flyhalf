@@ -123,6 +123,12 @@ class APIClient {
         });
     }
 
+    async promoteTicket(id) {
+        return this.request(`/tickets/${id}/promote`, {
+            method: 'POST',
+        });
+    }
+
     async getEpics() {
         return this.request('/epics');
     }

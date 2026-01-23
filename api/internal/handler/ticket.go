@@ -193,3 +193,41 @@ func (h *TicketHandler) DeleteTicket(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *TicketHandler) PromoteTicket(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Get current max priority
+	maxPriority, err := h.ticketRepo.GetMaxPriority(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to get max priority"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Set ticket priority to max + 1
+	if err := h.ticketRepo.UpdatePriority(r.Context(), id, maxPriority+1); err != nil {
+		http.Error(w, `{"error":"failed to promote ticket"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated ticket and return it
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}
