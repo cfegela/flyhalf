@@ -61,6 +61,9 @@ export async function sprintsListView() {
                                     </td>
                                     <td>
                                         <div class="actions">
+                                            <a href="#/sprints/${sprint.id}/board" class="btn btn-primary action-btn">
+                                                Board
+                                            </a>
                                             <a href="#/sprints/${sprint.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
