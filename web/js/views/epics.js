@@ -41,7 +41,6 @@ export async function epicsListView() {
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Name</th>
                                 <th>Actions</th>
                             </tr>
@@ -49,9 +48,6 @@ export async function epicsListView() {
                         <tbody>
                             ${epics.map(epic => `
                                 <tr>
-                                    <td>
-                                        <strong>${epic.id.substring(0, 6)}</strong>
-                                    </td>
                                     <td>
                                         <strong>${escapeHtml(epic.name)}</strong>
                                     </td>

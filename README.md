@@ -1,6 +1,6 @@
 # Flyhalf
 
-Full-stack ticketing and task management application with Go API, vanilla JavaScript SPA, PostgreSQL database, and JWT authentication with role-based authorization.
+Full-stack ticketing and epic management application with Go API, vanilla JavaScript SPA, PostgreSQL database, and JWT authentication with role-based authorization.
 
 ## Tech Stack
 
@@ -14,12 +14,21 @@ Full-stack ticketing and task management application with Go API, vanilla JavaSc
 
 - JWT-based authentication with token refresh
 - Role-based access control (admin/user)
-- CRUD operations for tickets with status and priority tracking
-- All users can view and edit all tickets (collaborative workspace)
-- Users can delete tickets they created; admins can delete any ticket
+- **Ticket Management**:
+  - CRUD operations with 6 status options (new, open, in-progress, blocked, needs-review, closed)
+  - New tickets automatically default to "new" status
+  - New tickets highlighted with blue background and sorted to top
+  - Ticket assignment to users
+  - Assign tickets to epics for organization
+  - 6-character unique ID for each ticket
+- **Epic Management**:
+  - CRUD operations for epics (name and description)
+  - Organize tickets by assigning them to epics
+  - Full list and detail views
+- All users can view and edit all tickets and epics (collaborative workspace)
+- Users can delete tickets/epics they created; admins can delete any ticket/epic
 - Forced password change for newly created users
 - Admin user management
-- Ticket assignment and priority management
 - User settings page with account information
 - Password change functionality
 - Responsive UI with modern CSS
@@ -29,24 +38,25 @@ Full-stack ticketing and task management application with Go API, vanilla JavaSc
 ## Permission Model
 
 ### Regular Users (role: 'user')
-- ✅ View all tickets
-- ✅ Create new tickets
-- ✅ Edit any ticket
-- ✅ Delete tickets they created
+- ✅ View all tickets and epics
+- ✅ Create new tickets and epics
+- ✅ Edit any ticket or epic
+- ✅ Delete tickets and epics they created
+- ✅ Assign tickets to epics
 - ✅ Change own password
 - ✅ View own account settings
-- ❌ Delete tickets created by others
+- ❌ Delete tickets/epics created by others
 - ❌ Manage users
 
 ### Administrators (role: 'admin')
 - ✅ All user permissions
-- ✅ Delete any ticket (including those created by others)
+- ✅ Delete any ticket or epic (including those created by others)
 - ✅ Create new users (with forced password change)
 - ✅ Edit user accounts
 - ✅ Delete users
 - ✅ Deactivate/activate users
 
-This collaborative permission model allows all team members to view and update tickets while protecting data integrity. Users can manage their own tickets completely, but cannot delete tickets created by others.
+This collaborative permission model allows all team members to view and update tickets and epics while protecting data integrity. Users can manage their own items completely, but cannot delete items created by others.
 
 ## Project Structure
 
@@ -149,9 +159,16 @@ The application provides the following pages:
 ### For All Users
 - **Login Page** - Email/password authentication
 - **Force Password Change** - Required for newly created users on first login
-- **Tickets List** - View all tickets with status and priority badges
+- **Tickets List** - View all tickets with 6-character ID, title, and status badges
+  - New tickets highlighted with blue background
+  - New tickets sorted to top of list
 - **Ticket Detail** - View full ticket information with delete button (enabled only for own tickets)
 - **Create/Edit Ticket** - Form to create or modify tickets
+  - Create: Title and description only (status defaults to "new")
+  - Edit: Additional fields for status (5 options) and epic assignment
+- **Epics List** - View all epics with name column
+- **Epic Detail** - View epic name and description with delete button (enabled only for own epics)
+- **Create/Edit Epic** - Form to create or modify epics (name and description)
 - **Settings** - View account information and change password
 
 ### Admin Only
@@ -159,12 +176,13 @@ The application provides the following pages:
 - **Create/Edit User** - Manage user accounts (new users must change password on first login)
 - **User Detail** - View user information
 - **Delete Users** - Remove user accounts
-- **Delete Any Ticket** - Delete button enabled for all tickets
+- **Delete Any Ticket/Epic** - Delete button enabled for all tickets and epics
 
 ### Navigation
 - Click the **Flyhalf** logo to return to the tickets list
 - Click your **username** in the navbar to access settings
 - **Tickets** link shows all tickets
+- **Epics** link shows all epics
 - **Users** link (admins only) for user management
 - **Logout** button to end session
 - Page state preserved on browser refresh
@@ -204,6 +222,28 @@ http://localhost:8081/api/v1
 | DELETE | `/tickets/{id}` | Delete ticket | Yes | Creator or Admin |
 
 **Note**: All authenticated users can view and edit all tickets. Users can delete tickets they created; admins can delete any ticket.
+
+**Ticket Fields**:
+- `title` (string, required)
+- `description` (string, optional)
+- `status` (string: new, open, in-progress, blocked, needs-review, closed)
+- `epic_id` (UUID, optional) - Assign ticket to an epic
+
+### Epic Endpoints
+
+| Method | Endpoint | Description | Auth Required | Role |
+|--------|----------|-------------|---------------|------|
+| GET | `/epics` | List all epics | Yes | Any |
+| POST | `/epics` | Create epic | Yes | Any |
+| GET | `/epics/{id}` | Get epic by ID | Yes | Any |
+| PUT | `/epics/{id}` | Update epic | Yes | Any |
+| DELETE | `/epics/{id}` | Delete epic | Yes | Creator or Admin |
+
+**Note**: All authenticated users can view and edit all epics. Users can delete epics they created; admins can delete any epic.
+
+**Epic Fields**:
+- `name` (string, required)
+- `description` (string, optional)
 
 ### Admin Endpoints
 
@@ -265,6 +305,7 @@ Frontend: No package manager needed - just add ES module imports!
 - `first_name` (not null)
 - `last_name` (not null)
 - `is_active` (boolean)
+- `must_change_password` (boolean, default: false)
 - `created_at`, `updated_at` (timestamps)
 
 ### Refresh Tokens Table
@@ -275,14 +316,21 @@ Frontend: No package manager needed - just add ES module imports!
 - `revoked_at` (timestamp, nullable)
 - `created_at` (timestamp)
 
+### Epics Table
+- `id` (UUID, primary key)
+- `user_id` (FK to users - epic creator)
+- `name` (varchar(255), not null)
+- `description` (text, nullable)
+- `created_at`, `updated_at` (timestamps)
+
 ### Tickets Table
 - `id` (UUID, primary key)
 - `user_id` (FK to users - ticket creator)
-- `title` (not null)
-- `description` (text)
-- `status` (varchar: open, in_progress, resolved, closed)
-- `priority` (varchar: low, medium, high, urgent)
+- `title` (varchar(255), not null)
+- `description` (text, nullable)
+- `status` (varchar(50): new, open, in-progress, blocked, needs-review, closed, default: 'new')
 - `assigned_to` (UUID, FK to users, nullable)
+- `epic_id` (UUID, FK to epics, nullable)
 - `created_at`, `updated_at` (timestamps)
 
 ## Security
