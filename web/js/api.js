@@ -157,6 +157,34 @@ class APIClient {
         });
     }
 
+    async getSprints() {
+        return this.request('/sprints');
+    }
+
+    async getSprint(id) {
+        return this.request(`/sprints/${id}`);
+    }
+
+    async createSprint(sprint) {
+        return this.request('/sprints', {
+            method: 'POST',
+            body: JSON.stringify(sprint),
+        });
+    }
+
+    async updateSprint(id, sprint) {
+        return this.request(`/sprints/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(sprint),
+        });
+    }
+
+    async deleteSprint(id) {
+        return this.request(`/sprints/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
     async getUsers() {
         return this.request('/admin/users');
     }

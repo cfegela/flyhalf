@@ -108,6 +108,22 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS epic_id UUID REFERENCES epics(id) ON DELETE SET NULL`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_epic_id ON tickets(epic_id)`,
+
+		`CREATE TABLE IF NOT EXISTS sprints (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			name VARCHAR(255) NOT NULL,
+			start_date DATE NOT NULL,
+			end_date DATE NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_sprints_user_id ON sprints(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_sprints_start_date ON sprints(start_date)`,
+
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS sprint_id UUID REFERENCES sprints(id) ON DELETE SET NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_sprint_id ON tickets(sprint_id)`,
 	}
 
 	for _, migration := range migrations {

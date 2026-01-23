@@ -17,6 +17,7 @@ type Router struct {
 	adminHandler   *handler.AdminHandler
 	ticketHandler  *handler.TicketHandler
 	epicHandler    *handler.EpicHandler
+	sprintHandler  *handler.SprintHandler
 	authMiddleware *auth.AuthMiddleware
 	cfg            *config.Config
 }
@@ -26,6 +27,7 @@ func New(
 	adminHandler *handler.AdminHandler,
 	ticketHandler *handler.TicketHandler,
 	epicHandler *handler.EpicHandler,
+	sprintHandler *handler.SprintHandler,
 	authMiddleware *auth.AuthMiddleware,
 	cfg *config.Config,
 ) *Router {
@@ -34,6 +36,7 @@ func New(
 		adminHandler:   adminHandler,
 		ticketHandler:  ticketHandler,
 		epicHandler:    epicHandler,
+		sprintHandler:  sprintHandler,
 		authMiddleware: authMiddleware,
 		cfg:            cfg,
 	}
@@ -88,6 +91,16 @@ func (rt *Router) Setup() http.Handler {
 			r.Get("/{id}", rt.epicHandler.GetEpic)
 			r.Put("/{id}", rt.epicHandler.UpdateEpic)
 			r.Delete("/{id}", rt.epicHandler.DeleteEpic)
+		})
+
+		r.Route("/sprints", func(r chi.Router) {
+			r.Use(rt.authMiddleware.Authenticate)
+
+			r.Get("/", rt.sprintHandler.ListSprints)
+			r.Post("/", rt.sprintHandler.CreateSprint)
+			r.Get("/{id}", rt.sprintHandler.GetSprint)
+			r.Put("/{id}", rt.sprintHandler.UpdateSprint)
+			r.Delete("/{id}", rt.sprintHandler.DeleteSprint)
 		})
 
 		r.Route("/admin", func(r chi.Router) {

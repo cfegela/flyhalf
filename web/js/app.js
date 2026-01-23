@@ -13,6 +13,11 @@ import {
     epicFormView
 } from './views/epics.js';
 import {
+    sprintsListView,
+    sprintDetailView,
+    sprintFormView
+} from './views/sprints.js';
+import {
     usersListView,
     userDetailView,
     userFormView
@@ -33,6 +38,10 @@ async function initApp() {
     router.addRoute('/epics/new', (params) => epicFormView(['new']), { requireAuth: true });
     router.addRoute('/epics/:id/edit', (params) => epicFormView([params[0], 'edit']), { requireAuth: true });
     router.addRoute('/epics/:id', epicDetailView, { requireAuth: true });
+    router.addRoute('/sprints', sprintsListView, { requireAuth: true });
+    router.addRoute('/sprints/new', (params) => sprintFormView(['new']), { requireAuth: true });
+    router.addRoute('/sprints/:id/edit', (params) => sprintFormView([params[0], 'edit']), { requireAuth: true });
+    router.addRoute('/sprints/:id', sprintDetailView, { requireAuth: true });
     router.addRoute('/settings', settingsView, { requireAuth: true });
     router.addRoute('/admin/users', usersListView, { requireAuth: true, requireAdmin: true });
     router.addRoute('/admin/users/new', (params) => userFormView(['admin', 'new']), { requireAuth: true, requireAdmin: true });

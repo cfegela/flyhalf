@@ -24,6 +24,7 @@ type CreateTicketRequest struct {
 	Status      string     `json:"status"`
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 	EpicID      *uuid.UUID `json:"epic_id,omitempty"`
+	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
 }
 
 type UpdateTicketRequest struct {
@@ -32,6 +33,7 @@ type UpdateTicketRequest struct {
 	Status      string     `json:"status"`
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 	EpicID      *uuid.UUID `json:"epic_id,omitempty"`
+	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
 }
 
 func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +107,7 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		Status:      req.Status,
 		AssignedTo:  req.AssignedTo,
 		EpicID:      req.EpicID,
+		SprintID:    req.SprintID,
 	}
 
 	if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
@@ -152,6 +155,9 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.EpicID != nil {
 		ticket.EpicID = req.EpicID
+	}
+	if req.SprintID != nil {
+		ticket.SprintID = req.SprintID
 	}
 
 	if err := h.ticketRepo.Update(r.Context(), ticket); err != nil {

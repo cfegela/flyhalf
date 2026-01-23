@@ -20,12 +20,19 @@ export async function ticketsListView() {
     try {
         const tickets = await api.getTickets();
         const epics = await api.getEpics();
+        const sprints = await api.getSprints();
         const ticketsContainer = container.querySelector('#tickets-container');
 
         // Create a map of epic_id to epic for quick lookup
         const epicMap = {};
         epics.forEach(epic => {
             epicMap[epic.id] = epic;
+        });
+
+        // Create a map of sprint_id to sprint for quick lookup
+        const sprintMap = {};
+        sprints.forEach(sprint => {
+            sprintMap[sprint.id] = sprint;
         });
 
         if (tickets.length === 0) {
@@ -52,12 +59,14 @@ export async function ticketsListView() {
                                 <th>Title</th>
                                 <th>Status</th>
                                 <th>Epic</th>
+                                <th>Sprint</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${tickets.map(ticket => {
                                 const epic = ticket.epic_id ? epicMap[ticket.epic_id] : null;
+                                const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
                                 return `
                                 <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
                                     <td>
@@ -73,6 +82,9 @@ export async function ticketsListView() {
                                     </td>
                                     <td>
                                         ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : 'None'}
+                                    </td>
+                                    <td>
+                                        ${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : 'None'}
                                     </td>
                                     <td>
                                         <div class="actions">
@@ -167,6 +179,16 @@ export async function ticketDetailView(params) {
             }
         }
 
+        // Fetch sprint if ticket is assigned to one
+        let sprint = null;
+        if (ticket.sprint_id) {
+            try {
+                sprint = await api.getSprint(ticket.sprint_id);
+            } catch (error) {
+                // Sprint might have been deleted, continue without it
+            }
+        }
+
         container.innerHTML = `
             <div>
                 <div class="page-header">
@@ -189,6 +211,10 @@ export async function ticketDetailView(params) {
                         <div>
                             <label class="form-label">Epic</label>
                             <p>${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : 'None'}</p>
+                        </div>
+                        <div>
+                            <label class="form-label">Sprint</label>
+                            <p>${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : 'None'}</p>
                         </div>
                         <div>
                             <label class="form-label">Description</label>
@@ -243,11 +269,13 @@ export async function ticketFormView(params) {
 
     let ticket = null;
     let epics = [];
+    let sprints = [];
     if (isEdit && id) {
         container.innerHTML = '<div class="loading">Loading ticket...</div>';
         try {
             ticket = await api.getTicket(id);
             epics = await api.getEpics();
+            sprints = await api.getSprints();
         } catch (error) {
             router.navigate('/tickets');
             return;
@@ -300,6 +328,17 @@ export async function ticketFormView(params) {
                             `).join('')}
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label" for="sprint">Sprint</label>
+                        <select id="sprint" class="form-select">
+                            <option value="">None</option>
+                            ${sprints.map(sprint => `
+                                <option value="${sprint.id}" ${ticket && ticket.sprint_id === sprint.id ? 'selected' : ''}>
+                                    ${escapeHtml(sprint.name)}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
                     ` : ''}
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
@@ -321,7 +360,7 @@ export async function ticketFormView(params) {
 
         const data = { title, description };
 
-        // Only include status and epic when editing
+        // Only include status, epic, and sprint when editing
         if (isEdit) {
             data.status = form.status.value;
             const epicValue = form.epic.value;
@@ -329,6 +368,12 @@ export async function ticketFormView(params) {
                 data.epic_id = epicValue;
             } else {
                 data.epic_id = null;
+            }
+            const sprintValue = form.sprint.value;
+            if (sprintValue) {
+                data.sprint_id = sprintValue;
+            } else {
+                data.sprint_id = null;
             }
         }
 
