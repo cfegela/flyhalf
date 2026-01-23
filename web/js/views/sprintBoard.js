@@ -90,6 +90,9 @@ async function loadSprintBoard(container, sprintId) {
     // Initialize drag and drop
     initializeDragAndDrop(container, sprintId);
 
+    // Initialize status badge clicks for underway tickets
+    initializeStatusBadgeClicks(container, sprintId);
+
   } catch (error) {
     container.innerHTML = `
       <div class="error-state">
@@ -100,24 +103,29 @@ async function loadSprintBoard(container, sprintId) {
   }
 }
 
-function renderTickets(tickets) {
+function renderTickets(tickets, column = '') {
   if (tickets.length === 0) {
     return '<div class="board-empty-state">No tickets</div>';
   }
 
-  return tickets.map(ticket => `
-    <div class="board-ticket" draggable="true" data-ticket-id="${ticket.id}" data-status="${ticket.status}">
-      <div class="board-ticket-header">
-        <span class="board-ticket-id">#${ticket.id.slice(0, 8)}</span>
-        <span class="badge badge-${ticket.status}">${ticket.status}</span>
+  return tickets.map(ticket => {
+    const isUnderway = ['in-progress', 'blocked', 'needs-review'].includes(ticket.status);
+    const badgeClass = isUnderway ? 'badge badge-' + ticket.status + ' badge-clickable' : 'badge badge-' + ticket.status;
+
+    return `
+      <div class="board-ticket" draggable="true" data-ticket-id="${ticket.id}" data-status="${ticket.status}">
+        <div class="board-ticket-header">
+          <span class="board-ticket-id">#${ticket.id.slice(0, 8)}</span>
+          <span class="${badgeClass}" ${isUnderway ? 'data-ticket-id="' + ticket.id + '"' : ''}>${ticket.status}</span>
+        </div>
+        <div class="board-ticket-title">${ticket.title}</div>
+        ${ticket.description ? `<div class="board-ticket-description">${ticket.description.substring(0, 100)}${ticket.description.length > 100 ? '...' : ''}</div>` : ''}
+        <div class="board-ticket-footer">
+          <a href="#/tickets/${ticket.id}" class="board-ticket-link" onclick="event.stopPropagation()">View</a>
+        </div>
       </div>
-      <div class="board-ticket-title">${ticket.title}</div>
-      ${ticket.description ? `<div class="board-ticket-description">${ticket.description.substring(0, 100)}${ticket.description.length > 100 ? '...' : ''}</div>` : ''}
-      <div class="board-ticket-footer">
-        <a href="#/tickets/${ticket.id}" class="board-ticket-link" onclick="event.stopPropagation()">View</a>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function initializeDragAndDrop(container, sprintId) {
@@ -223,4 +231,74 @@ function initializeDragAndDrop(container, sprintId) {
 
     return false;
   }
+}
+
+function initializeStatusBadgeClicks(container, sprintId) {
+  const clickableBadges = container.querySelectorAll('.badge-clickable');
+
+  clickableBadges.forEach(badge => {
+    badge.addEventListener('click', function(e) {
+      e.stopPropagation();
+
+      // Close any existing dropdowns
+      const existingDropdown = document.querySelector('.status-dropdown');
+      if (existingDropdown) {
+        existingDropdown.remove();
+      }
+
+      const ticketId = this.dataset.ticketId;
+      const currentStatus = this.textContent;
+      const rect = this.getBoundingClientRect();
+
+      // Create dropdown
+      const dropdown = document.createElement('div');
+      dropdown.className = 'status-dropdown';
+      dropdown.innerHTML = `
+        <div class="status-dropdown-item" data-status="in-progress">in-progress</div>
+        <div class="status-dropdown-item" data-status="blocked">blocked</div>
+        <div class="status-dropdown-item" data-status="needs-review">needs-review</div>
+      `;
+
+      // Position dropdown
+      dropdown.style.position = 'fixed';
+      dropdown.style.top = `${rect.bottom + 5}px`;
+      dropdown.style.left = `${rect.left}px`;
+
+      document.body.appendChild(dropdown);
+
+      // Handle dropdown item clicks
+      const items = dropdown.querySelectorAll('.status-dropdown-item');
+      items.forEach(item => {
+        item.addEventListener('click', async function(e) {
+          e.stopPropagation();
+          const newStatus = this.dataset.status;
+
+          if (newStatus !== currentStatus) {
+            try {
+              // Update ticket status
+              const ticket = await api.getTicket(ticketId);
+              ticket.status = newStatus;
+              await api.updateTicket(ticketId, ticket);
+
+              // Reload the board
+              await loadSprintBoard(container, sprintId);
+            } catch (error) {
+              console.error('Failed to update ticket status:', error);
+            }
+          }
+
+          dropdown.remove();
+        });
+      });
+
+      // Close dropdown when clicking outside
+      const closeDropdown = (e) => {
+        if (!dropdown.contains(e.target) && e.target !== badge) {
+          dropdown.remove();
+          document.removeEventListener('click', closeDropdown);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+    });
+  });
 }

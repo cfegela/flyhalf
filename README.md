@@ -38,6 +38,7 @@ Full-stack ticketing, epic, and sprint management application with Go API, vanil
   - **Sprint Board**: Interactive kanban board with drag-and-drop functionality
     - Three columns: Committed (open), Underway (in-progress/blocked/needs-review), Completed (closed)
     - Drag tickets between columns to update their status
+    - Clickable status badges in Underway column to change between in-progress/blocked/needs-review
     - Real-time status updates via API
     - Tickets sorted by priority within each column
     - Responsive design with mobile support
@@ -195,6 +196,7 @@ The application provides the following pages:
 - **Sprint Board** - Interactive kanban board for sprint management
   - Three columns: Committed, Underway, Completed
   - Drag-and-drop tickets between columns to update status
+  - Clickable status badges in Underway column (click to change between in-progress/blocked/needs-review)
   - Ticket cards show: ID, title, description (truncated), status badge, and view link
   - Ticket counts displayed in each column header
   - "Back to Details" button to return to sprint detail view
@@ -409,6 +411,14 @@ Frontend: No package manager needed - just add ES module imports!
 - CORS configured with explicit origin allowlist
 - Parameterized queries to prevent SQL injection
 - Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+
+## Accessibility
+
+- **Section 508 Compliant**: All color combinations meet WCAG 2.0 Level AA standards
+- **Contrast Ratios**: Minimum 4.5:1 contrast ratio for normal text
+- **Readable Colors**: Text and background colors optimized for readability
+- **Status Indicators**: Color-coded status badges with sufficient contrast for visual accessibility
+- **Interactive Elements**: Clear visual indicators for clickable and interactive elements
 
 ## Production Deployment
 

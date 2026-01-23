@@ -8,7 +8,7 @@
     --border: #e5e7eb;
     --bg-gray: #f9fafb;
     --text-primary: #111827;
-    --text-secondary: #6b7280;
+    --text-secondary: #4b5563; /* Darkened from #6b7280 for better contrast */
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
@@ -242,7 +242,7 @@ tr:hover {
 
 .badge-warning {
     background-color: #fed7aa;
-    color: #9a3412;
+    color: #7c2d12; /* Darkened from #9a3412 for better contrast */
 }
 
 .badge-primary {
@@ -472,33 +472,70 @@ tr:hover {
 
 /* Badge status colors */
 .badge-new {
-    background-color: #f3f4f6;
-    color: #374151;
+    background-color: #e5e7eb; /* Darkened from #f3f4f6 for better contrast */
+    color: #1f2937; /* Darkened from #374151 for better contrast */
 }
 
 .badge-open {
-    background-color: #dbeafe;
+    background-color: #bfdbfe; /* Darkened from #dbeafe for better contrast */
     color: #1e40af;
 }
 
 .badge-in-progress {
-    background-color: #fef3c7;
-    color: #92400e;
+    background-color: #fde68a; /* Darkened from #fef3c7 for better contrast */
+    color: #78350f; /* Darkened from #92400e for better contrast */
 }
 
 .badge-blocked {
-    background-color: #fee2e2;
+    background-color: #fecaca; /* Darkened from #fee2e2 for better contrast */
     color: #991b1b;
 }
 
 .badge-needs-review {
-    background-color: #e0e7ff;
+    background-color: #c7d2fe; /* Darkened from #e0e7ff for better contrast */
     color: #3730a3;
 }
 
 .badge-closed {
-    background-color: #dcfce7;
+    background-color: #bbf7d0; /* Darkened from #dcfce7 for better contrast */
     color: #166534;
+}
+
+.badge-clickable {
+    cursor: pointer;
+    position: relative;
+    transition: opacity 0.2s;
+}
+
+.badge-clickable:hover {
+    opacity: 0.8;
+}
+
+.badge-clickable::after {
+    content: ' ▼';
+    font-size: 0.6rem;
+    margin-left: 0.25rem;
+}
+
+.status-dropdown {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    min-width: 140px;
+    overflow: hidden;
+}
+
+.status-dropdown-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background-color 0.2s;
+}
+
+.status-dropdown-item:hover {
+    background-color: var(--bg-gray);
 }
 
 .error-state {
