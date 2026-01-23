@@ -21,15 +21,17 @@ Full-stack ticketing, epic, and sprint management application with Go API, vanil
   - New tickets automatically default to "new" status
   - New tickets highlighted with blue background and sorted to top
   - Priority system with "Promote to Top" button to bump tickets to top of list
-  - Ticket assignment to users
+  - Ticket assignment to users with assignee display in ticket list
   - Assign tickets to epics for organization
   - Assign tickets to sprints for sprint planning
   - 6-character unique ID for each ticket
+  - Simplified list view with detail-level actions (edit/delete available in detail view only)
 - **Epic Management**:
   - CRUD operations for epics (name and description)
   - Organize tickets by assigning them to epics
   - Epic detail view shows all tickets assigned to that epic
   - Full list and detail views
+  - Simplified list view with detail-level actions (edit/delete available in detail view only)
 - **Sprint Management**:
   - CRUD operations for sprints (name and start date)
   - End date automatically calculated as 2 weeks after start date
@@ -43,6 +45,7 @@ Full-stack ticketing, epic, and sprint management application with Go API, vanil
     - Tickets sorted by priority within each column
     - Responsive design with mobile support
   - Full list and detail views
+  - Simplified list view with detail-level actions (edit/delete available in detail view only)
 - All users can view and edit all tickets and epics (collaborative workspace)
 - Users can delete tickets/epics they created; admins can delete any ticket/epic
 - Forced password change for newly created users
@@ -179,20 +182,26 @@ The application provides the following pages:
 ### For All Users
 - **Login Page** - Email/password authentication
 - **Force Password Change** - Required for newly created users on first login
-- **Tickets List** - View all tickets with 6-character ID, title, status badges, epic, and sprint
+- **Tickets List** - View all tickets with 6-character ID, title, status badges, assignee, epic, and sprint
   - New tickets highlighted with blue background
   - New tickets sorted to top of list
   - "Promote to Top" button to bump tickets to top priority
-- **Ticket Detail** - View full ticket information including epic and sprint assignment with delete button (enabled only for own tickets)
+  - Click "View" to access ticket details, edit, and delete actions
+- **Ticket Detail** - View full ticket information including assignee, epic, and sprint assignment with edit and delete buttons
+  - Edit and delete buttons enabled only for ticket creator or admin
 - **Create/Edit Ticket** - Form to create or modify tickets
-  - Create: Title and description only (status defaults to "new")
-  - Edit: Additional fields for status (5 options), epic assignment, and sprint assignment
+  - Create: Title, description, and optional assignee selection (status defaults to "new")
+  - Edit: Additional fields for status (6 options), assignee, epic assignment, and sprint assignment
 - **Epics List** - View all epics with name column
+  - Click "View" to access epic details, edit, and delete actions
 - **Epic Detail** - View epic name and description with table of all tickets assigned to the epic
+  - Edit and delete buttons available in detail view
 - **Create/Edit Epic** - Form to create or modify epics (name and description)
 - **Sprints List** - View all sprints with name, start date, and end date columns
+  - "Board" and "View" buttons for accessing sprint board and details
 - **Sprint Detail** - View sprint dates with table of all tickets assigned to the sprint
   - "View Board" button to access the interactive kanban board
+  - Edit and delete buttons available in detail view
 - **Sprint Board** - Interactive kanban board for sprint management
   - Three columns: Committed, Underway, Completed
   - Drag-and-drop tickets between columns to update status
@@ -204,11 +213,12 @@ The application provides the following pages:
 - **Settings** - View account information and change password
 
 ### Admin Only
-- **User Management** - List all users
+- **User Management** - List all users with view access
+  - Click "View" to access user details, edit, and delete actions
+- **User Detail** - View user information with edit and delete buttons
 - **Create/Edit User** - Manage user accounts (new users must change password on first login)
-- **User Detail** - View user information
-- **Delete Users** - Remove user accounts
-- **Delete Any Ticket/Epic** - Delete button enabled for all tickets and epics
+- **Delete Users** - Delete button available in user detail view
+- **Delete Any Ticket/Epic/Sprint** - Delete button enabled for all tickets, epics, and sprints in their respective detail views
 
 ### Navigation
 - Click the **Flyhalf** logo to return to the tickets list
@@ -219,6 +229,7 @@ The application provides the following pages:
   - From sprint detail page, click "View Board" to access the interactive kanban board
 - **Users** link (admins only) for user management
 - **Logout** button to end session
+- **Active link highlighting** - Navbar automatically highlights the current section, including when viewing detail pages (e.g., viewing a specific ticket highlights the Tickets link)
 - Page state preserved on browser refresh
 
 ### New User Workflow
@@ -304,6 +315,14 @@ http://localhost:8081/api/v1
 - `name` (string, required)
 - `start_date` (date, required, format: YYYY-MM-DD)
 - `end_date` (date, auto-calculated as start_date + 14 days)
+
+### User Endpoints
+
+| Method | Endpoint | Description | Auth Required | Role |
+|--------|----------|-------------|---------------|------|
+| GET | `/users` | List users for assignment | Yes | Any |
+
+**Note**: Returns simplified user information (ID, name, email) for ticket assignment purposes. Available to all authenticated users.
 
 ### Admin Endpoints
 
