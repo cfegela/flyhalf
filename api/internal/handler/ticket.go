@@ -22,7 +22,6 @@ type CreateTicketRequest struct {
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
 	Status      string     `json:"status"`
-	Priority    string     `json:"priority"`
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 }
 
@@ -30,7 +29,6 @@ type UpdateTicketRequest struct {
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
 	Status      string     `json:"status"`
-	Priority    string     `json:"priority"`
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 }
 
@@ -95,11 +93,7 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Status == "" {
-		req.Status = "open"
-	}
-
-	if req.Priority == "" {
-		req.Priority = "medium"
+		req.Status = "new"
 	}
 
 	ticket := &model.Ticket{
@@ -107,7 +101,6 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      req.Status,
-		Priority:    req.Priority,
 		AssignedTo:  req.AssignedTo,
 	}
 
@@ -150,9 +143,6 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Status != "" {
 		ticket.Status = req.Status
-	}
-	if req.Priority != "" {
-		ticket.Priority = req.Priority
 	}
 	if req.AssignedTo != nil {
 		ticket.AssignedTo = req.AssignedTo

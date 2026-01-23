@@ -41,31 +41,26 @@ export async function ticketsListView() {
                     <table>
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Title</th>
                                 <th>Status</th>
-                                <th>Priority</th>
-                                <th>Created</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${tickets.map(ticket => `
-                                <tr>
+                                <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
+                                    <td>
+                                        <strong>${ticket.id.substring(0, 6)}</strong>
+                                    </td>
                                     <td>
                                         <strong>${escapeHtml(ticket.title)}</strong>
-                                        ${ticket.description ? `<br><small style="color: var(--text-secondary);">${escapeHtml(ticket.description.substring(0, 60))}${ticket.description.length > 60 ? '...' : ''}</small>` : ''}
                                     </td>
                                     <td>
                                         <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                             ${escapeHtml(ticket.status)}
                                         </span>
                                     </td>
-                                    <td>
-                                        <span class="badge ${getPriorityBadgeClass(ticket.priority)}">
-                                            ${escapeHtml(ticket.priority)}
-                                        </span>
-                                    </td>
-                                    <td>${formatDate(ticket.created_at)}</td>
                                     <td>
                                         <div class="actions">
                                             <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
@@ -142,22 +137,12 @@ export async function ticketDetailView(params) {
                 </div>
                 <div class="card">
                     <div style="display: grid; gap: 1rem;">
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                        <div>
+                            <label class="form-label">Status</label>
                             <div>
-                                <label class="form-label">Status</label>
-                                <div>
-                                    <span class="badge ${getStatusBadgeClass(ticket.status)}">
-                                        ${escapeHtml(ticket.status)}
-                                    </span>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="form-label">Priority</label>
-                                <div>
-                                    <span class="badge ${getPriorityBadgeClass(ticket.priority)}">
-                                        ${escapeHtml(ticket.priority)}
-                                    </span>
-                                </div>
+                                <span class="badge ${getStatusBadgeClass(ticket.status)}">
+                                    ${escapeHtml(ticket.status)}
+                                </span>
                             </div>
                         </div>
                         <div>
@@ -246,26 +231,18 @@ export async function ticketFormView(params) {
                             class="form-textarea"
                         >${ticket ? escapeHtml(ticket.description || '') : ''}</textarea>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label" for="status">Status *</label>
-                            <select id="status" class="form-select" required>
-                                <option value="open" ${ticket && ticket.status === 'open' ? 'selected' : ''}>Open</option>
-                                <option value="in_progress" ${ticket && ticket.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="resolved" ${ticket && ticket.status === 'resolved' ? 'selected' : ''}>Resolved</option>
-                                <option value="closed" ${ticket && ticket.status === 'closed' ? 'selected' : ''}>Closed</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="priority">Priority *</label>
-                            <select id="priority" class="form-select" required>
-                                <option value="low" ${ticket && ticket.priority === 'low' ? 'selected' : ''}>Low</option>
-                                <option value="medium" ${ticket && ticket.priority === 'medium' ? 'selected' : ''}>Medium</option>
-                                <option value="high" ${ticket && ticket.priority === 'high' ? 'selected' : ''}>High</option>
-                                <option value="urgent" ${ticket && ticket.priority === 'urgent' ? 'selected' : ''}>Urgent</option>
-                            </select>
-                        </div>
+                    ${isEdit ? `
+                    <div class="form-group">
+                        <label class="form-label" for="status">Status *</label>
+                        <select id="status" class="form-select" required>
+                            <option value="open" ${ticket && ticket.status === 'open' ? 'selected' : ''}>Open</option>
+                            <option value="in-progress" ${ticket && ticket.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="blocked" ${ticket && ticket.status === 'blocked' ? 'selected' : ''}>Blocked</option>
+                            <option value="needs-review" ${ticket && ticket.status === 'needs-review' ? 'selected' : ''}>Needs Review</option>
+                            <option value="closed" ${ticket && ticket.status === 'closed' ? 'selected' : ''}>Closed</option>
+                        </select>
                     </div>
+                    ` : ''}
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Ticket
@@ -283,10 +260,13 @@ export async function ticketFormView(params) {
 
         const title = form.title.value.trim();
         const description = form.description.value.trim();
-        const status = form.status.value;
-        const priority = form.priority.value;
 
-        const data = { title, description, status, priority };
+        const data = { title, description };
+
+        // Only include status when editing
+        if (isEdit) {
+            data.status = form.status.value;
+        }
 
         const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
@@ -295,7 +275,7 @@ export async function ticketFormView(params) {
         try {
             if (isEdit) {
                 await api.updateTicket(id, data);
-                router.navigate(`/tickets/${id}`);
+                router.navigate('/tickets');
             } else {
                 await api.createTicket(data);
                 router.navigate('/tickets');
@@ -320,20 +300,13 @@ function formatDate(dateString) {
 
 function getStatusBadgeClass(status) {
     switch (status) {
+        case 'new': return 'badge-primary';
         case 'open': return 'badge-primary';
-        case 'in_progress': return 'badge-warning';
-        case 'resolved': return 'badge-success';
-        case 'closed': return 'badge-danger';
+        case 'in-progress': return 'badge-warning';
+        case 'blocked': return 'badge-danger';
+        case 'needs-review': return 'badge-warning';
+        case 'closed': return 'badge-success';
         default: return 'badge-primary';
     }
 }
 
-function getPriorityBadgeClass(priority) {
-    switch (priority) {
-        case 'low': return 'badge-success';
-        case 'medium': return 'badge-primary';
-        case 'high': return 'badge-warning';
-        case 'urgent': return 'badge-danger';
-        default: return 'badge-primary';
-    }
-}

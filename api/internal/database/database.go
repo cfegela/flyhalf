@@ -78,8 +78,7 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			title VARCHAR(255) NOT NULL,
 			description TEXT,
-			status VARCHAR(50) NOT NULL DEFAULT 'open',
-			priority VARCHAR(50) NOT NULL DEFAULT 'medium',
+			status VARCHAR(50) NOT NULL DEFAULT 'new',
 			assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
 			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -90,7 +89,8 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 		`ALTER TABLE tickets DROP COLUMN IF EXISTS metadata`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_assigned_to ON tickets(assigned_to)`,
-		`CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`,
+		`DROP INDEX IF EXISTS idx_tickets_priority`,
+		`ALTER TABLE tickets DROP COLUMN IF EXISTS priority`,
 	}
 
 	for _, migration := range migrations {

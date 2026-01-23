@@ -15,7 +15,6 @@ type Ticket struct {
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
 	Status      string     `json:"status"`
-	Priority    string     `json:"priority"`
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
@@ -31,24 +30,24 @@ func NewTicketRepository(db *pgxpool.Pool) *TicketRepository {
 
 func (r *TicketRepository) Create(ctx context.Context, ticket *Ticket) error {
 	query := `
-		INSERT INTO tickets (user_id, title, description, status, priority, assigned_to)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO tickets (user_id, title, description, status, assigned_to)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		ticket.UserID, ticket.Title, ticket.Description, ticket.Status, ticket.Priority, ticket.AssignedTo,
+		ticket.UserID, ticket.Title, ticket.Description, ticket.Status, ticket.AssignedTo,
 	).Scan(&ticket.ID, &ticket.CreatedAt, &ticket.UpdatedAt)
 }
 
 func (r *TicketRepository) GetByID(ctx context.Context, id uuid.UUID) (*Ticket, error) {
 	query := `
-		SELECT id, user_id, title, description, status, priority, assigned_to, created_at, updated_at
+		SELECT id, user_id, title, description, status, assigned_to, created_at, updated_at
 		FROM tickets WHERE id = $1
 	`
 	ticket := &Ticket{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&ticket.ID, &ticket.UserID, &ticket.Title, &ticket.Description,
-		&ticket.Status, &ticket.Priority, &ticket.AssignedTo, &ticket.CreatedAt, &ticket.UpdatedAt,
+		&ticket.Status, &ticket.AssignedTo, &ticket.CreatedAt, &ticket.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -63,14 +62,16 @@ func (r *TicketRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Tick
 
 	if userID != nil {
 		query = `
-			SELECT id, user_id, title, description, status, priority, assigned_to, created_at, updated_at
-			FROM tickets WHERE user_id = $1 ORDER BY created_at DESC
+			SELECT id, user_id, title, description, status, assigned_to, created_at, updated_at
+			FROM tickets WHERE user_id = $1
+			ORDER BY CASE WHEN status = 'new' THEN 0 ELSE 1 END, created_at DESC
 		`
 		args = append(args, *userID)
 	} else {
 		query = `
-			SELECT id, user_id, title, description, status, priority, assigned_to, created_at, updated_at
-			FROM tickets ORDER BY created_at DESC
+			SELECT id, user_id, title, description, status, assigned_to, created_at, updated_at
+			FROM tickets
+			ORDER BY CASE WHEN status = 'new' THEN 0 ELSE 1 END, created_at DESC
 		`
 	}
 
@@ -85,7 +86,7 @@ func (r *TicketRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Tick
 		ticket := &Ticket{}
 		if err := rows.Scan(
 			&ticket.ID, &ticket.UserID, &ticket.Title, &ticket.Description,
-			&ticket.Status, &ticket.Priority, &ticket.AssignedTo, &ticket.CreatedAt, &ticket.UpdatedAt,
+			&ticket.Status, &ticket.AssignedTo, &ticket.CreatedAt, &ticket.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -98,12 +99,12 @@ func (r *TicketRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Tick
 func (r *TicketRepository) Update(ctx context.Context, ticket *Ticket) error {
 	query := `
 		UPDATE tickets
-		SET title = $1, description = $2, status = $3, priority = $4, assigned_to = $5, updated_at = NOW()
-		WHERE id = $6
+		SET title = $1, description = $2, status = $3, assigned_to = $4, updated_at = NOW()
+		WHERE id = $5
 		RETURNING updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		ticket.Title, ticket.Description, ticket.Status, ticket.Priority, ticket.AssignedTo, ticket.ID,
+		ticket.Title, ticket.Description, ticket.Status, ticket.AssignedTo, ticket.ID,
 	).Scan(&ticket.UpdatedAt)
 }
 
