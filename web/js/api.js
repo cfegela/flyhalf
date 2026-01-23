@@ -185,6 +185,10 @@ class APIClient {
         });
     }
 
+    async getUsersForAssignment() {
+        return this.request('/users');
+    }
+
     async getUsers() {
         return this.request('/admin/users');
     }

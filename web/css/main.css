@@ -235,6 +235,11 @@ tr:hover {
     color: #166534;
 }
 
+.badge-closed {
+    background-color: #6b7280; /* Dark gray background for closed status */
+    color: #f9fafb; /* Light gray text for WCAG AA compliance */
+}
+
 .badge-danger {
     background-color: #fee2e2;
     color: #991b1b;
@@ -482,23 +487,23 @@ tr:hover {
 }
 
 .badge-in-progress {
-    background-color: #fde68a; /* Darkened from #fef3c7 for better contrast */
-    color: #78350f; /* Darkened from #92400e for better contrast */
+    background-color: #86efac; /* Green background for in-progress status */
+    color: #14532d; /* Dark green text for WCAG AA compliance */
 }
 
 .badge-blocked {
-    background-color: #fecaca; /* Darkened from #fee2e2 for better contrast */
-    color: #991b1b;
+    background-color: #fca5a5; /* Match closed badge color */
+    color: #7f1d1d; /* Match closed badge color */
 }
 
 .badge-needs-review {
-    background-color: #c7d2fe; /* Darkened from #e0e7ff for better contrast */
-    color: #3730a3;
+    background-color: #fde68a; /* Yellow background for needs-review status */
+    color: #78350f; /* Dark brown text for WCAG AA compliance */
 }
 
 .badge-closed {
-    background-color: #bbf7d0; /* Darkened from #dcfce7 for better contrast */
-    color: #166534;
+    background-color: #6b7280; /* Dark gray background for closed status */
+    color: #f9fafb; /* Light gray text for WCAG AA compliance */
 }
 
 .badge-clickable {

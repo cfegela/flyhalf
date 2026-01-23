@@ -49,6 +49,37 @@ func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
+// ListUsersForAssignment returns a simplified list of users for ticket assignment
+// Available to all authenticated users
+func (h *AdminHandler) ListUsersForAssignment(w http.ResponseWriter, r *http.Request) {
+	users, err := h.userRepo.List(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to list users"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Return simplified user info (no password hash, no sensitive fields)
+	type UserForAssignment struct {
+		ID        uuid.UUID `json:"id"`
+		FirstName string    `json:"first_name"`
+		LastName  string    `json:"last_name"`
+		Email     string    `json:"email"`
+	}
+
+	simplified := make([]UserForAssignment, len(users))
+	for i, user := range users {
+		simplified[i] = UserForAssignment{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(simplified)
+}
+
 func (h *AdminHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)

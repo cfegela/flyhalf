@@ -299,12 +299,12 @@ function formatDate(dateString) {
 
 function getStatusBadgeClass(status) {
     switch (status) {
-        case 'new': return 'badge-primary';
-        case 'open': return 'badge-primary';
-        case 'in-progress': return 'badge-warning';
-        case 'blocked': return 'badge-danger';
-        case 'needs-review': return 'badge-warning';
-        case 'closed': return 'badge-success';
-        default: return 'badge-primary';
+        case 'new': return 'badge-new';
+        case 'open': return 'badge-open';
+        case 'in-progress': return 'badge-in-progress';
+        case 'blocked': return 'badge-blocked';
+        case 'needs-review': return 'badge-needs-review';
+        case 'closed': return 'badge-closed';
+        default: return 'badge-new';
     }
 }

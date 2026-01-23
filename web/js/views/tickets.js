@@ -21,6 +21,7 @@ export async function ticketsListView() {
         const tickets = await api.getTickets();
         const epics = await api.getEpics();
         const sprints = await api.getSprints();
+        const users = await api.getUsersForAssignment();
         const ticketsContainer = container.querySelector('#tickets-container');
 
         // Create a map of epic_id to epic for quick lookup
@@ -33,6 +34,12 @@ export async function ticketsListView() {
         const sprintMap = {};
         sprints.forEach(sprint => {
             sprintMap[sprint.id] = sprint;
+        });
+
+        // Create a map of user_id to user for quick lookup
+        const userMap = {};
+        users.forEach(user => {
+            userMap[user.id] = user;
         });
 
         if (tickets.length === 0) {
@@ -55,9 +62,9 @@ export async function ticketsListView() {
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Title</th>
                                 <th>Status</th>
+                                <th>Assignee</th>
                                 <th>Epic</th>
                                 <th>Sprint</th>
                                 <th>Actions</th>
@@ -65,13 +72,11 @@ export async function ticketsListView() {
                         </thead>
                         <tbody>
                             ${tickets.map(ticket => {
+                                const assignee = ticket.assigned_to ? userMap[ticket.assigned_to] : null;
                                 const epic = ticket.epic_id ? epicMap[ticket.epic_id] : null;
                                 const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
                                 return `
                                 <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
-                                    <td>
-                                        <strong>${ticket.id.substring(0, 6)}</strong>
-                                    </td>
                                     <td>
                                         <strong>${escapeHtml(ticket.title)}</strong>
                                     </td>
@@ -81,10 +86,13 @@ export async function ticketsListView() {
                                         </span>
                                     </td>
                                     <td>
-                                        ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : 'None'}
+                                        ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
                                     </td>
                                     <td>
-                                        ${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : 'None'}
+                                        ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : '-'}
+                                    </td>
+                                    <td>
+                                        ${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
                                     </td>
                                     <td>
                                         <div class="actions">
@@ -96,14 +104,6 @@ export async function ticketsListView() {
                                             <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
-                                            <a href="#/tickets/${ticket.id}/edit" class="btn btn-secondary action-btn">
-                                                Edit
-                                            </a>
-                                            <button class="btn btn-danger action-btn delete-btn"
-                                                    data-id="${ticket.id}"
-                                                    ${auth.isAdmin() || ticket.user_id === auth.getUser().id ? '' : 'disabled'}>
-                                                Delete
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -114,21 +114,6 @@ export async function ticketsListView() {
                 </div>
             </div>
         `;
-
-        const deleteButtons = ticketsContainer.querySelectorAll('.delete-btn');
-        deleteButtons.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                if (e.target.disabled) return;
-                const id = e.target.dataset.id;
-                if (confirm('Are you sure you want to delete this ticket?')) {
-                    try {
-                        await api.deleteTicket(id);
-                        ticketsListView();
-                    } catch (error) {
-                    }
-                }
-            });
-        });
 
         const promoteButtons = ticketsContainer.querySelectorAll('.promote-btn');
         promoteButtons.forEach(btn => {
@@ -168,6 +153,16 @@ export async function ticketDetailView(params) {
 
     try {
         const ticket = await api.getTicket(id);
+
+        // Fetch assignee if ticket is assigned to someone
+        let assignee = null;
+        if (ticket.assigned_to) {
+            try {
+                assignee = await api.getUser(ticket.assigned_to);
+            } catch (error) {
+                // User might have been deleted, continue without it
+            }
+        }
 
         // Fetch epic if ticket is assigned to one
         let epic = null;
@@ -220,12 +215,10 @@ export async function ticketDetailView(params) {
                             <label class="form-label">Description</label>
                             <p>${escapeHtml(ticket.description) || 'No description'}</p>
                         </div>
-                        ${ticket.assigned_to ? `
-                            <div>
-                                <label class="form-label">Assigned To</label>
-                                <p>${ticket.assigned_to}</p>
-                            </div>
-                        ` : ''}
+                        <div>
+                            <label class="form-label">Assigned To</label>
+                            <p>${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)} (${escapeHtml(assignee.email)})` : 'Unassigned'}</p>
+                        </div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
                             <div>
                                 <label class="form-label">Created</label>
@@ -270,16 +263,22 @@ export async function ticketFormView(params) {
     let ticket = null;
     let epics = [];
     let sprints = [];
-    if (isEdit && id) {
-        container.innerHTML = '<div class="loading">Loading ticket...</div>';
-        try {
+    let users = [];
+
+    container.innerHTML = '<div class="loading">Loading...</div>';
+
+    try {
+        // Fetch users for assignee dropdown
+        users = await api.getUsersForAssignment();
+
+        if (isEdit && id) {
             ticket = await api.getTicket(id);
             epics = await api.getEpics();
             sprints = await api.getSprints();
-        } catch (error) {
-            router.navigate('/tickets');
-            return;
         }
+    } catch (error) {
+        router.navigate('/tickets');
+        return;
     }
 
     container.innerHTML = `
@@ -305,6 +304,17 @@ export async function ticketFormView(params) {
                             id="description"
                             class="form-textarea"
                         >${ticket ? escapeHtml(ticket.description || '') : ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="assigned_to">Assign To</label>
+                        <select id="assigned_to" class="form-select">
+                            <option value="">Unassigned</option>
+                            ${users.map(user => `
+                                <option value="${user.id}" ${ticket && ticket.assigned_to === user.id ? 'selected' : ''}>
+                                    ${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)} (${escapeHtml(user.email)})
+                                </option>
+                            `).join('')}
+                        </select>
                     </div>
                     ${isEdit ? `
                     <div class="form-group">
@@ -360,6 +370,14 @@ export async function ticketFormView(params) {
 
         const data = { title, description };
 
+        // Handle assignee (available for both create and edit)
+        const assignedToValue = form.assigned_to.value;
+        if (assignedToValue) {
+            data.assigned_to = assignedToValue;
+        } else {
+            data.assigned_to = null;
+        }
+
         // Only include status, epic, and sprint when editing
         if (isEdit) {
             data.status = form.status.value;
@@ -409,13 +427,13 @@ function formatDate(dateString) {
 
 function getStatusBadgeClass(status) {
     switch (status) {
-        case 'new': return 'badge-primary';
-        case 'open': return 'badge-primary';
-        case 'in-progress': return 'badge-warning';
-        case 'blocked': return 'badge-danger';
-        case 'needs-review': return 'badge-warning';
-        case 'closed': return 'badge-success';
-        default: return 'badge-primary';
+        case 'new': return 'badge-new';
+        case 'open': return 'badge-open';
+        case 'in-progress': return 'badge-in-progress';
+        case 'blocked': return 'badge-blocked';
+        case 'needs-review': return 'badge-needs-review';
+        case 'closed': return 'badge-closed';
+        default: return 'badge-new';
     }
 }
 

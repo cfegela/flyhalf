@@ -103,6 +103,12 @@ func (rt *Router) Setup() http.Handler {
 			r.Delete("/{id}", rt.sprintHandler.DeleteSprint)
 		})
 
+		// Public endpoint for getting users for assignment (all authenticated users)
+		r.Group(func(r chi.Router) {
+			r.Use(rt.authMiddleware.Authenticate)
+			r.Get("/users", rt.adminHandler.ListUsersForAssignment)
+		})
+
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(rt.authMiddleware.Authenticate)
 			r.Use(rt.authMiddleware.RequireRole(model.RoleAdmin))
