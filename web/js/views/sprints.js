@@ -143,7 +143,6 @@ export async function sprintDetailView(params) {
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
                                         <th>Title</th>
                                         <th>Status</th>
                                         <th>Actions</th>
@@ -152,9 +151,6 @@ export async function sprintDetailView(params) {
                                 <tbody>
                                     ${sprintTickets.map(ticket => `
                                         <tr>
-                                            <td>
-                                                <strong>${ticket.id.substring(0, 6)}</strong>
-                                            </td>
                                             <td>
                                                 <strong>${escapeHtml(ticket.title)}</strong>
                                             </td>

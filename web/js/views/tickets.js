@@ -105,6 +105,11 @@ export async function ticketsListView() {
                                                     title="Promote to top">
                                                 ↑
                                             </button>
+                                            <button class="btn btn-primary action-btn demote-btn"
+                                                    data-id="${ticket.id}"
+                                                    title="Demote down one">
+                                                ↓
+                                            </button>
                                             <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
@@ -125,6 +130,18 @@ export async function ticketsListView() {
                 const id = e.target.dataset.id;
                 try {
                     await api.promoteTicket(id);
+                    ticketsListView();
+                } catch (error) {
+                }
+            });
+        });
+
+        const demoteButtons = ticketsContainer.querySelectorAll('.demote-btn');
+        demoteButtons.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.target.dataset.id;
+                try {
+                    await api.demoteTicket(id);
                     ticketsListView();
                 } catch (error) {
                 }

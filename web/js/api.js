@@ -129,6 +129,12 @@ class APIClient {
         });
     }
 
+    async demoteTicket(id) {
+        return this.request(`/tickets/${id}/demote`, {
+            method: 'POST',
+        });
+    }
+
     async getEpics() {
         return this.request('/epics');
     }
