@@ -19,7 +19,14 @@ export async function ticketsListView() {
 
     try {
         const tickets = await api.getTickets();
+        const epics = await api.getEpics();
         const ticketsContainer = container.querySelector('#tickets-container');
+
+        // Create a map of epic_id to epic for quick lookup
+        const epicMap = {};
+        epics.forEach(epic => {
+            epicMap[epic.id] = epic;
+        });
 
         if (tickets.length === 0) {
             ticketsContainer.innerHTML = `
@@ -44,11 +51,14 @@ export async function ticketsListView() {
                                 <th>ID</th>
                                 <th>Title</th>
                                 <th>Status</th>
+                                <th>Epic</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${tickets.map(ticket => `
+                            ${tickets.map(ticket => {
+                                const epic = ticket.epic_id ? epicMap[ticket.epic_id] : null;
+                                return `
                                 <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
                                     <td>
                                         <strong>${ticket.id.substring(0, 6)}</strong>
@@ -60,6 +70,9 @@ export async function ticketsListView() {
                                         <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                             ${escapeHtml(ticket.status)}
                                         </span>
+                                    </td>
+                                    <td>
+                                        ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : 'None'}
                                     </td>
                                     <td>
                                         <div class="actions">
@@ -77,7 +90,8 @@ export async function ticketsListView() {
                                         </div>
                                     </td>
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -126,6 +140,16 @@ export async function ticketDetailView(params) {
     try {
         const ticket = await api.getTicket(id);
 
+        // Fetch epic if ticket is assigned to one
+        let epic = null;
+        if (ticket.epic_id) {
+            try {
+                epic = await api.getEpic(ticket.epic_id);
+            } catch (error) {
+                // Epic might have been deleted, continue without it
+            }
+        }
+
         container.innerHTML = `
             <div>
                 <div class="page-header">
@@ -144,6 +168,10 @@ export async function ticketDetailView(params) {
                                     ${escapeHtml(ticket.status)}
                                 </span>
                             </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Epic</label>
+                            <p>${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : 'None'}</p>
                         </div>
                         <div>
                             <label class="form-label">Description</label>
