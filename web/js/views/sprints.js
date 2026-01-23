@@ -67,14 +67,6 @@ export async function sprintsListView() {
                                             <a href="#/sprints/${sprint.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
-                                            <a href="#/sprints/${sprint.id}/edit" class="btn btn-secondary action-btn">
-                                                Edit
-                                            </a>
-                                            <button class="btn btn-danger action-btn delete-btn"
-                                                    data-id="${sprint.id}"
-                                                    ${auth.isAdmin() || sprint.user_id === auth.getUser().id ? '' : 'disabled'}>
-                                                Delete
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -85,20 +77,6 @@ export async function sprintsListView() {
             </div>
         `;
 
-        const deleteButtons = sprintsContainer.querySelectorAll('.delete-btn');
-        deleteButtons.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                if (e.target.disabled) return;
-                const id = e.target.dataset.id;
-                if (confirm('Are you sure you want to delete this sprint?')) {
-                    try {
-                        await api.deleteSprint(id);
-                        sprintsListView();
-                    } catch (error) {
-                    }
-                }
-            });
-        });
     } catch (error) {
         const sprintsContainer = container.querySelector('#sprints-container');
         sprintsContainer.innerHTML = `

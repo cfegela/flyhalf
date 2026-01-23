@@ -64,12 +64,6 @@ export async function usersListView() {
                                             <a href="#/admin/users/${user.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
-                                            <a href="#/admin/users/${user.id}/edit" class="btn btn-secondary action-btn">
-                                                Edit
-                                            </a>
-                                            <button class="btn btn-danger action-btn delete-btn" data-id="${user.id}">
-                                                Delete
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -80,19 +74,6 @@ export async function usersListView() {
             </div>
         `;
 
-        const deleteButtons = usersContainer.querySelectorAll('.delete-btn');
-        deleteButtons.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.dataset.id;
-                if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-                    try {
-                        await api.deleteUser(id);
-                        usersListView();
-                    } catch (error) {
-                    }
-                }
-            });
-        });
     } catch (error) {
         const usersContainer = container.querySelector('#users-container');
         usersContainer.innerHTML = `
