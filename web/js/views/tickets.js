@@ -197,10 +197,12 @@ export async function ticketFormView(params) {
     const isEdit = action === 'edit';
 
     let ticket = null;
+    let epics = [];
     if (isEdit && id) {
         container.innerHTML = '<div class="loading">Loading ticket...</div>';
         try {
             ticket = await api.getTicket(id);
+            epics = await api.getEpics();
         } catch (error) {
             router.navigate('/tickets');
             return;
@@ -242,6 +244,17 @@ export async function ticketFormView(params) {
                             <option value="closed" ${ticket && ticket.status === 'closed' ? 'selected' : ''}>Closed</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label" for="epic">Epic</label>
+                        <select id="epic" class="form-select">
+                            <option value="">None</option>
+                            ${epics.map(epic => `
+                                <option value="${epic.id}" ${ticket && ticket.epic_id === epic.id ? 'selected' : ''}>
+                                    ${escapeHtml(epic.name)}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
                     ` : ''}
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
@@ -263,9 +276,15 @@ export async function ticketFormView(params) {
 
         const data = { title, description };
 
-        // Only include status when editing
+        // Only include status and epic when editing
         if (isEdit) {
             data.status = form.status.value;
+            const epicValue = form.epic.value;
+            if (epicValue) {
+                data.epic_id = epicValue;
+            } else {
+                data.epic_id = null;
+            }
         }
 
         const submitBtn = form.querySelector('button[type="submit"]');

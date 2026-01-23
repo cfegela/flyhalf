@@ -102,6 +102,9 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		)`,
 
 		`CREATE INDEX IF NOT EXISTS idx_epics_user_id ON epics(user_id)`,
+
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS epic_id UUID REFERENCES epics(id) ON DELETE SET NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_epic_id ON tickets(epic_id)`,
 	}
 
 	for _, migration := range migrations {
