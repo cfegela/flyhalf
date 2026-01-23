@@ -25,6 +25,7 @@ type CreateTicketRequest struct {
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 	EpicID      *uuid.UUID `json:"epic_id,omitempty"`
 	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
+	Size        *int       `json:"size,omitempty"`
 }
 
 type UpdateTicketRequest struct {
@@ -34,6 +35,7 @@ type UpdateTicketRequest struct {
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
 	EpicID      *uuid.UUID `json:"epic_id,omitempty"`
 	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
+	Size        *int       `json:"size,omitempty"`
 }
 
 func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
@@ -96,8 +98,13 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Description == "" {
+		http.Error(w, `{"error":"description is required"}`, http.StatusBadRequest)
+		return
+	}
+
 	if req.Status == "" {
-		req.Status = "new"
+		req.Status = "open"
 	}
 
 	ticket := &model.Ticket{
@@ -108,6 +115,7 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		AssignedTo:  req.AssignedTo,
 		EpicID:      req.EpicID,
 		SprintID:    req.SprintID,
+		Size:        req.Size,
 	}
 
 	if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
@@ -141,24 +149,24 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Title != "" {
-		ticket.Title = req.Title
+	if req.Title == "" {
+		http.Error(w, `{"error":"title is required"}`, http.StatusBadRequest)
+		return
 	}
-	if req.Description != "" {
-		ticket.Description = req.Description
+	ticket.Title = req.Title
+
+	if req.Description == "" {
+		http.Error(w, `{"error":"description is required"}`, http.StatusBadRequest)
+		return
 	}
+	ticket.Description = req.Description
 	if req.Status != "" {
 		ticket.Status = req.Status
 	}
-	if req.AssignedTo != nil {
-		ticket.AssignedTo = req.AssignedTo
-	}
-	if req.EpicID != nil {
-		ticket.EpicID = req.EpicID
-	}
-	if req.SprintID != nil {
-		ticket.SprintID = req.SprintID
-	}
+	ticket.AssignedTo = req.AssignedTo
+	ticket.EpicID = req.EpicID
+	ticket.SprintID = req.SprintID
+	ticket.Size = req.Size
 
 	if err := h.ticketRepo.Update(r.Context(), ticket); err != nil {
 		http.Error(w, `{"error":"failed to update ticket"}`, http.StatusInternalServerError)

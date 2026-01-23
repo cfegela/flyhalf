@@ -88,6 +88,11 @@ func (h *EpicHandler) CreateEpic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Description == "" {
+		http.Error(w, `{"error":"description is required"}`, http.StatusBadRequest)
+		return
+	}
+
 	epic := &model.Epic{
 		UserID:      userID,
 		Name:        req.Name,
@@ -125,12 +130,17 @@ func (h *EpicHandler) UpdateEpic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name != "" {
-		epic.Name = req.Name
+	if req.Name == "" {
+		http.Error(w, `{"error":"name is required"}`, http.StatusBadRequest)
+		return
 	}
-	if req.Description != "" {
-		epic.Description = req.Description
+	epic.Name = req.Name
+
+	if req.Description == "" {
+		http.Error(w, `{"error":"description is required"}`, http.StatusBadRequest)
+		return
 	}
+	epic.Description = req.Description
 
 	if err := h.epicRepo.Update(r.Context(), epic); err != nil {
 		http.Error(w, `{"error":"failed to update epic"}`, http.StatusInternalServerError)

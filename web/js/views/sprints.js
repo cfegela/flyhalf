@@ -151,7 +151,7 @@ export async function sprintDetailView(params) {
                                 </thead>
                                 <tbody>
                                     ${sprintTickets.map(ticket => `
-                                        <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
+                                        <tr>
                                             <td>
                                                 <strong>${ticket.id.substring(0, 6)}</strong>
                                             </td>
@@ -258,7 +258,7 @@ export async function sprintFormView(params) {
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Sprint
                         </button>
-                        <a href="#/sprints" class="btn btn-secondary">Cancel</a>
+                        <a href="${isEdit ? `#/sprints/${id}` : '#/sprints'}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
@@ -306,12 +306,11 @@ function formatDate(dateString) {
 
 function getStatusBadgeClass(status) {
     switch (status) {
-        case 'new': return 'badge-new';
         case 'open': return 'badge-open';
         case 'in-progress': return 'badge-in-progress';
         case 'blocked': return 'badge-blocked';
         case 'needs-review': return 'badge-needs-review';
         case 'closed': return 'badge-closed';
-        default: return 'badge-new';
+        default: return 'badge-open';
     }
 }

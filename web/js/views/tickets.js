@@ -64,6 +64,7 @@ export async function ticketsListView() {
                             <tr>
                                 <th>Title</th>
                                 <th>Status</th>
+                                <th>Size</th>
                                 <th>Assignee</th>
                                 <th>Epic</th>
                                 <th>Sprint</th>
@@ -76,7 +77,7 @@ export async function ticketsListView() {
                                 const epic = ticket.epic_id ? epicMap[ticket.epic_id] : null;
                                 const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
                                 return `
-                                <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
+                                <tr>
                                     <td>
                                         <strong>${escapeHtml(ticket.title)}</strong>
                                     </td>
@@ -84,6 +85,9 @@ export async function ticketsListView() {
                                         <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                             ${escapeHtml(ticket.status)}
                                         </span>
+                                    </td>
+                                    <td>
+                                        ${getSizeLabel(ticket.size)}
                                     </td>
                                     <td>
                                         ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
@@ -204,6 +208,10 @@ export async function ticketDetailView(params) {
                             </div>
                         </div>
                         <div>
+                            <label class="form-label">Size</label>
+                            <p>${ticket.size ? `${getSizeLabel(ticket.size)} (${ticket.size})` : 'Not Sized'}</p>
+                        </div>
+                        <div>
                             <label class="form-label">Epic</label>
                             <p>${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : 'None'}</p>
                         </div>
@@ -299,10 +307,11 @@ export async function ticketFormView(params) {
                         >
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="description">Description</label>
+                        <label class="form-label" for="description">Description *</label>
                         <textarea
                             id="description"
                             class="form-textarea"
+                            required
                         >${ticket ? escapeHtml(ticket.description || '') : ''}</textarea>
                     </div>
                     <div class="form-group">
@@ -314,6 +323,17 @@ export async function ticketFormView(params) {
                                     ${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)} (${escapeHtml(user.email)})
                                 </option>
                             `).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="size">Size</label>
+                        <select id="size" class="form-select">
+                            <option value="">Not Sized</option>
+                            <option value="1" ${ticket && ticket.size === 1 ? 'selected' : ''}>Small</option>
+                            <option value="2" ${ticket && ticket.size === 2 ? 'selected' : ''}>Medium</option>
+                            <option value="3" ${ticket && ticket.size === 3 ? 'selected' : ''}>Large</option>
+                            <option value="5" ${ticket && ticket.size === 5 ? 'selected' : ''}>X-Large</option>
+                            <option value="8" ${ticket && ticket.size === 8 ? 'selected' : ''}>Danger</option>
                         </select>
                     </div>
                     ${isEdit ? `
@@ -354,7 +374,7 @@ export async function ticketFormView(params) {
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Ticket
                         </button>
-                        <a href="#/tickets" class="btn btn-secondary">Cancel</a>
+                        <a href="${isEdit ? `#/tickets/${id}` : '#/tickets'}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
@@ -376,6 +396,14 @@ export async function ticketFormView(params) {
             data.assigned_to = assignedToValue;
         } else {
             data.assigned_to = null;
+        }
+
+        // Handle size (available for both create and edit)
+        const sizeValue = form.size.value;
+        if (sizeValue) {
+            data.size = parseInt(sizeValue, 10);
+        } else {
+            data.size = null;
         }
 
         // Only include status, epic, and sprint when editing
@@ -427,13 +455,24 @@ function formatDate(dateString) {
 
 function getStatusBadgeClass(status) {
     switch (status) {
-        case 'new': return 'badge-new';
         case 'open': return 'badge-open';
         case 'in-progress': return 'badge-in-progress';
         case 'blocked': return 'badge-blocked';
         case 'needs-review': return 'badge-needs-review';
         case 'closed': return 'badge-closed';
-        default: return 'badge-new';
+        default: return 'badge-open';
+    }
+}
+
+function getSizeLabel(size) {
+    if (!size) return '-';
+    switch (size) {
+        case 1: return 'Small';
+        case 2: return 'Medium';
+        case 3: return 'Large';
+        case 5: return 'X-Large';
+        case 8: return 'Danger';
+        default: return '-';
     }
 }
 

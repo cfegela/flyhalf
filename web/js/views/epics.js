@@ -135,7 +135,7 @@ export async function epicDetailView(params) {
                                 </thead>
                                 <tbody>
                                     ${epicTickets.map(ticket => `
-                                        <tr ${ticket.status === 'new' ? 'style="background-color: var(--primary-light, #e3f2fd); font-weight: 500;"' : ''}>
+                                        <tr>
                                             <td>
                                                 <strong>${ticket.id.substring(0, 6)}</strong>
                                             </td>
@@ -219,17 +219,18 @@ export async function epicFormView(params) {
                         >
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="description">Description</label>
+                        <label class="form-label" for="description">Description *</label>
                         <textarea
                             id="description"
                             class="form-textarea"
+                            required
                         >${epic ? escapeHtml(epic.description || '') : ''}</textarea>
                     </div>
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Epic
                         </button>
-                        <a href="#/epics" class="btn btn-secondary">Cancel</a>
+                        <a href="${isEdit ? `#/epics/${id}` : '#/epics'}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
@@ -277,12 +278,11 @@ function formatDate(dateString) {
 
 function getStatusBadgeClass(status) {
     switch (status) {
-        case 'new': return 'badge-new';
         case 'open': return 'badge-open';
         case 'in-progress': return 'badge-in-progress';
         case 'blocked': return 'badge-blocked';
         case 'needs-review': return 'badge-needs-review';
         case 'closed': return 'badge-closed';
-        default: return 'badge-new';
+        default: return 'badge-open';
     }
 }

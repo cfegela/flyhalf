@@ -247,7 +247,7 @@ export async function userFormView(params) {
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} User
                         </button>
-                        <a href="#/admin/users" class="btn btn-secondary">Cancel</a>
+                        <a href="${isEdit ? `#/admin/users/${id}` : '#/admin/users'}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
