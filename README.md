@@ -1,5 +1,7 @@
 # Flyhalf
 
+### A Very, Very Opinionated Agile Scrum Management System
+
 Full-stack ticketing and epic management application with Go API, vanilla JavaScript SPA, PostgreSQL database, and JWT authentication with role-based authorization.
 
 ## Tech Stack
