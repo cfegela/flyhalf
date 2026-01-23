@@ -41,7 +41,6 @@ export async function usersListView() {
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Created</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -60,7 +59,6 @@ export async function usersListView() {
                                             ${user.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
-                                    <td>${formatDate(user.created_at)}</td>
                                     <td>
                                         <div class="actions">
                                             <a href="#/admin/users/${user.id}" class="btn btn-secondary action-btn">
@@ -152,16 +150,6 @@ export async function userDetailView(params) {
                                 <span class="badge ${user.is_active ? 'badge-success' : 'badge-danger'}">
                                     ${user.is_active ? 'Active' : 'Inactive'}
                                 </span>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                            <div>
-                                <label class="form-label">Created</label>
-                                <p>${formatDate(user.created_at)}</p>
-                            </div>
-                            <div>
-                                <label class="form-label">Last Updated</label>
-                                <p>${formatDate(user.updated_at)}</p>
                             </div>
                         </div>
                     </div>

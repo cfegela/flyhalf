@@ -131,16 +131,6 @@ export async function epicDetailView(params) {
                             <label class="form-label">Description</label>
                             <p>${escapeHtml(epic.description) || 'No description'}</p>
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                            <div>
-                                <label class="form-label">Created</label>
-                                <p>${formatDate(epic.created_at)}</p>
-                            </div>
-                            <div>
-                                <label class="form-label">Last Updated</label>
-                                <p>${formatDate(epic.updated_at)}</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
