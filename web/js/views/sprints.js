@@ -271,15 +271,19 @@ export async function sprintFormView(params) {
             <div class="page-header">
                 <h1 class="page-title">${isEdit ? 'Edit' : 'Create'} Sprint</h1>
             </div>
-            <div class="card">
-                <form id="sprint-form">
+
+            <form id="sprint-form">
+                <!-- Sprint Information Card -->
+                <div class="card">
+                    <h2 class="card-header">Sprint Information</h2>
                     <div class="form-group">
-                        <label class="form-label" for="name">Name *</label>
+                        <label class="form-label" for="name">Sprint Name *</label>
                         <input
                             type="text"
                             id="name"
                             class="form-input"
                             required
+                            placeholder="e.g., Sprint 1, Q1 2026 Sprint 3"
                             value="${sprint ? escapeHtml(sprint.name) : ''}"
                         >
                     </div>
@@ -293,18 +297,24 @@ export async function sprintFormView(params) {
                             value="${sprint ? formatDateForInput(sprint.start_date) : ''}"
                         >
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">End Date</label>
-                        <p style="color: var(--text-secondary);">Automatically set to 2 weeks after start date</p>
+                        <p style="color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.6;">
+                            The end date will be automatically set to 2 weeks (14 days) after the start date.
+                        </p>
                     </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Sprint
                         </button>
                         <a href="${isEdit ? `#/sprints/${id}` : '#/sprints'}" class="btn btn-secondary">Cancel</a>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     `;
 

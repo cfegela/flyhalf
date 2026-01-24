@@ -197,61 +197,82 @@ export async function userFormView(params) {
             <div class="page-header">
                 <h1 class="page-title">${isEdit ? 'Edit' : 'Create'} User</h1>
             </div>
-            <div class="card">
-                <form id="user-form">
-                    <div class="form-group">
-                        <label class="form-label" for="first_name">First Name *</label>
-                        <input
-                            type="text"
-                            id="first_name"
-                            class="form-input"
-                            required
-                            value="${user ? escapeHtml(user.first_name) : ''}"
-                        >
+
+            <form id="user-form">
+                <!-- Personal Information Card -->
+                <div class="card">
+                    <h2 class="card-header">Personal Information</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="first_name">First Name *</label>
+                            <input
+                                type="text"
+                                id="first_name"
+                                class="form-input"
+                                required
+                                placeholder="John"
+                                value="${user ? escapeHtml(user.first_name) : ''}"
+                            >
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="last_name">Last Name *</label>
+                            <input
+                                type="text"
+                                id="last_name"
+                                class="form-input"
+                                required
+                                placeholder="Doe"
+                                value="${user ? escapeHtml(user.last_name) : ''}"
+                            >
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="last_name">Last Name *</label>
-                        <input
-                            type="text"
-                            id="last_name"
-                            class="form-input"
-                            required
-                            value="${user ? escapeHtml(user.last_name) : ''}"
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="email">Email *</label>
+                    <div class="form-group" style="margin-bottom: 0; margin-top: 1.5rem;">
+                        <label class="form-label" for="email">Email Address *</label>
                         <input
                             type="email"
                             id="email"
                             class="form-input"
                             required
+                            placeholder="john.doe@example.com"
                             value="${user ? escapeHtml(user.email) : ''}"
                         >
                     </div>
-                    ${!isEdit ? `
-                        <div class="form-group">
-                            <label class="form-label" for="password">Password *</label>
-                            <input
-                                type="password"
-                                id="password"
-                                class="form-input"
-                                required
-                                minlength="8"
-                            >
-                            <small style="color: var(--text-secondary);">Minimum 8 characters</small>
-                        </div>
-                    ` : ''}
-                    <div class="form-group">
+                </div>
+
+                ${!isEdit ? `
+                <!-- Security Card -->
+                <div class="card">
+                    <h2 class="card-header">Security</h2>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="password">Password *</label>
+                        <input
+                            type="password"
+                            id="password"
+                            class="form-input"
+                            required
+                            minlength="8"
+                            placeholder="Minimum 8 characters"
+                        >
+                        <small style="color: var(--text-secondary);">User will be required to change this password on first login.</small>
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Access & Permissions Card -->
+                <div class="card">
+                    <h2 class="card-header">Access & Permissions</h2>
+                    <div class="form-group" ${!isEdit ? 'style="margin-bottom: 0;"' : ''}>
                         <label class="form-label" for="role">Role *</label>
                         <select id="role" class="form-select" required>
                             <option value="user" ${user && user.role === 'user' ? 'selected' : ''}>User</option>
                             <option value="admin" ${user && user.role === 'admin' ? 'selected' : ''}>Admin</option>
                         </select>
+                        <small style="color: var(--text-secondary);">Admins can manage users, epics, and sprints. Users can manage their own tickets.</small>
                     </div>
                     ${isEdit ? `
-                        <div class="form-group">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Account Status</label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-top: 0.5rem;">
                                 <input
                                     type="checkbox"
                                     id="is_active"
@@ -259,16 +280,21 @@ export async function userFormView(params) {
                                 >
                                 <span>Active</span>
                             </label>
+                            <small style="color: var(--text-secondary);">Inactive users cannot log in to the system.</small>
                         </div>
                     ` : ''}
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} User
                         </button>
                         <a href="${isEdit ? `#/admin/users/${id}` : '#/admin/users'}" class="btn btn-secondary">Cancel</a>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     `;
 

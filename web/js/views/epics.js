@@ -215,8 +215,11 @@ export async function epicFormView(params) {
             <div class="page-header">
                 <h1 class="page-title">${isEdit ? 'Edit' : 'Create'} Epic</h1>
             </div>
-            <div class="card">
-                <form id="epic-form">
+
+            <form id="epic-form">
+                <!-- Epic Information Card -->
+                <div class="card">
+                    <h2 class="card-header">Epic Information</h2>
                     <div class="form-group">
                         <label class="form-label" for="name">Name *</label>
                         <input
@@ -224,8 +227,10 @@ export async function epicFormView(params) {
                             id="name"
                             class="form-input"
                             required
+                            placeholder="e.g., User Authentication System"
                             value="${epic ? escapeHtml(epic.name) : ''}"
                         >
+                        <small style="color: var(--text-secondary);">Use title case for clarity. Uppercase letters will form the epic acronym.</small>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="description">Description *</label>
@@ -233,16 +238,21 @@ export async function epicFormView(params) {
                             id="description"
                             class="form-textarea"
                             required
+                            placeholder="Provide a detailed description of the epic's goals and scope..."
                         >${epic ? escapeHtml(epic.description || '') : ''}</textarea>
                     </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card">
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Epic
                         </button>
                         <a href="${isEdit ? `#/epics/${id}` : '#/epics'}" class="btn btn-secondary">Cancel</a>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     `;
 

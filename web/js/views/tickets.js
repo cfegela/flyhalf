@@ -343,8 +343,11 @@ export async function ticketFormView(params) {
             <div class="page-header">
                 <h1 class="page-title">${isEdit ? 'Edit' : 'Create'} Ticket</h1>
             </div>
-            <div class="card">
-                <form id="ticket-form">
+
+            <form id="ticket-form">
+                <!-- Basic Information Card -->
+                <div class="card">
+                    <h2 class="card-header">Basic Information</h2>
                     <div class="form-group">
                         <label class="form-label" for="title">Title *</label>
                         <input
@@ -361,31 +364,44 @@ export async function ticketFormView(params) {
                             id="description"
                             class="form-textarea"
                             required
+                            placeholder="Provide a detailed description of the ticket..."
                         >${ticket ? escapeHtml(ticket.description || '') : ''}</textarea>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="assigned_to">Assign To</label>
-                        <select id="assigned_to" class="form-select">
-                            <option value="">Unassigned</option>
-                            ${users.map(user => `
-                                <option value="${user.id}" ${ticket && ticket.assigned_to === user.id ? 'selected' : ''}>
-                                    ${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)} (${escapeHtml(user.email)})
-                                </option>
-                            `).join('')}
-                        </select>
+                </div>
+
+                <!-- Assignment & Sizing Card -->
+                <div class="card">
+                    <h2 class="card-header">Assignment & Sizing</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="assigned_to">Assign To</label>
+                            <select id="assigned_to" class="form-select">
+                                <option value="">Unassigned</option>
+                                ${users.map(user => `
+                                    <option value="${user.id}" ${ticket && ticket.assigned_to === user.id ? 'selected' : ''}>
+                                        ${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)} (${escapeHtml(user.email)})
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="size">Size</label>
+                            <select id="size" class="form-select">
+                                <option value="">Not Sized</option>
+                                <option value="1" ${ticket && ticket.size === 1 ? 'selected' : ''}>Small (1)</option>
+                                <option value="2" ${ticket && ticket.size === 2 ? 'selected' : ''}>Medium (2)</option>
+                                <option value="3" ${ticket && ticket.size === 3 ? 'selected' : ''}>Large (3)</option>
+                                <option value="5" ${ticket && ticket.size === 5 ? 'selected' : ''}>X-Large (5)</option>
+                                <option value="8" ${ticket && ticket.size === 8 ? 'selected' : ''}>Danger (8)</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="size">Size</label>
-                        <select id="size" class="form-select">
-                            <option value="">Not Sized</option>
-                            <option value="1" ${ticket && ticket.size === 1 ? 'selected' : ''}>Small</option>
-                            <option value="2" ${ticket && ticket.size === 2 ? 'selected' : ''}>Medium</option>
-                            <option value="3" ${ticket && ticket.size === 3 ? 'selected' : ''}>Large</option>
-                            <option value="5" ${ticket && ticket.size === 5 ? 'selected' : ''}>X-Large</option>
-                            <option value="8" ${ticket && ticket.size === 8 ? 'selected' : ''}>Danger</option>
-                        </select>
-                    </div>
-                    ${isEdit ? `
+                </div>
+
+                ${isEdit ? `
+                <!-- Project Organization Card -->
+                <div class="card">
+                    <h2 class="card-header">Project Organization</h2>
                     <div class="form-group">
                         <label class="form-label" for="status">Status *</label>
                         <select id="status" class="form-select" required>
@@ -396,37 +412,43 @@ export async function ticketFormView(params) {
                             <option value="closed" ${ticket && ticket.status === 'closed' ? 'selected' : ''}>Closed</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="epic">Epic</label>
-                        <select id="epic" class="form-select">
-                            <option value="">None</option>
-                            ${epics.map(epic => `
-                                <option value="${epic.id}" ${ticket && ticket.epic_id === epic.id ? 'selected' : ''}>
-                                    ${escapeHtml(epic.name)}
-                                </option>
-                            `).join('')}
-                        </select>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="epic">Epic</label>
+                            <select id="epic" class="form-select">
+                                <option value="">None</option>
+                                ${epics.map(epic => `
+                                    <option value="${epic.id}" ${ticket && ticket.epic_id === epic.id ? 'selected' : ''}>
+                                        ${escapeHtml(epic.name)}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="sprint">Sprint</label>
+                            <select id="sprint" class="form-select">
+                                <option value="">None</option>
+                                ${sprints.map(sprint => `
+                                    <option value="${sprint.id}" ${ticket && ticket.sprint_id === sprint.id ? 'selected' : ''}>
+                                        ${escapeHtml(sprint.name)}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="sprint">Sprint</label>
-                        <select id="sprint" class="form-select">
-                            <option value="">None</option>
-                            ${sprints.map(sprint => `
-                                <option value="${sprint.id}" ${ticket && ticket.sprint_id === sprint.id ? 'selected' : ''}>
-                                    ${escapeHtml(sprint.name)}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    ` : ''}
+                </div>
+                ` : ''}
+
+                <!-- Form Actions -->
+                <div class="card">
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Ticket
                         </button>
                         <a href="${isEdit ? `#/tickets/${id}` : '#/tickets'}" class="btn btn-secondary">Cancel</a>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     `;
 
