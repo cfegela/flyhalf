@@ -180,6 +180,46 @@ http://localhost:3000
 
 Log in with the admin credentials above.
 
+## Recent UI/UX Improvements
+
+The application has been enhanced with a comprehensive redesign focused on legibility and information hierarchy:
+
+### Structured Card Layouts
+All detail pages and forms now use organized card-based layouts with clear section headers:
+
+**Detail Pages**:
+- **Ticket Details**: Organized into Key Information, Description, Project Details, and Metadata cards
+- **Epic Details**: Organized into Epic Details (with acronym display) and Tickets cards
+- **Sprint Details**: Organized into Sprint Details (with status calculation), Timeline, and Tickets cards
+  - Shows active/completed/upcoming status with color-coded badges
+  - Displays duration and days remaining/until start
+- **User Details**: Organized into User Information and Access & Permissions cards
+- **Settings Page**: Organized into Account Information and Security cards
+
+**Create/Edit Forms**:
+- **Ticket Form**: Organized into Basic Information, Assignment & Sizing, Project Organization (edit only), and Form Actions cards
+  - Responsive 2-column grids for related fields
+  - Helpful placeholders and contextual hints
+- **Epic Form**: Organized into Epic Information and Form Actions cards
+  - Guidance about acronym generation from uppercase letters
+- **Sprint Form**: Organized into Sprint Information and Form Actions cards
+  - Clear explanation of automatic end date calculation
+- **User Form**: Organized into Personal Information, Security (create only), Access & Permissions, and Form Actions cards
+  - 2-column grid for name fields
+  - Explanations for role permissions and account status
+
+### Visual Enhancements
+- **Improved Typography**: Larger, more prominent text for key information with consistent font sizes and weights
+- **Better Spacing**: Increased gaps (1.5rem) between elements for reduced visual clutter
+- **Responsive Grids**: Multi-column layouts that adapt to screen size using `auto-fit` and `minmax`
+- **Enhanced Badges**: Larger status and role badges with better color contrast
+- **Preserved Formatting**: Line breaks maintained in descriptions using `white-space: pre-wrap`
+- **Color Coding**: Strategic use of primary, secondary, and text colors to show information importance
+- **Clear Section Headers**: Semantic `<h2>` tags with consistent styling across all cards
+- **Helpful Context**: Placeholder text and explanatory hints throughout forms
+
+These improvements significantly enhance readability and make the interface easier to scan and navigate.
+
 ## User Interface
 
 The application provides the following pages:
@@ -192,19 +232,33 @@ The application provides the following pages:
   - New unpromoted tickets appear at bottom of list
   - "Promote to Top" button to bump tickets to top priority
   - Click "View" to access ticket details, edit, and delete actions
-- **Ticket Detail** - View full ticket information including size, assignee, epic, and sprint assignment with edit and delete buttons
+- **Ticket Detail** - Enhanced card-based layout displaying ticket information in organized sections
+  - Key Information card: Status, size, and assignee with email
+  - Description card: Full description with preserved line breaks
+  - Project Details card: Epic and sprint assignments with links
+  - Metadata card: Creation and last updated timestamps
   - Edit and delete buttons enabled only for ticket creator or admin
-- **Create/Edit Ticket** - Form to create or modify tickets
-  - Create: Required title and description, optional size and assignee selection (status defaults to "open")
-  - Edit: Additional fields for status (5 options: open, in-progress, blocked, needs-review, closed), epic assignment, and sprint assignment
+- **Create/Edit Ticket** - Structured form with organized card sections
+  - Basic Information card: Title and description with helpful placeholders
+  - Assignment & Sizing card: Assignee and size in responsive 2-column grid
+  - Project Organization card (edit only): Status, epic, and sprint assignment
+  - Create mode: Required title and description, optional size and assignee (status defaults to "open")
+  - Edit mode: Additional fields for status (5 options), epic, and sprint
 - **Epics List** - View all epics with name column
   - Click "View" to access epic details, edit, and delete actions
-- **Epic Detail** - View epic name and description with table of all tickets assigned to the epic
+- **Epic Detail** - Enhanced card-based layout for epic information
+  - Epic Details card: Acronym (displayed prominently) and description with preserved line breaks
+  - Tickets card: Table showing all tickets assigned to the epic with count in header
   - Edit and delete buttons available in detail view
-- **Create/Edit Epic** - Form to create or modify epics with required name and description fields
+- **Create/Edit Epic** - Structured form with organized sections
+  - Epic Information card: Name and description with placeholders and acronym generation guidance
+  - Helpful hint about using title case for clarity
 - **Sprints List** - View all sprints with name, start date, and end date columns
   - "Board" and "View" buttons for accessing sprint board and details
-- **Sprint Detail** - View sprint dates with table of all tickets assigned to the sprint
+- **Sprint Detail** - Enhanced card-based layout with intelligent status calculation
+  - Sprint Details card: Active/Completed/Upcoming status badge, duration, and days remaining/until start
+  - Timeline card: Start and end dates in responsive grid
+  - Tickets card: Table showing all tickets assigned to the sprint with count in header
   - "View Board" button to access the interactive kanban board
   - Edit and delete buttons available in detail view
 - **Sprint Board** - Interactive kanban board for sprint management
@@ -214,14 +268,25 @@ The application provides the following pages:
   - Ticket cards show: ID, title, description (truncated), status badge, and view link
   - Ticket counts displayed in each column header
   - "Back to Details" button to return to sprint detail view
-- **Create/Edit Sprint** - Form to create or modify sprints (name and start date, end date auto-calculated)
-- **Settings** - View account information and change password
+- **Create/Edit Sprint** - Structured form with organized sections
+  - Sprint Information card: Name and start date with helpful placeholders
+  - Clear explanation that end date is automatically set to 2 weeks after start date
+- **Settings** - Enhanced card-based layout for account management
+  - Account Information card: Full name, email, and role badge in responsive grid
+  - Security card: Password change form with helpful security guidance
 
 ### Admin Only
 - **User Management** - List all users with view access
   - Click "View" to access user details, edit, and delete actions
-- **User Detail** - View user information with edit and delete buttons
-- **Create/Edit User** - Manage user accounts (new users must change password on first login)
+- **User Detail** - Enhanced card-based layout for user information
+  - User Information card: Full name and email in responsive grid
+  - Access & Permissions card: Role and account status badges
+  - Edit and delete buttons available
+- **Create/Edit User** - Structured form with organized sections
+  - Personal Information card: First and last name in 2-column grid, email below
+  - Security card (create only): Password field with hint about required change on first login
+  - Access & Permissions card: Role selector with permission explanation, account status toggle (edit only)
+  - New users must change password on first login
 - **Delete Users** - Delete button available in user detail view
 - **Delete Any Ticket/Epic/Sprint** - Delete button enabled for all tickets, epics, and sprints in their respective detail views
 
