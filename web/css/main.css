@@ -446,6 +446,27 @@ tr:hover {
     margin-bottom: 0.75rem;
 }
 
+.board-ticket-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.board-ticket-assignee {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.board-ticket-size {
+    background-color: var(--background-secondary);
+    color: var(--text-primary);
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
 .board-ticket-footer {
     display: flex;
     justify-content: flex-end;

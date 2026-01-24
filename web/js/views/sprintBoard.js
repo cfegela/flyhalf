@@ -16,10 +16,17 @@ export async function sprintBoardView(params) {
 
 async function loadSprintBoard(container, sprintId) {
   try {
-    const [sprint, allTickets] = await Promise.all([
+    const [sprint, allTickets, users] = await Promise.all([
       api.getSprint(sprintId),
-      api.getTickets()
+      api.getTickets(),
+      api.getUsersForAssignment()
     ]);
+
+    // Create a map of user_id to user for quick lookup
+    const userMap = {};
+    users.forEach(user => {
+      userMap[user.id] = user;
+    });
 
     // Filter tickets for this sprint
     const sprintTickets = allTickets.filter(t => t.sprint_id === sprintId);
@@ -61,7 +68,7 @@ async function loadSprintBoard(container, sprintId) {
             <span class="ticket-count">${columns.committed.length}</span>
           </div>
           <div class="board-column-content" data-column="committed">
-            ${renderTickets(columns.committed)}
+            ${renderTickets(columns.committed, userMap)}
           </div>
         </div>
 
@@ -71,7 +78,7 @@ async function loadSprintBoard(container, sprintId) {
             <span class="ticket-count">${columns.underway.length}</span>
           </div>
           <div class="board-column-content" data-column="underway">
-            ${renderTickets(columns.underway)}
+            ${renderTickets(columns.underway, userMap)}
           </div>
         </div>
 
@@ -81,7 +88,7 @@ async function loadSprintBoard(container, sprintId) {
             <span class="ticket-count">${columns.completed.length}</span>
           </div>
           <div class="board-column-content" data-column="completed">
-            ${renderTickets(columns.completed)}
+            ${renderTickets(columns.completed, userMap)}
           </div>
         </div>
       </div>
@@ -103,7 +110,7 @@ async function loadSprintBoard(container, sprintId) {
   }
 }
 
-function renderTickets(tickets, column = '') {
+function renderTickets(tickets, userMap) {
   if (tickets.length === 0) {
     return '<div class="board-empty-state">No tickets</div>';
   }
@@ -111,6 +118,9 @@ function renderTickets(tickets, column = '') {
   return tickets.map(ticket => {
     const isUnderway = ['in-progress', 'blocked', 'needs-review'].includes(ticket.status);
     const badgeClass = isUnderway ? 'badge badge-' + ticket.status + ' badge-clickable' : 'badge badge-' + ticket.status;
+    const assignee = ticket.assigned_to ? userMap[ticket.assigned_to] : null;
+    const assigneeDisplay = assignee ? `${assignee.first_name} ${assignee.last_name}` : 'Unassigned';
+    const sizeDisplay = getSizeLabel(ticket.size);
 
     return `
       <div class="board-ticket" draggable="true" data-ticket-id="${ticket.id}" data-status="${ticket.status}">
@@ -120,12 +130,28 @@ function renderTickets(tickets, column = '') {
         </div>
         <div class="board-ticket-title">${ticket.title}</div>
         ${ticket.description ? `<div class="board-ticket-description">${ticket.description.substring(0, 100)}${ticket.description.length > 100 ? '...' : ''}</div>` : ''}
+        <div class="board-ticket-meta">
+          <span class="board-ticket-assignee">${assigneeDisplay}</span>
+          <span class="board-ticket-size">${sizeDisplay}</span>
+        </div>
         <div class="board-ticket-footer">
           <a href="/tickets/${ticket.id}" class="board-ticket-link" onclick="event.stopPropagation()">View</a>
         </div>
       </div>
     `;
   }).join('');
+}
+
+function getSizeLabel(size) {
+  if (!size) return '-';
+  switch (size) {
+    case 1: return 'S';
+    case 2: return 'M';
+    case 3: return 'L';
+    case 5: return 'XL';
+    case 8: return 'XXL';
+    default: return '-';
+  }
 }
 
 function initializeDragAndDrop(container, sprintId) {
