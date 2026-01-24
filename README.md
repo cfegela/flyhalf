@@ -17,12 +17,13 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
 ## Features
 
 - JWT-based authentication with token refresh
+- User-friendly login error messages for common issues (invalid credentials, inactive accounts, network errors)
 - Role-based access control (admin/user)
 - **Ticket Management**:
   - CRUD operations with 5 status options (open, in-progress, blocked, needs-review, closed)
   - New tickets automatically default to "open" status
   - New tickets appear at bottom of list (priority 0, promoted tickets at top)
-  - Priority system with "Promote to Top" button to bump tickets to top of list
+  - Persistent priority system with "Promote to Top" button to bump tickets to top of list (priorities persist between application restarts)
   - Optional ticket sizing (Small=1, Medium=2, Large=3, X-Large=5, Danger=8)
   - Ticket assignment to users with assignee display in ticket list
   - Assign tickets to epics for organization (epic names shown as acronyms in list)
@@ -183,6 +184,15 @@ Log in with the admin credentials above.
 ## Recent UI/UX Improvements
 
 The application has been enhanced with a comprehensive redesign focused on legibility and information hierarchy:
+
+### Latest Updates (January 2026)
+- **Enhanced Login Error Handling**: User-friendly error messages now appear on the login page for common failure scenarios:
+  - Invalid credentials with clear guidance
+  - Inactive account notifications
+  - Network/connection error messages
+  - Styled error alerts with borders and background color for better visibility
+- **Fixed Ticket Priority Persistence**: Ticket priorities now correctly persist between application restarts (previously would reset to 0)
+- **API Port Standardization**: API now runs on port 8080 for both host and container (previously mapped 8081:8080)
 
 ### Structured Card Layouts
 All detail pages and forms now use organized card-based layouts with clear section headers:
