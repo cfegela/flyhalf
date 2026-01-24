@@ -41,7 +41,7 @@ services:
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
       ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
-      - "8081:8080"
+      - "8080:8080"
     volumes:
       - ./api:/app
     depends_on:

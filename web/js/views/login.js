@@ -34,6 +34,7 @@ export async function loginView() {
                             placeholder="••••••••"
                         >
                     </div>
+                    <div id="error-message" class="form-error" style="display: none;"></div>
                     <button type="submit" class="btn btn-primary" style="width: 100%;">
                         Sign In
                     </button>
@@ -43,8 +44,11 @@ export async function loginView() {
     `;
 
     const form = container.querySelector('#login-form');
+    const errorMessage = container.querySelector('#error-message');
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        errorMessage.style.display = 'none';
 
         const email = form.email.value.trim();
         const password = form.password.value;
@@ -67,6 +71,25 @@ export async function loginView() {
             }
         } catch (error) {
             console.error('Login failed:', error);
+
+            // Display user-friendly error message
+            let errorText = 'Login failed. Please try again.';
+
+            if (error.message) {
+                const msg = error.message.toLowerCase();
+                if (msg.includes('invalid credentials') || msg.includes('unauthorized')) {
+                    errorText = 'Invalid email or password. Please check your credentials and try again.';
+                } else if (msg.includes('network') || msg.includes('fetch')) {
+                    errorText = 'Unable to connect to server. Please check your connection and try again.';
+                } else if (msg.includes('inactive') || msg.includes('disabled')) {
+                    errorText = 'Your account has been deactivated. Please contact your administrator.';
+                } else {
+                    errorText = error.message;
+                }
+            }
+
+            errorMessage.textContent = errorText;
+            errorMessage.style.display = 'block';
             submitBtn.disabled = false;
             submitBtn.textContent = 'Sign In';
         }

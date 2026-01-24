@@ -138,7 +138,7 @@ docker-compose up
 
 This will start three services:
 - **PostgreSQL** on port 5432
-- **API** on port 8081
+- **API** on port 8080
 - **Web** on port 3000
 
 4. Wait for the services to start. You should see:
@@ -313,7 +313,7 @@ The application provides the following pages:
 
 ### Base URL
 ```
-http://localhost:8081/api/v1
+http://localhost:8080/api/v1
 ```
 
 ### Authentication Endpoints
@@ -534,7 +534,7 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ### Port Already in Use
 
-If ports 3000, 5432, or 8081 are already in use, modify the port mappings in `docker-compose.yml`.
+If ports 3000, 5432, or 8080 are already in use, modify the port mappings in `docker-compose.yml`.
 
 ### Database Connection Issues
 
