@@ -2,6 +2,9 @@
 
 ### A Very, Very Opinionated Agile Scrum Management System
 
+flyhalf /ˈflaɪˌhɑːf/ noun
+
+The flyhalf is rugby’s primary playmaker and tactical leader who directs the team's attack. Flyhalves possess exceptional vision, game management, accuracy, and resilience. 
 Full-stack ticketing, epic, and sprint management application with Go API, vanilla JavaScript SPA, PostgreSQL database, and JWT authentication with role-based authorization.
 
 ## Tech Stack
