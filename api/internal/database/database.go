@@ -89,8 +89,6 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 		`ALTER TABLE tickets DROP COLUMN IF EXISTS metadata`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_assigned_to ON tickets(assigned_to)`,
-		`DROP INDEX IF EXISTS idx_tickets_priority`,
-		`ALTER TABLE tickets DROP COLUMN IF EXISTS priority`,
 
 		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS priority INTEGER NOT NULL DEFAULT 0`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`,
