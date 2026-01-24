@@ -50,7 +50,7 @@ async function loadSprintBoard(container, sprintId) {
           </div>
         </div>
         <div>
-          <a href="#/sprints/${sprintId}" class="btn btn-secondary">Back to Details</a>
+          <a href="/sprints/${sprintId}" class="btn btn-secondary">Back to Details</a>
         </div>
       </div>
 
@@ -97,7 +97,7 @@ async function loadSprintBoard(container, sprintId) {
     container.innerHTML = `
       <div class="error-state">
         <p>Error loading sprint board: ${error.message}</p>
-        <a href="#/sprints" class="btn">Back to Sprints</a>
+        <a href="/sprints" class="btn">Back to Sprints</a>
       </div>
     `;
   }
@@ -121,7 +121,7 @@ function renderTickets(tickets, column = '') {
         <div class="board-ticket-title">${ticket.title}</div>
         ${ticket.description ? `<div class="board-ticket-description">${ticket.description.substring(0, 100)}${ticket.description.length > 100 ? '...' : ''}</div>` : ''}
         <div class="board-ticket-footer">
-          <a href="#/tickets/${ticket.id}" class="board-ticket-link" onclick="event.stopPropagation()">View</a>
+          <a href="/tickets/${ticket.id}" class="board-ticket-link" onclick="event.stopPropagation()">View</a>
         </div>
       </div>
     `;

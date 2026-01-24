@@ -8,8 +8,9 @@ class Navbar {
 
         auth.subscribe(() => this.render());
 
-        // Update active link whenever the hash changes
-        window.addEventListener('hashchange', () => this.updateActiveLink());
+        // Update active link whenever the route changes
+        window.addEventListener('popstate', () => this.updateActiveLink());
+        window.addEventListener('routechange', () => this.updateActiveLink());
     }
 
     async handleLogout(e) {
@@ -34,13 +35,13 @@ class Navbar {
 
         this.container.innerHTML = `
             <div class="navbar">
-                <a href="#/" class="navbar-brand">Flyhalf</a>
+                <a href="/" class="navbar-brand">Flyhalf</a>
                 <div class="navbar-menu">
-                    <a href="#/tickets" class="navbar-link">Tickets</a>
-                    <a href="#/epics" class="navbar-link">Epics</a>
-                    <a href="#/sprints" class="navbar-link">Sprints</a>
-                    ${isAdmin ? '<a href="#/admin/users" class="navbar-link">Users</a>' : ''}
-                    <a href="#/settings" class="navbar-link">${user.first_name} ${user.last_name}</a>
+                    <a href="/tickets" class="navbar-link">Tickets</a>
+                    <a href="/epics" class="navbar-link">Epics</a>
+                    <a href="/sprints" class="navbar-link">Sprints</a>
+                    ${isAdmin ? '<a href="/admin/users" class="navbar-link">Users</a>' : ''}
+                    <a href="/settings" class="navbar-link">${user.first_name} ${user.last_name}</a>
                     <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
                 </div>
             </div>
@@ -55,18 +56,18 @@ class Navbar {
     }
 
     updateActiveLink() {
-        const hash = window.location.hash || '#/';
+        const pathname = window.location.pathname || '/';
         const links = this.container.querySelectorAll('.navbar-link');
 
         links.forEach(link => {
             const href = link.getAttribute('href');
 
-            // Check if current hash matches this link
-            // For home link, only match exact '/' or '#/'
-            // For other links, match if hash starts with the link path
-            const isActive = href === '#/'
-                ? (hash === '#/' || hash === '#')
-                : hash.startsWith(href);
+            // Check if current pathname matches this link
+            // For home link, only match exact '/'
+            // For other links, match if pathname starts with the link path
+            const isActive = href === '/'
+                ? pathname === '/'
+                : pathname.startsWith(href);
 
             if (isActive) {
                 link.classList.add('active');

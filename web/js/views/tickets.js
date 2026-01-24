@@ -9,7 +9,7 @@ export async function ticketsListView() {
         <div>
             <div class="page-header">
                 <h1 class="page-title">Tickets</h1>
-                <a href="#/tickets/new" class="btn btn-primary">Create Ticket</a>
+                <a href="/tickets/new" class="btn btn-primary">Create Ticket</a>
             </div>
             <div id="tickets-container">
                 <div class="loading">Loading tickets...</div>
@@ -48,7 +48,7 @@ export async function ticketsListView() {
                     <div class="empty-state-icon">🎫</div>
                     <h2>No tickets yet</h2>
                     <p>Create your first ticket to get started</p>
-                    <a href="#/tickets/new" class="btn btn-primary" style="margin-top: 1rem;">
+                    <a href="/tickets/new" class="btn btn-primary" style="margin-top: 1rem;">
                         Create Ticket
                     </a>
                 </div>
@@ -93,10 +93,10 @@ export async function ticketsListView() {
                                         ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
                                     </td>
                                     <td>
-                                        ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;" title="${escapeHtml(epic.name)}">${getEpicAcronym(epic.name)}</a>` : '-'}
+                                        ${epic ? `<a href="/epics/${epic.id}" style="color: var(--primary); text-decoration: none;" title="${escapeHtml(epic.name)}">${getEpicAcronym(epic.name)}</a>` : '-'}
                                     </td>
                                     <td>
-                                        ${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
+                                        ${sprint ? `<a href="/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
                                     </td>
                                     <td>
                                         <div class="actions">
@@ -110,7 +110,7 @@ export async function ticketsListView() {
                                                     title="Demote down one">
                                                 ↓
                                             </button>
-                                            <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
+                                            <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
                                         </div>
@@ -210,7 +210,7 @@ export async function ticketDetailView(params) {
                 <div class="page-header">
                     <h1 class="page-title">${escapeHtml(ticket.title)}</h1>
                     <div class="actions">
-                        <a href="#/tickets/${id}/edit" class="btn btn-primary">Edit</a>
+                        <a href="/tickets/${id}/edit" class="btn btn-primary">Edit</a>
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || ticket.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
@@ -258,13 +258,13 @@ export async function ticketDetailView(params) {
                         <div>
                             <label class="form-label">Epic</label>
                             <p style="margin-top: 0.25rem; font-size: 1rem;">
-                                ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(epic.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
+                                ${epic ? `<a href="/epics/${epic.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(epic.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
                             </p>
                         </div>
                         <div>
                             <label class="form-label">Sprint</label>
                             <p style="margin-top: 0.25rem; font-size: 1rem;">
-                                ${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(sprint.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
+                                ${sprint ? `<a href="/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(sprint.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
                             </p>
                         </div>
                     </div>
@@ -306,7 +306,7 @@ export async function ticketDetailView(params) {
         container.innerHTML = `
             <div class="card">
                 <p style="color: var(--danger);">Failed to load ticket: ${error.message}</p>
-                <a href="#/tickets" class="btn btn-secondary" style="margin-top: 1rem;">Back to Tickets</a>
+                <a href="/tickets" class="btn btn-secondary" style="margin-top: 1rem;">Back to Tickets</a>
             </div>
         `;
     }

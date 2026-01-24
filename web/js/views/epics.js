@@ -9,7 +9,7 @@ export async function epicsListView() {
         <div>
             <div class="page-header">
                 <h1 class="page-title">Epics</h1>
-                <a href="#/epics/new" class="btn btn-primary">Create Epic</a>
+                <a href="/epics/new" class="btn btn-primary">Create Epic</a>
             </div>
             <div id="epics-container">
                 <div class="loading">Loading epics...</div>
@@ -27,7 +27,7 @@ export async function epicsListView() {
                     <div class="empty-state-icon">📚</div>
                     <h2>No epics yet</h2>
                     <p>Create your first epic to get started</p>
-                    <a href="#/epics/new" class="btn btn-primary" style="margin-top: 1rem;">
+                    <a href="/epics/new" class="btn btn-primary" style="margin-top: 1rem;">
                         Create Epic
                     </a>
                 </div>
@@ -53,7 +53,7 @@ export async function epicsListView() {
                                     </td>
                                     <td>
                                         <div class="actions">
-                                            <a href="#/epics/${epic.id}" class="btn btn-secondary action-btn">
+                                            <a href="/epics/${epic.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
                                         </div>
@@ -103,7 +103,7 @@ export async function epicDetailView(params) {
                 <div class="page-header">
                     <h1 class="page-title">${escapeHtml(epic.name)}</h1>
                     <div class="actions">
-                        <a href="#/epics/${id}/edit" class="btn btn-primary">Edit</a>
+                        <a href="/epics/${id}/edit" class="btn btn-primary">Edit</a>
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || epic.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
@@ -158,7 +158,7 @@ export async function epicDetailView(params) {
                                             </td>
                                             <td>
                                                 <div class="actions">
-                                                    <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
+                                                    <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                         View
                                                     </a>
                                                 </div>
@@ -188,7 +188,7 @@ export async function epicDetailView(params) {
         container.innerHTML = `
             <div class="card">
                 <p style="color: var(--danger);">Failed to load epic: ${error.message}</p>
-                <a href="#/epics" class="btn btn-secondary" style="margin-top: 1rem;">Back to Epics</a>
+                <a href="/epics" class="btn btn-secondary" style="margin-top: 1rem;">Back to Epics</a>
             </div>
         `;
     }

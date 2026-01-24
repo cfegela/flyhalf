@@ -9,7 +9,7 @@ export async function sprintsListView() {
         <div>
             <div class="page-header">
                 <h1 class="page-title">Sprints</h1>
-                <a href="#/sprints/new" class="btn btn-primary">Create Sprint</a>
+                <a href="/sprints/new" class="btn btn-primary">Create Sprint</a>
             </div>
             <div id="sprints-container">
                 <div class="loading">Loading sprints...</div>
@@ -27,7 +27,7 @@ export async function sprintsListView() {
                     <div class="empty-state-icon">🏃</div>
                     <h2>No sprints yet</h2>
                     <p>Create your first sprint to get started</p>
-                    <a href="#/sprints/new" class="btn btn-primary" style="margin-top: 1rem;">
+                    <a href="/sprints/new" class="btn btn-primary" style="margin-top: 1rem;">
                         Create Sprint
                     </a>
                 </div>
@@ -61,10 +61,10 @@ export async function sprintsListView() {
                                     </td>
                                     <td>
                                         <div class="actions">
-                                            <a href="#/sprints/${sprint.id}/board" class="btn btn-primary action-btn">
+                                            <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn">
                                                 Board
                                             </a>
-                                            <a href="#/sprints/${sprint.id}" class="btn btn-secondary action-btn">
+                                            <a href="/sprints/${sprint.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
                                         </div>
@@ -125,8 +125,8 @@ export async function sprintDetailView(params) {
                 <div class="page-header">
                     <h1 class="page-title">${escapeHtml(sprint.name)}</h1>
                     <div class="actions">
-                        <a href="#/sprints/${id}/board" class="btn btn-primary">View Board</a>
-                        <a href="#/sprints/${id}/edit" class="btn btn-secondary">Edit</a>
+                        <a href="/sprints/${id}/board" class="btn btn-primary">View Board</a>
+                        <a href="/sprints/${id}/edit" class="btn btn-secondary">Edit</a>
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || sprint.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
@@ -208,7 +208,7 @@ export async function sprintDetailView(params) {
                                             </td>
                                             <td>
                                                 <div class="actions">
-                                                    <a href="#/tickets/${ticket.id}" class="btn btn-secondary action-btn">
+                                                    <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                         View
                                                     </a>
                                                 </div>
@@ -238,7 +238,7 @@ export async function sprintDetailView(params) {
         container.innerHTML = `
             <div class="card">
                 <p style="color: var(--danger);">Failed to load sprint: ${error.message}</p>
-                <a href="#/sprints" class="btn btn-secondary" style="margin-top: 1rem;">Back to Sprints</a>
+                <a href="/sprints" class="btn btn-secondary" style="margin-top: 1rem;">Back to Sprints</a>
             </div>
         `;
     }

@@ -52,7 +52,7 @@ async function initApp() {
 
     await auth.init();
 
-    if (!auth.isAuthenticated() && !window.location.hash.includes('login')) {
+    if (!auth.isAuthenticated() && !window.location.pathname.includes('login')) {
         router.navigate('/login');
     } else {
         router.navigate();

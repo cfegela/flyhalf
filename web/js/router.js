@@ -6,7 +6,16 @@ class Router {
         this.currentRoute = null;
         this.viewContainer = document.getElementById('view-container');
 
-        window.addEventListener('hashchange', () => this.navigate());
+        window.addEventListener('popstate', () => this.navigate());
+
+        // Handle link clicks to prevent full page reloads
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('a[href^="/"]') || e.target.closest('a[href^="/"]')) {
+                const link = e.target.matches('a') ? e.target : e.target.closest('a');
+                e.preventDefault();
+                this.navigate(link.getAttribute('href'));
+            }
+        });
     }
 
     addRoute(path, handler, options = {}) {
@@ -44,12 +53,14 @@ class Router {
 
     async navigate(path) {
         if (path) {
-            window.location.hash = path;
+            window.history.pushState(null, '', path);
+            // Trigger navigation after updating URL
+            await this.navigate();
             return;
         }
 
-        const hash = window.location.hash.slice(1) || '/';
-        const match = this.matchRoute(hash);
+        const pathname = window.location.pathname || '/';
+        const match = this.matchRoute(pathname);
 
         if (!match) {
             this.viewContainer.innerHTML = '<div class="empty-state"><h2>Page not found</h2></div>';
@@ -84,11 +95,14 @@ class Router {
 
         this.currentRoute = route;
         await route.handler(params);
+
+        // Dispatch custom event for components to react to navigation
+        window.dispatchEvent(new CustomEvent('routechange'));
     }
 
     getParams() {
-        const hash = window.location.hash.slice(1) || '/';
-        const parts = hash.split('/').filter(Boolean);
+        const pathname = window.location.pathname || '/';
+        const parts = pathname.split('/').filter(Boolean);
         return parts.slice(1);
     }
 }

@@ -8,7 +8,7 @@ export async function usersListView() {
         <div>
             <div class="page-header">
                 <h1 class="page-title">User Management</h1>
-                <a href="#/admin/users/new" class="btn btn-primary">Create User</a>
+                <a href="/admin/users/new" class="btn btn-primary">Create User</a>
             </div>
             <div id="users-container">
                 <div class="loading">Loading users...</div>
@@ -61,7 +61,7 @@ export async function usersListView() {
                                     </td>
                                     <td>
                                         <div class="actions">
-                                            <a href="#/admin/users/${user.id}" class="btn btn-secondary action-btn">
+                                            <a href="/admin/users/${user.id}" class="btn btn-secondary action-btn">
                                                 View
                                             </a>
                                         </div>
@@ -107,7 +107,7 @@ export async function userDetailView(params) {
                 <div class="page-header">
                     <h1 class="page-title">${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</h1>
                     <div class="actions">
-                        <a href="#/admin/users/${id}/edit" class="btn btn-primary">Edit</a>
+                        <a href="/admin/users/${id}/edit" class="btn btn-primary">Edit</a>
                         <button class="btn btn-danger" id="delete-btn">Delete</button>
                     </div>
                 </div>
@@ -170,7 +170,7 @@ export async function userDetailView(params) {
         container.innerHTML = `
             <div class="card">
                 <p style="color: var(--danger);">Failed to load user: ${error.message}</p>
-                <a href="#/admin/users" class="btn btn-secondary" style="margin-top: 1rem;">Back to Users</a>
+                <a href="/admin/users" class="btn btn-secondary" style="margin-top: 1rem;">Back to Users</a>
             </div>
         `;
     }
