@@ -230,7 +230,7 @@ export async function ticketDetailView(params) {
                         <div>
                             <label class="form-label">Size</label>
                             <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
-                                ${ticket.size ? `${getSizeLabel(ticket.size)} (${ticket.size})` : 'Not Sized'}
+                                ${ticket.size ? getSizeLabel(ticket.size) : 'Not Sized'}
                             </p>
                         </div>
                         <div>
