@@ -107,16 +107,29 @@ export async function epicDetailView(params) {
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || epic.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
+
+                <!-- Epic Information Card -->
                 <div class="card">
-                    <div style="display: grid; gap: 1rem;">
+                    <h2 class="card-header">Epic Details</h2>
+                    <div style="display: grid; gap: 1.5rem;">
+                        <div>
+                            <label class="form-label">Acronym</label>
+                            <p style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 600; color: var(--primary); font-family: monospace;">
+                                ${getEpicAcronym(epic.name)}
+                            </p>
+                        </div>
                         <div>
                             <label class="form-label">Description</label>
-                            <p>${escapeHtml(epic.description) || 'No description'}</p>
+                            <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary); margin-top: 0.25rem;">
+                                ${escapeHtml(epic.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}
+                            </p>
                         </div>
                     </div>
                 </div>
-                <div class="card" style="margin-top: 1.5rem;">
-                    <h2 style="margin-bottom: 1rem;">Tickets</h2>
+
+                <!-- Tickets Card -->
+                <div class="card">
+                    <h2 class="card-header">Tickets (${epicTickets.length})</h2>
                     ${epicTickets.length === 0 ? `
                         <div class="empty-state">
                             <div class="empty-state-icon">🎫</div>

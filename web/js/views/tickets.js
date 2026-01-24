@@ -214,45 +214,77 @@ export async function ticketDetailView(params) {
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || ticket.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
+
+                <!-- Key Information Card -->
                 <div class="card">
-                    <div style="display: grid; gap: 1rem;">
+                    <h2 class="card-header">Key Information</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
                         <div>
                             <label class="form-label">Status</label>
-                            <div>
-                                <span class="badge ${getStatusBadgeClass(ticket.status)}">
+                            <div style="margin-top: 0.25rem;">
+                                <span class="badge ${getStatusBadgeClass(ticket.status)}" style="font-size: 0.875rem; padding: 0.375rem 0.875rem;">
                                     ${escapeHtml(ticket.status)}
                                 </span>
                             </div>
                         </div>
                         <div>
                             <label class="form-label">Size</label>
-                            <p>${ticket.size ? `${getSizeLabel(ticket.size)} (${ticket.size})` : 'Not Sized'}</p>
-                        </div>
-                        <div>
-                            <label class="form-label">Epic</label>
-                            <p>${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(epic.name)}</a>` : 'None'}</p>
-                        </div>
-                        <div>
-                            <label class="form-label">Sprint</label>
-                            <p>${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : 'None'}</p>
-                        </div>
-                        <div>
-                            <label class="form-label">Description</label>
-                            <p>${escapeHtml(ticket.description) || 'No description'}</p>
+                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                                ${ticket.size ? `${getSizeLabel(ticket.size)} (${ticket.size})` : 'Not Sized'}
+                            </p>
                         </div>
                         <div>
                             <label class="form-label">Assigned To</label>
-                            <p>${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)} (${escapeHtml(assignee.email)})` : 'Unassigned'}</p>
+                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                                ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : 'Unassigned'}
+                            </p>
+                            ${assignee ? `<p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.125rem;">${escapeHtml(assignee.email)}</p>` : ''}
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-                            <div>
-                                <label class="form-label">Created</label>
-                                <p>${formatDate(ticket.created_at)}</p>
-                            </div>
-                            <div>
-                                <label class="form-label">Last Updated</label>
-                                <p>${formatDate(ticket.updated_at)}</p>
-                            </div>
+                    </div>
+                </div>
+
+                <!-- Description Card -->
+                <div class="card">
+                    <h2 class="card-header">Description</h2>
+                    <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary);">
+                        ${escapeHtml(ticket.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}
+                    </p>
+                </div>
+
+                <!-- Project Details Card -->
+                <div class="card">
+                    <h2 class="card-header">Project Details</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                        <div>
+                            <label class="form-label">Epic</label>
+                            <p style="margin-top: 0.25rem; font-size: 1rem;">
+                                ${epic ? `<a href="#/epics/${epic.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(epic.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="form-label">Sprint</label>
+                            <p style="margin-top: 0.25rem; font-size: 1rem;">
+                                ${sprint ? `<a href="#/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(sprint.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata Card -->
+                <div class="card">
+                    <h2 class="card-header">Metadata</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                        <div>
+                            <label class="form-label">Created</label>
+                            <p style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                ${formatDate(ticket.created_at)}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="form-label">Last Updated</label>
+                            <p style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                ${formatDate(ticket.updated_at)}
+                            </p>
                         </div>
                     </div>
                 </div>

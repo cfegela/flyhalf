@@ -109,6 +109,17 @@ export async function sprintDetailView(params) {
         // Filter tickets for this sprint
         const sprintTickets = allTickets.filter(ticket => ticket.sprint_id === id);
 
+        // Calculate sprint duration and progress
+        const startDate = new Date(sprint.start_date);
+        const endDate = new Date(sprint.end_date);
+        const today = new Date();
+        const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+        const daysElapsed = Math.max(0, Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)));
+        const daysRemaining = Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
+        const isActive = today >= startDate && today <= endDate;
+        const isCompleted = today > endDate;
+        const isUpcoming = today < startDate;
+
         container.innerHTML = `
             <div>
                 <div class="page-header">
@@ -119,20 +130,56 @@ export async function sprintDetailView(params) {
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || sprint.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
+
+                <!-- Sprint Information Card -->
                 <div class="card">
-                    <div style="display: grid; gap: 1rem;">
+                    <h2 class="card-header">Sprint Details</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
                         <div>
-                            <label class="form-label">Start Date</label>
-                            <p>${formatDate(sprint.start_date)}</p>
+                            <label class="form-label">Status</label>
+                            <div style="margin-top: 0.25rem;">
+                                <span class="badge ${isActive ? 'badge-in-progress' : isCompleted ? 'badge-closed' : 'badge-open'}" style="font-size: 0.875rem; padding: 0.375rem 0.875rem;">
+                                    ${isActive ? 'Active' : isCompleted ? 'Completed' : 'Upcoming'}
+                                </span>
+                            </div>
                         </div>
                         <div>
-                            <label class="form-label">End Date</label>
-                            <p>${formatDate(sprint.end_date)}</p>
+                            <label class="form-label">Duration</label>
+                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                                ${totalDays} days
+                            </p>
+                        </div>
+                        <div>
+                            <label class="form-label">${isCompleted ? 'Completed' : isUpcoming ? 'Starts In' : 'Days Remaining'}</label>
+                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                                ${isCompleted ? formatDate(sprint.end_date) : isUpcoming ? `${Math.abs(daysElapsed)} days` : `${daysRemaining} days`}
+                            </p>
                         </div>
                     </div>
                 </div>
-                <div class="card" style="margin-top: 1.5rem;">
-                    <h2 style="margin-bottom: 1rem;">Tickets</h2>
+
+                <!-- Date Information Card -->
+                <div class="card">
+                    <h2 class="card-header">Timeline</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                        <div>
+                            <label class="form-label">Start Date</label>
+                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                                ${formatDate(sprint.start_date)}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="form-label">End Date</label>
+                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                                ${formatDate(sprint.end_date)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tickets Card -->
+                <div class="card">
+                    <h2 class="card-header">Tickets (${sprintTickets.length})</h2>
                     ${sprintTickets.length === 0 ? `
                         <div class="empty-state">
                             <div class="empty-state-icon">🎫</div>
