@@ -107,26 +107,39 @@ export async function settingsView() {
                 <h1 class="page-title">Settings</h1>
             </div>
 
+            <!-- Account Information Card -->
             <div class="card">
-                <div class="card-header">Account Information</div>
-                <div style="display: grid; gap: 1rem;">
+                <h2 class="card-header">Account Information</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
                     <div>
-                        <label class="form-label">Name</label>
-                        <p>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</p>
+                        <label class="form-label">Full Name</label>
+                        <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary); font-weight: 500;">
+                            ${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}
+                        </p>
                     </div>
                     <div>
-                        <label class="form-label">Email</label>
-                        <p>${escapeHtml(user.email)}</p>
+                        <label class="form-label">Email Address</label>
+                        <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                            ${escapeHtml(user.email)}
+                        </p>
                     </div>
                     <div>
                         <label class="form-label">Role</label>
-                        <p>${escapeHtml(user.role)}</p>
+                        <div style="margin-top: 0.25rem;">
+                            <span class="badge ${user.role === 'admin' ? 'badge-primary' : 'badge-success'}" style="font-size: 0.875rem; padding: 0.375rem 0.875rem;">
+                                ${escapeHtml(user.role)}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Security Card -->
             <div class="card">
-                <div class="card-header">Change Password</div>
+                <h2 class="card-header">Security</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                    Keep your account secure by using a strong password. We recommend changing your password regularly.
+                </p>
                 <form id="change-password-form">
                     <div class="form-group">
                         <label class="form-label" for="current_password">Current Password *</label>
