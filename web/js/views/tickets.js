@@ -388,11 +388,11 @@ export async function ticketFormView(params) {
                             <label class="form-label" for="size">Size</label>
                             <select id="size" class="form-select">
                                 <option value="">Not Sized</option>
-                                <option value="1" ${ticket && ticket.size === 1 ? 'selected' : ''}>Small (1)</option>
-                                <option value="2" ${ticket && ticket.size === 2 ? 'selected' : ''}>Medium (2)</option>
-                                <option value="3" ${ticket && ticket.size === 3 ? 'selected' : ''}>Large (3)</option>
-                                <option value="5" ${ticket && ticket.size === 5 ? 'selected' : ''}>X-Large (5)</option>
-                                <option value="8" ${ticket && ticket.size === 8 ? 'selected' : ''}>Danger (8)</option>
+                                <option value="1" ${ticket && ticket.size === 1 ? 'selected' : ''}>Small</option>
+                                <option value="2" ${ticket && ticket.size === 2 ? 'selected' : ''}>Medium</option>
+                                <option value="3" ${ticket && ticket.size === 3 ? 'selected' : ''}>Large</option>
+                                <option value="5" ${ticket && ticket.size === 5 ? 'selected' : ''}>X-Large</option>
+                                <option value="8" ${ticket && ticket.size === 8 ? 'selected' : ''}>Danger</option>
                             </select>
                         </div>
                     </div>
