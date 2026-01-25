@@ -131,6 +131,18 @@ class APIClient {
         });
     }
 
+    async promoteTicketUp(id) {
+        return this.request(`/tickets/${id}/promote-up`, {
+            method: 'POST',
+        });
+    }
+
+    async demoteTicketDown(id) {
+        return this.request(`/tickets/${id}/demote-down`, {
+            method: 'POST',
+        });
+    }
+
     async getEpics() {
         return this.request('/epics');
     }

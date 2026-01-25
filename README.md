@@ -23,14 +23,18 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
   - CRUD operations with 5 status options (open, in-progress, blocked, needs-review, closed)
   - New tickets automatically default to "open" status
   - New tickets appear at bottom of list (priority 0, promoted tickets at top)
-  - Persistent priority system with "Promote to Top" button to bump tickets to top of list (priorities persist between application restarts)
+  - **Flexible Priority Management** with icon-based action buttons (using Heroicons):
+    - Promote to top: Send ticket to highest priority
+    - Promote up one: Move ticket up one position
+    - Demote down one: Move ticket down one position
+    - Priorities persist between application restarts
   - Optional ticket sizing (Small=1, Medium=2, Large=3, X-Large=5, Danger=8)
   - Ticket assignment to users with assignee display in ticket list
   - Assign tickets to epics for organization (epic names shown as acronyms in list)
   - Assign tickets to sprints for sprint planning
   - Required title and description fields
   - 6-character unique ID for each ticket
-  - Simplified list view with detail-level actions (edit/delete available in detail view only)
+  - Quick actions in list view: View and Edit buttons with clean icon interface
 - **Epic Management**:
   - CRUD operations for epics with required name and description fields
   - Organize tickets by assigning them to epics
@@ -70,7 +74,7 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
 - ✅ Edit any ticket, epic, or sprint
 - ✅ Delete tickets, epics, and sprints they created
 - ✅ Assign tickets to epics and sprints
-- ✅ Promote tickets to top of list
+- ✅ Manage ticket priorities (promote to top, promote up, demote down)
 - ✅ Use sprint board with drag-and-drop to update ticket status
 - ✅ Change own password
 - ✅ View own account settings
@@ -186,6 +190,13 @@ Log in with the admin credentials above.
 The application has been enhanced with a comprehensive redesign focused on legibility and information hierarchy:
 
 ### Latest Updates (January 2026)
+- **Icon-Based Ticket Priority Controls**: Tickets list now features a modern actions column with 5 Heroicons SVG icons:
+  - Promote to top (⇈): Send ticket to highest priority
+  - Promote up one (↑): Swap priority with ticket immediately above
+  - Demote down one (↓): Swap priority with ticket immediately below
+  - View (👁): Navigate to ticket details
+  - Edit (✏️): Navigate to ticket edit form
+  - Clean, accessible icons with proper tooltips and responsive sizing
 - **Enhanced Login Error Handling**: User-friendly error messages now appear on the login page for common failure scenarios:
   - Invalid credentials with clear guidance
   - Inactive account notifications
@@ -240,8 +251,13 @@ The application provides the following pages:
 - **Tickets List** - View all tickets with title, status badges, size, assignee, epic (shown as acronym), and sprint
   - Sorted by priority (promoted tickets at top), then by creation date (oldest first)
   - New unpromoted tickets appear at bottom of list
-  - "Promote to Top" button to bump tickets to top priority
-  - Click "View" to access ticket details, edit, and delete actions
+  - **Icon-based Actions Column** with 5 intuitive controls:
+    - ⇈ Promote to top: Send ticket to highest priority
+    - ↑ Promote up one: Swap priority with ticket above
+    - ↓ Demote down one: Swap priority with ticket below
+    - 👁 View: Access ticket details
+    - ✏️ Edit: Modify ticket information
+  - Clean Heroicons SVG icons for modern, accessible interface
 - **Ticket Detail** - Enhanced card-based layout displaying ticket information in organized sections
   - Key Information card: Status, size, and assignee with email
   - Description card: Full description with preserved line breaks
@@ -353,6 +369,8 @@ https://flyhalf-prod-api-oas33witna-uc.a.run.app/api/v1
 | PUT | `/tickets/{id}` | Update ticket | Yes | Any |
 | DELETE | `/tickets/{id}` | Delete ticket | Yes | Creator or Admin |
 | POST | `/tickets/{id}/promote` | Promote ticket to top | Yes | Any |
+| POST | `/tickets/{id}/promote-up` | Promote ticket up one position | Yes | Any |
+| POST | `/tickets/{id}/demote-down` | Demote ticket down one position | Yes | Any |
 
 **Note**: All authenticated users can view and edit all tickets. Users can delete tickets they created; admins can delete any ticket.
 

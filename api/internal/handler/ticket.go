@@ -245,3 +245,97 @@ func (h *TicketHandler) PromoteTicket(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
 }
+
+func (h *TicketHandler) PromoteTicketUp(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Get current ticket
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Get next higher priority ticket (higher priority = higher number)
+	higherTicket, err := h.ticketRepo.GetNextHigherPriorityTicket(r.Context(), ticket.Priority)
+	if err != nil {
+		// No ticket with higher priority, already at top
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ticket)
+		return
+	}
+
+	// Swap priorities
+	if err := h.ticketRepo.SwapPriorities(r.Context(), id, higherTicket.ID); err != nil {
+		http.Error(w, `{"error":"failed to promote ticket"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated ticket and return it
+	ticket, err = h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}
+
+func (h *TicketHandler) DemoteTicketDown(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Get current ticket
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Get next lower priority ticket
+	lowerTicket, err := h.ticketRepo.GetNextLowerPriorityTicket(r.Context(), ticket.Priority)
+	if err != nil {
+		// No ticket with lower priority, already at bottom
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ticket)
+		return
+	}
+
+	// Swap priorities
+	if err := h.ticketRepo.SwapPriorities(r.Context(), id, lowerTicket.ID); err != nil {
+		http.Error(w, `{"error":"failed to demote ticket"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated ticket and return it
+	ticket, err = h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}

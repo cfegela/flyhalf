@@ -269,6 +269,12 @@ tr:hover {
     font-size: 0.75rem;
 }
 
+.icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    display: inline-block;
+}
+
 .loading {
     text-align: center;
     padding: 2rem;
