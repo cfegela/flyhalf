@@ -322,8 +322,15 @@ The application provides the following pages:
 ## API Documentation
 
 ### Base URL
+
+**Local Development:**
 ```
 http://localhost:8080/api/v1
+```
+
+**Production (GCP):**
+```
+https://flyhalf-prod-api-oas33witna-uc.a.run.app/api/v1
 ```
 
 ### Authentication Endpoints
@@ -524,6 +531,8 @@ Frontend: No package manager needed - just add ES module imports!
 
 ## Production Deployment
 
+### Self-Hosted Deployment
+
 1. Update `.env` with production values:
    - Generate new JWT secrets: `openssl rand -base64 32`
    - Set `ENVIRONMENT=production`
@@ -539,6 +548,65 @@ docker-compose -f docker-compose.prod.yml up -d
 3. Set up HTTPS with a reverse proxy (nginx/Caddy)
 
 4. Regular backups of PostgreSQL database
+
+### Google Cloud Platform (GCP) Deployment
+
+The application is currently deployed to GCP using Cloud Run, Cloud SQL, and Cloud Storage with CDN.
+
+**Live Application**: https://www.flyhalf.app
+
+**Production Admin Credentials:**
+- Email: `admin@flyhalf.local`
+- Password: `admin123`
+- **IMPORTANT**: Change this password immediately after first login!
+
+#### Infrastructure Overview
+
+- **Frontend**: Cloud Storage + Cloud CDN with global HTTPS load balancer
+- **API**: Cloud Run (serverless containers) at https://flyhalf-prod-api-oas33witna-uc.a.run.app
+- **Database**: Cloud SQL PostgreSQL 16 (private IP only)
+- **Secrets**: Secret Manager for sensitive credentials (DB password, JWT secrets)
+- **Region**: us-central1
+- **SSL**: Google-managed certificates for HTTPS
+
+#### Deployment Configuration
+
+All GCP infrastructure is managed with Terraform in `ops/terraform/gcp/`. The configuration includes:
+
+- **Networking**: Custom VPC with Serverless VPC Access Connector for Cloud Run → Cloud SQL
+- **Security**: Service accounts with least privilege, no public database IP
+- **Monitoring**: Health checks on `/health` endpoint
+- **Scaling**: Min 0 instances (scales to zero), max 10 instances
+- **Cost**: Estimated $15-25/month for production workload
+
+#### CORS Configuration
+
+The API requires the `ALLOWED_ORIGIN` environment variable to be set for frontend access:
+```bash
+ALLOWED_ORIGIN=https://www.flyhalf.app
+```
+
+Without proper CORS configuration, the frontend will display "Unable to connect to server" errors.
+
+#### Database Migrations
+
+Database migrations run automatically when the API starts. The default admin user is created during the initial migration.
+
+#### Terraform Deployment
+
+See `ops/terraform/gcp/README.md` for detailed Terraform deployment instructions including:
+- Required GCP APIs and permissions
+- Creating secrets in Secret Manager
+- Building and pushing Docker images to Artifact Registry
+- Uploading frontend files to Cloud Storage
+- DNS configuration for custom domains
+
+**Estimated Monthly Costs:**
+- Cloud Run API: $5-10 (minimal traffic, scales to zero)
+- Cloud SQL: $10-15 (db-f1-micro instance)
+- Cloud Storage + CDN: $1-2
+- Other (networking, secrets): $1-2
+- **Total**: $15-25/month
 
 ## Troubleshooting
 

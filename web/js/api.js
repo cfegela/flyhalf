@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+import { config } from './config.js';
+
+const API_BASE_URL = config.apiBaseUrl;
 
 class APIClient {
     constructor() {

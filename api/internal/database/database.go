@@ -129,6 +129,13 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 		`UPDATE tickets SET status = 'open' WHERE status = 'new'`,
 		`ALTER TABLE tickets ALTER COLUMN status SET DEFAULT 'open'`,
+
+		// Create default admin user if it doesn't exist
+		// Default password: admin123 (bcrypt hash with cost 12)
+		// IMPORTANT: Change this password immediately after first login!
+		`INSERT INTO users (email, password_hash, role, first_name, last_name, is_active)
+VALUES ('admin@flyhalf.local', '$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi', 'admin', 'System', 'Administrator', true)
+ON CONFLICT (email) DO NOTHING`,
 	}
 
 	for _, migration := range migrations {
