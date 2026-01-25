@@ -42,16 +42,30 @@ export async function sprintsListView() {
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>Status</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${sprints.map(sprint => `
+                            ${sprints.map(sprint => {
+                                const startDate = new Date(sprint.start_date);
+                                const endDate = new Date(sprint.end_date);
+                                const today = new Date();
+                                const isActive = today >= startDate && today <= endDate;
+                                const isCompleted = today > endDate;
+                                const isUpcoming = today < startDate;
+
+                                return `
                                 <tr class="clickable-row" data-sprint-id="${sprint.id}" style="cursor: pointer;">
                                     <td data-label="Name">
                                         <strong>${escapeHtml(sprint.name)}</strong>
+                                    </td>
+                                    <td data-label="Status">
+                                        <span class="badge ${isActive ? 'badge-in-progress' : isCompleted ? 'badge-closed' : 'badge-open'}">
+                                            ${isActive ? 'Active' : isCompleted ? 'Completed' : 'Upcoming'}
+                                        </span>
                                     </td>
                                     <td data-label="Start Date">
                                         ${formatDate(sprint.start_date)}
@@ -67,7 +81,8 @@ export async function sprintsListView() {
                                         </div>
                                     </td>
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
