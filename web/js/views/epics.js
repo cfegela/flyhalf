@@ -48,10 +48,10 @@ export async function epicsListView() {
                         <tbody>
                             ${epics.map(epic => `
                                 <tr>
-                                    <td>
+                                    <td data-label="Name">
                                         <strong>${escapeHtml(epic.name)} (${getEpicAcronym(epic.name)})</strong>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <div class="actions">
                                             <a href="/epics/${epic.id}" class="btn btn-secondary action-btn">
                                                 View
@@ -148,15 +148,15 @@ export async function epicDetailView(params) {
                                 <tbody>
                                     ${epicTickets.map(ticket => `
                                         <tr>
-                                            <td>
+                                            <td data-label="Title">
                                                 <strong>${escapeHtml(ticket.title)}</strong>
                                             </td>
-                                            <td>
+                                            <td data-label="Status">
                                                 <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                                     ${escapeHtml(ticket.status)}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td data-label="Actions">
                                                 <div class="actions">
                                                     <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                         View

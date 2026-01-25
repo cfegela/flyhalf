@@ -50,16 +50,16 @@ export async function sprintsListView() {
                         <tbody>
                             ${sprints.map(sprint => `
                                 <tr>
-                                    <td>
+                                    <td data-label="Name">
                                         <strong>${escapeHtml(sprint.name)}</strong>
                                     </td>
-                                    <td>
+                                    <td data-label="Start Date">
                                         ${formatDate(sprint.start_date)}
                                     </td>
-                                    <td>
+                                    <td data-label="End Date">
                                         ${formatDate(sprint.end_date)}
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <div class="actions">
                                             <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn">
                                                 Board
@@ -198,15 +198,15 @@ export async function sprintDetailView(params) {
                                 <tbody>
                                     ${sprintTickets.map(ticket => `
                                         <tr>
-                                            <td>
+                                            <td data-label="Title">
                                                 <strong>${escapeHtml(ticket.title)}</strong>
                                             </td>
-                                            <td>
+                                            <td data-label="Status">
                                                 <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                                     ${escapeHtml(ticket.status)}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td data-label="Actions">
                                                 <div class="actions">
                                                     <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn">
                                                         View

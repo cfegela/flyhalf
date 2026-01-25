@@ -47,19 +47,19 @@ export async function usersListView() {
                         <tbody>
                             ${users.map(user => `
                                 <tr>
-                                    <td><strong>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</strong></td>
-                                    <td>${escapeHtml(user.email)}</td>
-                                    <td>
+                                    <td data-label="Name"><strong>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</strong></td>
+                                    <td data-label="Email">${escapeHtml(user.email)}</td>
+                                    <td data-label="Role">
                                         <span class="badge ${user.role === 'admin' ? 'badge-primary' : 'badge-success'}">
                                             ${escapeHtml(user.role)}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Status">
                                         <span class="badge ${user.is_active ? 'badge-success' : 'badge-danger'}">
                                             ${user.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <div class="actions">
                                             <a href="/admin/users/${user.id}" class="btn btn-secondary action-btn">
                                                 View
