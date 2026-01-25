@@ -54,8 +54,13 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
     - Real-time status updates via API
     - Tickets sorted by priority within each column
     - Responsive design with mobile support
+  - **Sprint Report**: Visual burndown chart and progress metrics
+    - Story points and ticket completion metrics with progress bars
+    - Burndown chart showing remaining story points over sprint duration
+    - Breakdown by total/completed/remaining points and tickets
+    - Powered by Chart.js for interactive visualization
   - Full list and detail views
-  - Simplified list view with detail-level actions (edit/delete available in detail view only)
+  - Simplified list view with Board and Report buttons for quick access
 - All users can view and edit all tickets and epics (collaborative workspace)
 - Users can delete tickets/epics they created; admins can delete any ticket/epic
 - Forced password change for newly created users
@@ -279,13 +284,14 @@ The application provides the following pages:
 - **Create/Edit Epic** - Structured form with organized sections
   - Epic Information card: Name and description with placeholders and acronym generation guidance
   - Helpful hint about using title case for clarity
-- **Sprints List** - View all sprints with name, start date, and end date columns
-  - "Board" and "View" buttons for accessing sprint board and details
+- **Sprints List** - View all sprints with name, status, start date, and end date columns
+  - "Board" and "Report" buttons for quick access to sprint board and analytics
+  - Click sprint row to view full details
 - **Sprint Detail** - Enhanced card-based layout with intelligent status calculation
   - Sprint Details card: Active/Completed/Upcoming status badge, duration, and days remaining/until start
   - Timeline card: Start and end dates in responsive grid
   - Tickets card: Table showing all tickets assigned to the sprint with count in header
-  - "View Board" button to access the interactive kanban board
+  - "View Board" and "View Report" buttons to access the interactive kanban board and analytics
   - Edit and delete buttons available in detail view
 - **Sprint Board** - Interactive kanban board for sprint management
   - Three columns: Committed, Underway, Completed
@@ -294,6 +300,13 @@ The application provides the following pages:
   - Ticket cards show: ID, title, description (truncated), status badge, and view link
   - Ticket counts displayed in each column header
   - "Back to Details" button to return to sprint detail view
+- **Sprint Report** - Visual analytics and burndown tracking
+  - Story Points card: Total, completed, and remaining points with progress bar and percentage
+  - Tickets card: Total and completed ticket count with progress bar and percentage
+  - Burndown Chart: Line graph showing remaining story points across sprint duration
+  - Chart powered by Chart.js with interactive tooltips
+  - Clean, focused visualization for sprint progress tracking
+  - "View Board" and "Back to Details" buttons for easy navigation
 - **Create/Edit Sprint** - Structured form with organized sections
   - Sprint Information card: Name and start date with helpful placeholders
   - Clear explanation that end date is automatically set to 2 weeks after start date
@@ -322,7 +335,8 @@ The application provides the following pages:
 - **Tickets** link shows all tickets
 - **Epics** link shows all epics
 - **Sprints** link shows all sprints
-  - From sprint detail page, click "View Board" to access the interactive kanban board
+  - From sprints list, click "Board" or "Report" buttons for quick access
+  - From sprint detail page, click "View Board" for the interactive kanban board or "View Report" for analytics
 - **Users** link (admins only) for user management
 - **Logout** button to end session
 - **Active link highlighting** - Navbar automatically highlights the current section, including when viewing detail pages (e.g., viewing a specific ticket highlights the Tickets link)
@@ -413,6 +427,7 @@ https://flyhalf-prod-api-oas33witna-uc.a.run.app/api/v1
 | GET | `/sprints` | List all sprints | Yes | Any |
 | POST | `/sprints` | Create sprint | Yes | Any |
 | GET | `/sprints/{id}` | Get sprint by ID | Yes | Any |
+| GET | `/sprints/{id}/report` | Get sprint report data | Yes | Any |
 | PUT | `/sprints/{id}` | Update sprint | Yes | Any |
 | DELETE | `/sprints/{id}` | Delete sprint | Yes | Creator or Admin |
 
@@ -422,6 +437,18 @@ https://flyhalf-prod-api-oas33witna-uc.a.run.app/api/v1
 - `name` (string, required)
 - `start_date` (date, required, format: YYYY-MM-DD)
 - `end_date` (date, auto-calculated as start_date + 14 days)
+
+**Sprint Report Response**:
+The `/sprints/{id}/report` endpoint returns comprehensive sprint analytics including:
+- `sprint` - Full sprint object
+- `total_points` - Total story points for all tickets in sprint
+- `completed_points` - Story points for closed tickets
+- `remaining_points` - Story points for open/in-progress tickets
+- `total_tickets` - Count of all tickets in sprint
+- `completed_tickets` - Count of closed tickets
+- `ideal_burndown` - Array of daily burndown points (date, points)
+- `tickets_by_status` - Map of ticket counts grouped by status
+- `points_by_status` - Map of story points grouped by status
 
 ### User Endpoints
 
