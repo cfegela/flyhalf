@@ -13,10 +13,14 @@ import (
 
 type SprintHandler struct {
 	sprintRepo *model.SprintRepository
+	ticketRepo *model.TicketRepository
 }
 
-func NewSprintHandler(sprintRepo *model.SprintRepository) *SprintHandler {
-	return &SprintHandler{sprintRepo: sprintRepo}
+func NewSprintHandler(sprintRepo *model.SprintRepository, ticketRepo *model.TicketRepository) *SprintHandler {
+	return &SprintHandler{
+		sprintRepo: sprintRepo,
+		ticketRepo: ticketRepo,
+	}
 }
 
 type CreateSprintRequest struct {
@@ -194,4 +198,119 @@ func (h *SprintHandler) DeleteSprint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type SprintReportResponse struct {
+	Sprint              *model.Sprint       `json:"sprint"`
+	TotalPoints         int                 `json:"total_points"`
+	CompletedPoints     int                 `json:"completed_points"`
+	RemainingPoints     int                 `json:"remaining_points"`
+	TotalTickets        int                 `json:"total_tickets"`
+	CompletedTickets    int                 `json:"completed_tickets"`
+	IdealBurndown       []BurndownPoint     `json:"ideal_burndown"`
+	TicketsByStatus     map[string]int      `json:"tickets_by_status"`
+	PointsByStatus      map[string]int      `json:"points_by_status"`
+}
+
+type BurndownPoint struct {
+	Date   string `json:"date"`
+	Points int    `json:"points"`
+}
+
+func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid sprint ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	sprint, err := h.sprintRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Get all tickets
+	allTickets, err := h.ticketRepo.List(r.Context(), nil)
+	if err != nil {
+		http.Error(w, `{"error":"failed to fetch tickets"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Filter tickets for this sprint
+	var sprintTickets []*model.Ticket
+	for _, ticket := range allTickets {
+		if ticket.SprintID != nil && *ticket.SprintID == id {
+			sprintTickets = append(sprintTickets, ticket)
+		}
+	}
+
+	// Calculate statistics
+	totalPoints := 0
+	completedPoints := 0
+	ticketsByStatus := make(map[string]int)
+	pointsByStatus := make(map[string]int)
+
+	for _, ticket := range sprintTickets {
+		points := 0
+		if ticket.Size != nil {
+			points = *ticket.Size
+		}
+
+		totalPoints += points
+		ticketsByStatus[ticket.Status]++
+		pointsByStatus[ticket.Status] += points
+
+		if ticket.Status == "closed" {
+			completedPoints += points
+		}
+	}
+
+	remainingPoints := totalPoints - completedPoints
+
+	// Generate ideal burndown line
+	idealBurndown := generateIdealBurndown(sprint.StartDate, sprint.EndDate, totalPoints)
+
+	response := SprintReportResponse{
+		Sprint:           sprint,
+		TotalPoints:      totalPoints,
+		CompletedPoints:  completedPoints,
+		RemainingPoints:  remainingPoints,
+		TotalTickets:     len(sprintTickets),
+		CompletedTickets: ticketsByStatus["closed"],
+		IdealBurndown:    idealBurndown,
+		TicketsByStatus:  ticketsByStatus,
+		PointsByStatus:   pointsByStatus,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []BurndownPoint {
+	var points []BurndownPoint
+
+	// Calculate number of days in the sprint
+	duration := endDate.Sub(startDate).Hours() / 24
+	days := int(duration) + 1 // Include both start and end day
+
+	// Calculate points to burn per day
+	pointsPerDay := float64(totalPoints) / float64(days-1)
+
+	// Generate ideal burndown for each day
+	for i := 0; i < days; i++ {
+		date := startDate.AddDate(0, 0, i)
+		remainingPoints := totalPoints - int(float64(i)*pointsPerDay)
+		if remainingPoints < 0 {
+			remainingPoints = 0
+		}
+
+		points = append(points, BurndownPoint{
+			Date:   date.Format("2006-01-02"),
+			Points: remainingPoints,
+		})
+	}
+
+	return points
 }

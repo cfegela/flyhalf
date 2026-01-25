@@ -78,6 +78,9 @@ export async function sprintsListView() {
                                             <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn board-btn">
                                                 Board
                                             </a>
+                                            <a href="/sprints/${sprint.id}/report" class="btn btn-primary action-btn report-btn">
+                                                Report
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -98,9 +101,16 @@ export async function sprintsListView() {
             });
         });
 
-        // Prevent Board button clicks from triggering row navigation
+        // Prevent Board and Report button clicks from triggering row navigation
         const boardButtons = sprintsContainer.querySelectorAll('.board-btn');
         boardButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
+
+        const reportButtons = sprintsContainer.querySelectorAll('.report-btn');
+        reportButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
             });
@@ -155,6 +165,7 @@ export async function sprintDetailView(params) {
                     <h1 class="page-title">${escapeHtml(sprint.name)}</h1>
                     <div class="actions">
                         <a href="/sprints/${id}/board" class="btn btn-primary">View Board</a>
+                        <a href="/sprints/${id}/report" class="btn btn-primary">View Report</a>
                         <a href="/sprints/${id}/edit" class="btn btn-secondary">Edit</a>
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || sprint.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>

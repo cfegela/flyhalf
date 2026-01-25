@@ -60,7 +60,7 @@ func run() error {
 	adminHandler := handler.NewAdminHandler(userRepo)
 	ticketHandler := handler.NewTicketHandler(ticketRepo)
 	epicHandler := handler.NewEpicHandler(epicRepo)
-	sprintHandler := handler.NewSprintHandler(sprintRepo)
+	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo)
 
 	rt := router.New(authHandler, adminHandler, ticketHandler, epicHandler, sprintHandler, authMiddleware, cfg)
 	httpHandler := rt.Setup()

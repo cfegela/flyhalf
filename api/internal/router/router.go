@@ -101,6 +101,7 @@ func (rt *Router) Setup() http.Handler {
 			r.Get("/", rt.sprintHandler.ListSprints)
 			r.Post("/", rt.sprintHandler.CreateSprint)
 			r.Get("/{id}", rt.sprintHandler.GetSprint)
+			r.Get("/{id}/report", rt.sprintHandler.GetSprintReport)
 			r.Put("/{id}", rt.sprintHandler.UpdateSprint)
 			r.Delete("/{id}", rt.sprintHandler.DeleteSprint)
 		})

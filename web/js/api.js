@@ -199,6 +199,10 @@ class APIClient {
         });
     }
 
+    async getSprintReport(id) {
+        return this.request(`/sprints/${id}/report`);
+    }
+
     async getUsersForAssignment() {
         return this.request('/users');
     }
