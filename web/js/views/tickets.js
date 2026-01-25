@@ -68,7 +68,7 @@ export async function ticketsListView() {
                                 <th>Assignee</th>
                                 <th>Epic</th>
                                 <th>Sprint</th>
-                                <th>Actions</th>
+                                <th>Arrange</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -77,7 +77,7 @@ export async function ticketsListView() {
                                 const epic = ticket.epic_id ? epicMap[ticket.epic_id] : null;
                                 const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
                                 return `
-                                <tr>
+                                <tr class="clickable-row" data-ticket-id="${ticket.id}" style="cursor: pointer;">
                                     <td data-label="Title">
                                         <strong>${escapeHtml(ticket.title)}</strong>
                                     </td>
@@ -93,50 +93,28 @@ export async function ticketsListView() {
                                         ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
                                     </td>
                                     <td data-label="Epic">
-                                        ${epic ? `<a href="/epics/${epic.id}" style="color: var(--primary); text-decoration: none;" title="${escapeHtml(epic.name)}">${getEpicAcronym(epic.name)}</a>` : '-'}
+                                        ${epic ? `<span title="${escapeHtml(epic.name)}">${getEpicAcronym(epic.name)}</span>` : '-'}
                                     </td>
                                     <td data-label="Sprint">
-                                        ${sprint ? `<a href="/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
+                                        ${sprint ? escapeHtml(sprint.name) : '-'}
                                     </td>
-                                    <td data-label="Actions">
+                                    <td data-label="Arrange">
                                         <div class="actions">
                                             <button class="btn btn-primary action-btn promote-top-btn"
                                                     data-id="${ticket.id}"
                                                     title="Promote to top">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 18.75 7.5-7.5 7.5 7.5"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 7.5-7.5 7.5 7.5"/>
-                                                </svg>
+                                                top
                                             </button>
                                             <button class="btn btn-primary action-btn promote-up-btn"
                                                     data-id="${ticket.id}"
                                                     title="Promote up one">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5"/>
-                                                </svg>
+                                                up
                                             </button>
                                             <button class="btn btn-primary action-btn promote-down-btn"
                                                     data-id="${ticket.id}"
                                                     title="Promote down one">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
-                                                </svg>
+                                                down
                                             </button>
-                                            <a href="/tickets/${ticket.id}"
-                                               class="btn btn-secondary action-btn"
-                                               title="View ticket">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                                                </svg>
-                                            </a>
-                                            <a href="/tickets/${ticket.id}/edit"
-                                               class="btn btn-secondary action-btn"
-                                               title="Edit ticket">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/>
-                                                </svg>
-                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -148,9 +126,19 @@ export async function ticketsListView() {
             </div>
         `;
 
+        // Make rows clickable to navigate to ticket details
+        const clickableRows = ticketsContainer.querySelectorAll('.clickable-row');
+        clickableRows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                const ticketId = row.dataset.ticketId;
+                router.navigate(`/tickets/${ticketId}`);
+            });
+        });
+
         const promoteTopButtons = ticketsContainer.querySelectorAll('.promote-top-btn');
         promoteTopButtons.forEach(btn => {
             btn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent row click
                 const id = e.currentTarget.dataset.id;
                 try {
                     await api.promoteTicket(id);
@@ -163,6 +151,7 @@ export async function ticketsListView() {
         const promoteUpButtons = ticketsContainer.querySelectorAll('.promote-up-btn');
         promoteUpButtons.forEach(btn => {
             btn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent row click
                 const id = e.currentTarget.dataset.id;
                 try {
                     await api.promoteTicketUp(id);
@@ -175,6 +164,7 @@ export async function ticketsListView() {
         const promoteDownButtons = ticketsContainer.querySelectorAll('.promote-down-btn');
         promoteDownButtons.forEach(btn => {
             btn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent row click
                 const id = e.currentTarget.dataset.id;
                 try {
                     await api.demoteTicketDown(id);

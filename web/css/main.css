@@ -226,6 +226,11 @@ tr:hover {
     background-color: var(--bg-gray);
 }
 
+.clickable-row:hover {
+    background-color: var(--bg-gray);
+    cursor: pointer;
+}
+
 .badge {
     display: inline-block;
     padding: 0.25rem 0.625rem;

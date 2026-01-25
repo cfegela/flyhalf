@@ -42,21 +42,13 @@ export async function epicsListView() {
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${epics.map(epic => `
-                                <tr>
+                                <tr class="clickable-row" data-epic-id="${epic.id}" style="cursor: pointer;">
                                     <td data-label="Name">
                                         <strong>${escapeHtml(epic.name)} (${getEpicAcronym(epic.name)})</strong>
-                                    </td>
-                                    <td data-label="Actions">
-                                        <div class="actions">
-                                            <a href="/epics/${epic.id}" class="btn btn-secondary action-btn">
-                                                View
-                                            </a>
-                                        </div>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -65,6 +57,15 @@ export async function epicsListView() {
                 </div>
             </div>
         `;
+
+        // Make rows clickable to navigate to epic details
+        const clickableRows = epicsContainer.querySelectorAll('.clickable-row');
+        clickableRows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                const epicId = row.dataset.epicId;
+                router.navigate(`/epics/${epicId}`);
+            });
+        });
 
     } catch (error) {
         const epicsContainer = container.querySelector('#epics-container');
@@ -111,19 +112,11 @@ export async function epicDetailView(params) {
                 <!-- Epic Information Card -->
                 <div class="card">
                     <h2 class="card-header">Epic Details</h2>
-                    <div style="display: grid; gap: 1.5rem;">
-                        <div>
-                            <label class="form-label">Acronym</label>
-                            <p style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 600; color: var(--primary); font-family: monospace;">
-                                ${getEpicAcronym(epic.name)}
-                            </p>
-                        </div>
-                        <div>
-                            <label class="form-label">Description</label>
-                            <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary); margin-top: 0.25rem;">
-                                ${escapeHtml(epic.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}
-                            </p>
-                        </div>
+                    <div>
+                        <label class="form-label">Description</label>
+                        <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary); margin-top: 0.25rem;">
+                            ${escapeHtml(epic.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}
+                        </p>
                     </div>
                 </div>
 
@@ -142,12 +135,11 @@ export async function epicDetailView(params) {
                                     <tr>
                                         <th>Title</th>
                                         <th>Status</th>
-                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${epicTickets.map(ticket => `
-                                        <tr>
+                                        <tr class="clickable-row" data-ticket-id="${ticket.id}" style="cursor: pointer;">
                                             <td data-label="Title">
                                                 <strong>${escapeHtml(ticket.title)}</strong>
                                             </td>
@@ -155,13 +147,6 @@ export async function epicDetailView(params) {
                                                 <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                                     ${escapeHtml(ticket.status)}
                                                 </span>
-                                            </td>
-                                            <td data-label="Actions">
-                                                <div class="actions">
-                                                    <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn">
-                                                        View
-                                                    </a>
-                                                </div>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -183,6 +168,15 @@ export async function epicDetailView(params) {
                 } catch (error) {
                 }
             }
+        });
+
+        // Make ticket rows clickable to navigate to ticket details
+        const clickableRows = container.querySelectorAll('.clickable-row');
+        clickableRows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                const ticketId = row.dataset.ticketId;
+                router.navigate(`/tickets/${ticketId}`);
+            });
         });
     } catch (error) {
         container.innerHTML = `

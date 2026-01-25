@@ -49,7 +49,7 @@ export async function sprintsListView() {
                         </thead>
                         <tbody>
                             ${sprints.map(sprint => `
-                                <tr>
+                                <tr class="clickable-row" data-sprint-id="${sprint.id}" style="cursor: pointer;">
                                     <td data-label="Name">
                                         <strong>${escapeHtml(sprint.name)}</strong>
                                     </td>
@@ -61,11 +61,8 @@ export async function sprintsListView() {
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
-                                            <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn">
+                                            <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn board-btn">
                                                 Board
-                                            </a>
-                                            <a href="/sprints/${sprint.id}" class="btn btn-secondary action-btn">
-                                                View
                                             </a>
                                         </div>
                                     </td>
@@ -76,6 +73,23 @@ export async function sprintsListView() {
                 </div>
             </div>
         `;
+
+        // Make rows clickable to navigate to sprint details
+        const clickableRows = sprintsContainer.querySelectorAll('.clickable-row');
+        clickableRows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                const sprintId = row.dataset.sprintId;
+                router.navigate(`/sprints/${sprintId}`);
+            });
+        });
+
+        // Prevent Board button clicks from triggering row navigation
+        const boardButtons = sprintsContainer.querySelectorAll('.board-btn');
+        boardButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
 
     } catch (error) {
         const sprintsContainer = container.querySelector('#sprints-container');
@@ -192,12 +206,11 @@ export async function sprintDetailView(params) {
                                     <tr>
                                         <th>Title</th>
                                         <th>Status</th>
-                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${sprintTickets.map(ticket => `
-                                        <tr>
+                                        <tr class="clickable-row" data-ticket-id="${ticket.id}" style="cursor: pointer;">
                                             <td data-label="Title">
                                                 <strong>${escapeHtml(ticket.title)}</strong>
                                             </td>
@@ -205,13 +218,6 @@ export async function sprintDetailView(params) {
                                                 <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                                     ${escapeHtml(ticket.status)}
                                                 </span>
-                                            </td>
-                                            <td data-label="Actions">
-                                                <div class="actions">
-                                                    <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn">
-                                                        View
-                                                    </a>
-                                                </div>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -233,6 +239,15 @@ export async function sprintDetailView(params) {
                 } catch (error) {
                 }
             }
+        });
+
+        // Make ticket rows clickable to navigate to ticket details
+        const clickableRows = container.querySelectorAll('.clickable-row');
+        clickableRows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                const ticketId = row.dataset.ticketId;
+                router.navigate(`/tickets/${ticketId}`);
+            });
         });
     } catch (error) {
         container.innerHTML = `
