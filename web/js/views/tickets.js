@@ -78,27 +78,27 @@ export async function ticketsListView() {
                                 const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
                                 return `
                                 <tr>
-                                    <td>
+                                    <td data-label="Title">
                                         <strong>${escapeHtml(ticket.title)}</strong>
                                     </td>
-                                    <td>
+                                    <td data-label="Status">
                                         <span class="badge ${getStatusBadgeClass(ticket.status)}">
                                             ${escapeHtml(ticket.status)}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Size">
                                         ${getSizeLabel(ticket.size)}
                                     </td>
-                                    <td>
+                                    <td data-label="Assignee">
                                         ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
                                     </td>
-                                    <td>
+                                    <td data-label="Epic">
                                         ${epic ? `<a href="/epics/${epic.id}" style="color: var(--primary); text-decoration: none;" title="${escapeHtml(epic.name)}">${getEpicAcronym(epic.name)}</a>` : '-'}
                                     </td>
-                                    <td>
+                                    <td data-label="Sprint">
                                         ${sprint ? `<a href="/sprints/${sprint.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <div class="actions">
                                             <button class="btn btn-primary action-btn promote-btn"
                                                     data-id="${ticket.id}"

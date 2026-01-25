@@ -597,4 +597,77 @@ tr:hover {
     .board-column {
         min-height: 300px;
     }
+
+    /* Mobile card layout for tables */
+    .table-container {
+        overflow-x: visible;
+    }
+
+    table {
+        border: 0;
+    }
+
+    table thead {
+        display: none;
+    }
+
+    table tbody {
+        display: block;
+    }
+
+    table tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        background: white;
+    }
+
+    table tr:hover {
+        background: white;
+    }
+
+    table td {
+        display: block;
+        border: none;
+        padding: 0.5rem 0;
+        text-align: left;
+    }
+
+    table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-secondary);
+        display: block;
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    table td:first-child {
+        padding-top: 0;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    table td:first-child::before {
+        display: none;
+    }
+
+    table td:last-child {
+        padding-bottom: 0;
+        padding-top: 0.75rem;
+        margin-top: 0.75rem;
+        border-top: 1px solid var(--border);
+    }
+
+    table td:last-child::before {
+        display: none;
+    }
+
+    .actions {
+        flex-wrap: wrap;
+    }
 }
