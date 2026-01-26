@@ -369,3 +369,44 @@ func (h *TicketHandler) DemoteTicketDown(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
 }
+
+type UpdatePriorityRequest struct {
+	Priority float64 `json:"priority"`
+}
+
+func (h *TicketHandler) UpdateTicketPriority(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	var req UpdatePriorityRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Update ticket priority
+	if err := h.ticketRepo.UpdatePriority(r.Context(), id, req.Priority); err != nil {
+		http.Error(w, `{"error":"failed to update ticket priority"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated ticket and return it
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}

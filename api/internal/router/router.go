@@ -83,6 +83,7 @@ func (rt *Router) Setup() http.Handler {
 			r.Post("/{id}/promote", rt.ticketHandler.PromoteTicket)
 			r.Post("/{id}/promote-up", rt.ticketHandler.PromoteTicketUp)
 			r.Post("/{id}/demote-down", rt.ticketHandler.DemoteTicketDown)
+			r.Patch("/{id}/priority", rt.ticketHandler.UpdateTicketPriority)
 		})
 
 		r.Route("/epics", func(r chi.Router) {

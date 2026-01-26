@@ -71,15 +71,19 @@ export async function ticketsListView() {
                                 <th>Arrange</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tickets-tbody">
                             ${tickets.map(ticket => {
                                 const assignee = ticket.assigned_to ? userMap[ticket.assigned_to] : null;
                                 const epic = ticket.epic_id ? epicMap[ticket.epic_id] : null;
                                 const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
                                 return `
-                                <tr class="clickable-row" data-ticket-id="${ticket.id}" style="cursor: pointer;">
+                                <tr class="draggable-row"
+                                    data-ticket-id="${ticket.id}"
+                                    data-priority="${ticket.priority}"
+                                    draggable="true"
+                                    style="cursor: move;">
                                     <td data-label="Title">
-                                        <strong>${escapeHtml(ticket.title)}</strong>
+                                        <strong><a href="/tickets/${ticket.id}" style="color: inherit; text-decoration: none;" draggable="false">${escapeHtml(ticket.title)}</a></strong>
                                     </td>
                                     <td data-label="Status">
                                         <span class="badge ${getStatusBadgeClass(ticket.status)}">
@@ -126,14 +130,8 @@ export async function ticketsListView() {
             </div>
         `;
 
-        // Make rows clickable to navigate to ticket details
-        const clickableRows = ticketsContainer.querySelectorAll('.clickable-row');
-        clickableRows.forEach(row => {
-            row.addEventListener('click', (e) => {
-                const ticketId = row.dataset.ticketId;
-                router.navigate(`/tickets/${ticketId}`);
-            });
-        });
+        // Implement drag-and-drop with fractional indexing
+        setupDragAndDrop(ticketsContainer, tickets);
 
         const promoteTopButtons = ticketsContainer.querySelectorAll('.promote-top-btn');
         promoteTopButtons.forEach(btn => {
@@ -576,5 +574,117 @@ function getSizeLabel(size) {
 function getEpicAcronym(epicName) {
     // Remove spaces and lowercase letters, keeping only uppercase letters
     return epicName.replace(/[a-z\s]/g, '');
+}
+
+function setupDragAndDrop(container, tickets) {
+    let draggedElement = null;
+    let draggedTicketId = null;
+
+    const tbody = container.querySelector('#tickets-tbody');
+    const rows = tbody.querySelectorAll('.draggable-row');
+
+    console.log('Setting up drag and drop for', rows.length, 'rows');
+
+    rows.forEach(row => {
+        // Prevent links and buttons from being draggable
+        row.querySelectorAll('a, button').forEach(el => {
+            el.setAttribute('draggable', 'false');
+        });
+
+        // Dragstart event
+        row.addEventListener('dragstart', (e) => {
+            console.log('Drag started on ticket:', row.dataset.ticketId);
+            draggedElement = row;
+            draggedTicketId = row.dataset.ticketId;
+            row.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', row.dataset.ticketId);
+        });
+
+        // Dragend event
+        row.addEventListener('dragend', (e) => {
+            row.style.opacity = '1';
+            // Remove all drag-over classes
+            rows.forEach(r => r.classList.remove('drag-over'));
+        });
+
+        // Dragover event (allow drop)
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            if (draggedElement !== row) {
+                row.classList.add('drag-over');
+            }
+            return false;
+        });
+
+        // Dragleave event
+        row.addEventListener('dragleave', (e) => {
+            row.classList.remove('drag-over');
+        });
+
+        // Drop event
+        row.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('Dropped on ticket:', row.dataset.ticketId);
+
+            if (draggedElement !== row) {
+                // Calculate new priority using fractional indexing
+                const allRows = Array.from(tbody.querySelectorAll('.draggable-row'));
+                const targetIndex = allRows.indexOf(row);
+                const draggedIndex = allRows.indexOf(draggedElement);
+
+                console.log('Moving from index', draggedIndex, 'to', targetIndex);
+
+                let newPriority;
+
+                if (draggedIndex < targetIndex) {
+                    // Moving down - insert after the target row
+                    const nextRow = allRows[targetIndex + 1];
+                    if (nextRow) {
+                        // Insert between target and next
+                        const targetPriority = parseFloat(row.dataset.priority);
+                        const nextPriority = parseFloat(nextRow.dataset.priority);
+                        newPriority = (targetPriority + nextPriority) / 2.0;
+                    } else {
+                        // Insert at bottom
+                        const targetPriority = parseFloat(row.dataset.priority);
+                        newPriority = targetPriority - 1.0;
+                    }
+                } else {
+                    // Moving up - insert before the target row
+                    const prevRow = allRows[targetIndex - 1];
+                    if (prevRow) {
+                        // Insert between prev and target
+                        const prevPriority = parseFloat(prevRow.dataset.priority);
+                        const targetPriority = parseFloat(row.dataset.priority);
+                        newPriority = (prevPriority + targetPriority) / 2.0;
+                    } else {
+                        // Insert at top
+                        const targetPriority = parseFloat(row.dataset.priority);
+                        newPriority = targetPriority + 1.0;
+                    }
+                }
+
+                console.log('New priority:', newPriority);
+
+                try {
+                    // Update priority via API
+                    await api.updateTicketPriority(draggedTicketId, newPriority);
+                    console.log('Priority updated successfully');
+                    // Refresh the view
+                    ticketsListView();
+                } catch (error) {
+                    console.error('Failed to update ticket priority:', error);
+                }
+            }
+
+            row.classList.remove('drag-over');
+            return false;
+        });
+    });
 }
 

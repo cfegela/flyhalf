@@ -682,3 +682,25 @@ tr:hover {
         flex-wrap: wrap;
     }
 }
+
+/* Drag and drop styles */
+.draggable-row {
+    cursor: move !important;
+    transition: all 0.2s ease;
+}
+
+.draggable-row:hover {
+    background-color: #f3f4f6;
+}
+
+.draggable-row.drag-over {
+    border-top: 3px solid var(--primary);
+    background-color: #eff6ff;
+}
+
+.draggable-row[draggable="true"] {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}

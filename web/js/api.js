@@ -143,6 +143,13 @@ class APIClient {
         });
     }
 
+    async updateTicketPriority(id, priority) {
+        return this.request(`/tickets/${id}/priority`, {
+            method: 'PATCH',
+            body: JSON.stringify({ priority }),
+        });
+    }
+
     async getEpics() {
         return this.request('/epics');
     }
