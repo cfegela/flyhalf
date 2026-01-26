@@ -12,7 +12,7 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
 - **Frontend**: Vanilla JavaScript SPA with ES modules (no build step required)
 - **Database**: PostgreSQL 16
 - **Authentication**: JWT access tokens (15min) + refresh tokens (7 days, HttpOnly cookie)
-- **Development**: Docker Compose with hot reload (Air for Go)
+- **Development**: Docker Compose or Podman Compose with hot reload (Air for Go)
 
 ## Features
 
@@ -45,6 +45,7 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
 - **Sprint Management**:
   - CRUD operations for sprints (name and start date)
   - End date automatically calculated as 2 weeks after start date
+  - **Dynamic Status Calculation**: Sprint status (upcoming/active/completed) automatically calculated based on start/end dates
   - Assign tickets to sprints for sprint planning
   - Sprint detail view shows all tickets assigned to that sprint
   - **Sprint Board**: Interactive kanban board with drag-and-drop functionality
@@ -125,7 +126,7 @@ flyhalf/
 
 ### Prerequisites
 
-- Docker and Docker Compose
+- Docker and Docker Compose (or Podman and Podman Compose)
 - Git
 
 ### Installation
@@ -144,6 +145,8 @@ cat .env
 3. Start the application:
 ```bash
 docker-compose up
+# or with Podman
+podman compose up
 ```
 
 This will start three services:
@@ -195,6 +198,8 @@ Log in with the admin credentials above.
 The application has been enhanced with a comprehensive redesign focused on legibility and information hierarchy:
 
 ### Latest Updates (January 2026)
+- **Dynamic Sprint Status Calculation**: Sprint status (upcoming/active/completed) now calculated server-side based on current date and sprint timeline, ensuring consistent status across all views
+- **Improved Date Handling**: All date parsing now uses local timezone to prevent timezone conversion issues in sprint boards, reports, and detail views
 - **Icon-Based Ticket Priority Controls**: Tickets list now features a modern actions column with 5 Heroicons SVG icons:
   - Promote to top (⇈): Send ticket to highest priority
   - Promote up one (↑): Swap priority with ticket immediately above
@@ -542,6 +547,7 @@ Frontend: No package manager needed - just add ES module imports!
 - `name` (varchar(255), not null)
 - `start_date` (date, not null)
 - `end_date` (date, not null)
+- `status` (computed field: upcoming/active/completed, calculated based on current date)
 - `created_at`, `updated_at` (timestamps)
 
 ### Tickets Table

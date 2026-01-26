@@ -50,12 +50,16 @@ export async function sprintsListView() {
                         </thead>
                         <tbody>
                             ${sprints.map(sprint => {
-                                const startDate = new Date(sprint.start_date);
-                                const endDate = new Date(sprint.end_date);
-                                const today = new Date();
-                                const isActive = today >= startDate && today <= endDate;
-                                const isCompleted = today > endDate;
-                                const isUpcoming = today < startDate;
+                                const statusBadgeMap = {
+                                    'active': 'badge-in-progress',
+                                    'completed': 'badge-closed',
+                                    'upcoming': 'badge-open'
+                                };
+                                const statusLabelMap = {
+                                    'active': 'Active',
+                                    'completed': 'Completed',
+                                    'upcoming': 'Upcoming'
+                                };
 
                                 return `
                                 <tr data-sprint-id="${sprint.id}">
@@ -63,8 +67,8 @@ export async function sprintsListView() {
                                         <strong>${escapeHtml(sprint.name)}</strong>
                                     </td>
                                     <td data-label="Status">
-                                        <span class="badge ${isActive ? 'badge-in-progress' : isCompleted ? 'badge-closed' : 'badge-open'}">
-                                            ${isActive ? 'Active' : isCompleted ? 'Completed' : 'Upcoming'}
+                                        <span class="badge ${statusBadgeMap[sprint.status] || 'badge-open'}">
+                                            ${statusLabelMap[sprint.status] || sprint.status}
                                         </span>
                                     </td>
                                     <td data-label="Start Date">
@@ -157,15 +161,20 @@ export async function sprintDetailView(params) {
         const sprintTickets = allTickets.filter(ticket => ticket.sprint_id === id);
 
         // Calculate sprint duration and progress
-        const startDate = new Date(sprint.start_date);
-        const endDate = new Date(sprint.end_date);
+        // Parse dates as local dates to avoid timezone issues
+        const parseDate = (dateStr) => {
+            const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+            return new Date(year, month - 1, day);
+        };
+        const startDate = parseDate(sprint.start_date);
+        const endDate = parseDate(sprint.end_date);
         const today = new Date();
         const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
         const daysElapsed = Math.max(0, Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)));
         const daysRemaining = Math.max(0, Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)));
-        const isActive = today >= startDate && today <= endDate;
-        const isCompleted = today > endDate;
-        const isUpcoming = today < startDate;
+        const isActive = sprint.status === 'active';
+        const isCompleted = sprint.status === 'completed';
+        const isUpcoming = sprint.status === 'upcoming';
 
         container.innerHTML = `
             <div>
@@ -402,7 +411,9 @@ function escapeHtml(text) {
 }
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
+    // Parse date string as local date to avoid timezone conversion issues
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString();
 }
 

@@ -47,13 +47,19 @@ async function loadSprintBoard(container, sprintId) {
       columns[col].sort((a, b) => b.priority - a.priority);
     });
 
+    // Helper to parse date strings as local dates (avoiding timezone issues)
+    const parseDate = (dateStr) => {
+      const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     container.innerHTML = `
       <div class="page-header">
         <div>
           <h1>${sprint.name} - Board</h1>
           <div class="sprint-dates">
-            ${new Date(sprint.start_date).toLocaleDateString()} -
-            ${new Date(sprint.end_date).toLocaleDateString()}
+            ${parseDate(sprint.start_date).toLocaleDateString()} -
+            ${parseDate(sprint.end_date).toLocaleDateString()}
           </div>
         </div>
         <div>

@@ -41,15 +41,20 @@ export async function sprintReportView(params) {
         const sprint = report.sprint;
 
         // Calculate sprint progress
-        const startDate = new Date(sprint.start_date);
-        const endDate = new Date(sprint.end_date);
+        // Parse dates as local dates to avoid timezone issues
+        const parseDate = (dateStr) => {
+            const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+            return new Date(year, month - 1, day);
+        };
+        const startDate = parseDate(sprint.start_date);
+        const endDate = parseDate(sprint.end_date);
         const today = new Date();
         const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
         const daysElapsed = Math.max(0, Math.min(totalDays, Math.ceil((today - startDate) / (1000 * 60 * 60 * 24))));
         const daysRemaining = Math.max(0, totalDays - daysElapsed);
-        const isActive = today >= startDate && today <= endDate;
-        const isCompleted = today > endDate;
-        const isUpcoming = today < startDate;
+        const isActive = sprint.status === 'active';
+        const isCompleted = sprint.status === 'completed';
+        const isUpcoming = sprint.status === 'upcoming';
 
         // Calculate velocity (points per day)
         const velocity = daysElapsed > 0 ? (report.completed_points / daysElapsed).toFixed(2) : 0;
@@ -164,9 +169,15 @@ function renderBurndownChart(report, today, startDate, endDate) {
     const ctx = document.getElementById('burndown-chart');
     if (!ctx) return;
 
+    // Helper function to parse date string as local date (avoiding timezone issues)
+    const parseLocalDate = (dateStr) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day); // month is 0-indexed
+    };
+
     // Prepare data for the chart
     const labels = report.ideal_burndown.map(point => {
-        const date = new Date(point.date);
+        const date = parseLocalDate(point.date);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     });
 
@@ -176,7 +187,7 @@ function renderBurndownChart(report, today, startDate, endDate) {
     // For a simple version, we show a line from total points at start to current remaining at today
     const actualData = [];
     const todayIndex = report.ideal_burndown.findIndex(point => {
-        const pointDate = new Date(point.date);
+        const pointDate = parseLocalDate(point.date);
         pointDate.setHours(0, 0, 0, 0);
         const compareDate = new Date(today);
         compareDate.setHours(0, 0, 0, 0);
@@ -305,7 +316,9 @@ function escapeHtml(text) {
 }
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
+    // Parse date string as local date to avoid timezone conversion issues
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString();
 }
 

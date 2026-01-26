@@ -15,8 +15,28 @@ type Sprint struct {
 	Name        string    `json:"name"`
 	StartDate   time.Time `json:"start_date"`
 	EndDate     time.Time `json:"end_date"`
+	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (s *Sprint) CalculateStatus() {
+	now := time.Now().UTC()
+	startDate := s.StartDate.UTC()
+	endDate := s.EndDate.UTC()
+
+	// Normalize to start of day for date-only comparisons
+	nowDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	startDateOnly := time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC)
+	endDateOnly := time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 0, 0, 0, 0, time.UTC)
+
+	if nowDate.Before(startDateOnly) {
+		s.Status = "upcoming"
+	} else if nowDate.After(endDateOnly) {
+		s.Status = "completed"
+	} else {
+		s.Status = "active"
+	}
 }
 
 type SprintRepository struct {
@@ -33,9 +53,15 @@ func (r *SprintRepository) Create(ctx context.Context, sprint *Sprint) error {
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at, updated_at
 	`
-	return r.db.QueryRow(ctx, query,
+	err := r.db.QueryRow(ctx, query,
 		sprint.UserID, sprint.Name, sprint.StartDate, sprint.EndDate,
 	).Scan(&sprint.ID, &sprint.CreatedAt, &sprint.UpdatedAt)
+	if err != nil {
+		return err
+	}
+
+	sprint.CalculateStatus()
+	return nil
 }
 
 func (r *SprintRepository) GetByID(ctx context.Context, id uuid.UUID) (*Sprint, error) {
@@ -52,6 +78,7 @@ func (r *SprintRepository) GetByID(ctx context.Context, id uuid.UUID) (*Sprint, 
 		return nil, err
 	}
 
+	sprint.CalculateStatus()
 	return sprint, nil
 }
 
@@ -90,6 +117,7 @@ func (r *SprintRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Spri
 			return nil, err
 		}
 
+		sprint.CalculateStatus()
 		sprints = append(sprints, sprint)
 	}
 	return sprints, rows.Err()
@@ -102,9 +130,15 @@ func (r *SprintRepository) Update(ctx context.Context, sprint *Sprint) error {
 		WHERE id = $4
 		RETURNING updated_at
 	`
-	return r.db.QueryRow(ctx, query,
+	err := r.db.QueryRow(ctx, query,
 		sprint.Name, sprint.StartDate, sprint.EndDate, sprint.ID,
 	).Scan(&sprint.UpdatedAt)
+	if err != nil {
+		return err
+	}
+
+	sprint.CalculateStatus()
+	return nil
 }
 
 func (r *SprintRepository) Delete(ctx context.Context, id uuid.UUID) error {
