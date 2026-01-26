@@ -52,6 +52,7 @@ func run() error {
 	ticketRepo := model.NewTicketRepository(pool)
 	epicRepo := model.NewEpicRepository(pool)
 	sprintRepo := model.NewSprintRepository(pool)
+	retroItemRepo := model.NewRetroItemRepository(pool)
 
 	jwtService := auth.NewJWTService(&cfg.JWT)
 	authMiddleware := auth.NewAuthMiddleware(jwtService)
@@ -61,8 +62,9 @@ func run() error {
 	ticketHandler := handler.NewTicketHandler(ticketRepo)
 	epicHandler := handler.NewEpicHandler(epicRepo)
 	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo)
+	retroItemHandler := handler.NewRetroItemHandler(retroItemRepo, userRepo)
 
-	rt := router.New(authHandler, adminHandler, ticketHandler, epicHandler, sprintHandler, authMiddleware, cfg)
+	rt := router.New(authHandler, adminHandler, ticketHandler, epicHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)
 	httpHandler := rt.Setup()
 
 	srv := &http.Server{

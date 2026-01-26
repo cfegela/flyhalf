@@ -85,6 +85,9 @@ export async function sprintsListView() {
                                             <a href="/sprints/${sprint.id}/report" class="btn btn-primary action-btn">
                                                 report
                                             </a>
+                                            <a href="/sprints/${sprint.id}/retro" class="btn btn-primary action-btn">
+                                                retro
+                                            </a>
                                             <a href="/sprints/${sprint.id}" class="btn btn-secondary action-btn" title="View details">
                                                 <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
                                             </a>
@@ -183,6 +186,7 @@ export async function sprintDetailView(params) {
                     <div class="actions">
                         <a href="/sprints/${id}/board" class="btn btn-primary">View Board</a>
                         <a href="/sprints/${id}/report" class="btn btn-primary">View Report</a>
+                        <a href="/sprints/${id}/retro" class="btn btn-primary">View Retro</a>
                         <a href="/sprints/${id}/edit" class="btn btn-secondary">Edit</a>
                         <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || sprint.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>

@@ -19,6 +19,7 @@ import {
 } from './views/sprints.js';
 import { sprintBoardView } from './views/sprintBoard.js';
 import { sprintReportView } from './views/sprintReport.js';
+import { sprintRetroView } from './views/sprintRetro.js';
 import {
     usersListView,
     userDetailView,
@@ -44,6 +45,7 @@ async function initApp() {
     router.addRoute('/sprints/new', (params) => sprintFormView(['new']), { requireAuth: true });
     router.addRoute('/sprints/:id/board', sprintBoardView, { requireAuth: true });
     router.addRoute('/sprints/:id/report', sprintReportView, { requireAuth: true });
+    router.addRoute('/sprints/:id/retro', sprintRetroView, { requireAuth: true });
     router.addRoute('/sprints/:id/edit', (params) => sprintFormView([params[0], 'edit']), { requireAuth: true });
     router.addRoute('/sprints/:id', sprintDetailView, { requireAuth: true });
     router.addRoute('/settings', settingsView, { requireAuth: true });

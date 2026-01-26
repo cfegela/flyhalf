@@ -13,13 +13,14 @@ import (
 )
 
 type Router struct {
-	authHandler    *handler.AuthHandler
-	adminHandler   *handler.AdminHandler
-	ticketHandler  *handler.TicketHandler
-	epicHandler    *handler.EpicHandler
-	sprintHandler  *handler.SprintHandler
-	authMiddleware *auth.AuthMiddleware
-	cfg            *config.Config
+	authHandler      *handler.AuthHandler
+	adminHandler     *handler.AdminHandler
+	ticketHandler    *handler.TicketHandler
+	epicHandler      *handler.EpicHandler
+	sprintHandler    *handler.SprintHandler
+	retroItemHandler *handler.RetroItemHandler
+	authMiddleware   *auth.AuthMiddleware
+	cfg              *config.Config
 }
 
 func New(
@@ -28,17 +29,19 @@ func New(
 	ticketHandler *handler.TicketHandler,
 	epicHandler *handler.EpicHandler,
 	sprintHandler *handler.SprintHandler,
+	retroItemHandler *handler.RetroItemHandler,
 	authMiddleware *auth.AuthMiddleware,
 	cfg *config.Config,
 ) *Router {
 	return &Router{
-		authHandler:    authHandler,
-		adminHandler:   adminHandler,
-		ticketHandler:  ticketHandler,
-		epicHandler:    epicHandler,
-		sprintHandler:  sprintHandler,
-		authMiddleware: authMiddleware,
-		cfg:            cfg,
+		authHandler:      authHandler,
+		adminHandler:     adminHandler,
+		ticketHandler:    ticketHandler,
+		epicHandler:      epicHandler,
+		sprintHandler:    sprintHandler,
+		retroItemHandler: retroItemHandler,
+		authMiddleware:   authMiddleware,
+		cfg:              cfg,
 	}
 }
 
@@ -103,6 +106,17 @@ func (rt *Router) Setup() http.Handler {
 			r.Get("/{id}/report", rt.sprintHandler.GetSprintReport)
 			r.Put("/{id}", rt.sprintHandler.UpdateSprint)
 			r.Delete("/{id}", rt.sprintHandler.DeleteSprint)
+			r.Get("/{sprintId}/retro", rt.retroItemHandler.ListRetroItems)
+			r.Post("/{sprintId}/retro", rt.retroItemHandler.CreateRetroItem)
+		})
+
+		r.Route("/retro-items", func(r chi.Router) {
+			r.Use(rt.authMiddleware.Authenticate)
+
+			r.Put("/{id}", rt.retroItemHandler.UpdateRetroItem)
+			r.Delete("/{id}", rt.retroItemHandler.DeleteRetroItem)
+			r.Post("/{id}/vote", rt.retroItemHandler.VoteRetroItem)
+			r.Delete("/{id}/vote", rt.retroItemHandler.UnvoteRetroItem)
 		})
 
 		// Public endpoint for getting users for assignment (all authenticated users)

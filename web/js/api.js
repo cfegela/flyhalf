@@ -198,6 +198,42 @@ class APIClient {
         return this.request(`/sprints/${id}/report`);
     }
 
+    async getRetroItems(sprintId) {
+        return this.request(`/sprints/${sprintId}/retro`);
+    }
+
+    async createRetroItem(sprintId, content, category) {
+        return this.request(`/sprints/${sprintId}/retro`, {
+            method: 'POST',
+            body: JSON.stringify({ content, category }),
+        });
+    }
+
+    async updateRetroItem(id, content, category) {
+        return this.request(`/retro-items/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ content, category }),
+        });
+    }
+
+    async deleteRetroItem(id) {
+        return this.request(`/retro-items/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async voteRetroItem(id) {
+        return this.request(`/retro-items/${id}/vote`, {
+            method: 'POST',
+        });
+    }
+
+    async unvoteRetroItem(id) {
+        return this.request(`/retro-items/${id}/vote`, {
+            method: 'DELETE',
+        });
+    }
+
     async getUsersForAssignment() {
         return this.request('/users');
     }

@@ -158,6 +158,21 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		`UPDATE tickets SET status = 'open' WHERE status = 'new'`,
 		`ALTER TABLE tickets ALTER COLUMN status SET DEFAULT 'open'`,
 
+		`CREATE TABLE IF NOT EXISTS retro_items (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			sprint_id UUID NOT NULL REFERENCES sprints(id) ON DELETE CASCADE,
+			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			content TEXT NOT NULL,
+			category VARCHAR(10) NOT NULL CHECK (category IN ('good', 'bad')),
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_retro_items_sprint_id ON retro_items(sprint_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_retro_items_user_id ON retro_items(user_id)`,
+
+		`ALTER TABLE retro_items ADD COLUMN IF NOT EXISTS vote_count INTEGER NOT NULL DEFAULT 0`,
+
 		// Create default admin user if it doesn't exist
 		// Default password: admin123 (bcrypt hash with cost 12)
 		// IMPORTANT: Admin must change password on first login!
