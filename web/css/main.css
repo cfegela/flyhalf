@@ -764,7 +764,7 @@ tr:hover {
 .retro-item-actions {
     display: flex;
     gap: 1rem;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
 .retro-add-item {

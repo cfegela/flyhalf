@@ -135,12 +135,12 @@ function renderItems(items, category) {
                         <a href="#" class="board-ticket-link" onclick="event.preventDefault(); window.unvoteRetroItem('${item.id}')">remove</a>
                         <span style="color: var(--text-secondary);">]</span>
                     </div>
-                    ${canEdit ? `
-                        <div style="display: flex; gap: 1rem;">
+                    <div style="display: flex; gap: 1rem;">
+                        ${canEdit ? `
                             <a href="#" class="board-ticket-link" onclick="event.preventDefault(); window.editRetroItem('${item.id}')">Edit</a>
                             <a href="#" class="board-ticket-link" style="color: var(--danger);" onclick="event.preventDefault(); window.deleteRetroItem('${item.id}')">Delete</a>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                    </div>
                 </div>
             </div>
         `;
