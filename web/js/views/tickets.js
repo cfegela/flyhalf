@@ -83,7 +83,7 @@ export async function ticketsListView() {
                                     draggable="true"
                                     style="cursor: move;">
                                     <td data-label="Title">
-                                        <strong><a href="/tickets/${ticket.id}" style="color: inherit; text-decoration: none;" draggable="false">${escapeHtml(ticket.title)}</a></strong>
+                                        <strong>${escapeHtml(ticket.title)}</strong>
                                     </td>
                                     <td data-label="Status">
                                         <span class="badge ${getStatusBadgeClass(ticket.status)}">
@@ -103,23 +103,11 @@ export async function ticketsListView() {
                                         ${sprint ? escapeHtml(sprint.name) : '-'}
                                     </td>
                                     <td data-label="Arrange">
-                                        <div class="actions">
-                                            <button class="btn btn-primary action-btn promote-top-btn"
-                                                    data-id="${ticket.id}"
-                                                    title="Promote to top">
-                                                top
-                                            </button>
-                                            <button class="btn btn-primary action-btn promote-up-btn"
-                                                    data-id="${ticket.id}"
-                                                    title="Promote up one">
-                                                up
-                                            </button>
-                                            <button class="btn btn-primary action-btn promote-down-btn"
-                                                    data-id="${ticket.id}"
-                                                    title="Promote down one">
-                                                down
-                                            </button>
-                                        </div>
+                                        <button class="btn btn-primary action-btn promote-top-btn"
+                                                data-id="${ticket.id}"
+                                                title="Promote to top">
+                                            top
+                                        </button>
                                     </td>
                                 </tr>
                                 `;
@@ -133,41 +121,17 @@ export async function ticketsListView() {
         // Implement drag-and-drop with fractional indexing
         setupDragAndDrop(ticketsContainer, tickets);
 
+        // Handle promote to top button
         const promoteTopButtons = ticketsContainer.querySelectorAll('.promote-top-btn');
         promoteTopButtons.forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevent row click
+                e.stopPropagation();
                 const id = e.currentTarget.dataset.id;
                 try {
                     await api.promoteTicket(id);
                     ticketsListView();
                 } catch (error) {
-                }
-            });
-        });
-
-        const promoteUpButtons = ticketsContainer.querySelectorAll('.promote-up-btn');
-        promoteUpButtons.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevent row click
-                const id = e.currentTarget.dataset.id;
-                try {
-                    await api.promoteTicketUp(id);
-                    ticketsListView();
-                } catch (error) {
-                }
-            });
-        });
-
-        const promoteDownButtons = ticketsContainer.querySelectorAll('.promote-down-btn');
-        promoteDownButtons.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevent row click
-                const id = e.currentTarget.dataset.id;
-                try {
-                    await api.demoteTicketDown(id);
-                    ticketsListView();
-                } catch (error) {
+                    console.error('Failed to promote ticket:', error);
                 }
             });
         });
@@ -583,8 +547,6 @@ function setupDragAndDrop(container, tickets) {
     const tbody = container.querySelector('#tickets-tbody');
     const rows = tbody.querySelectorAll('.draggable-row');
 
-    console.log('Setting up drag and drop for', rows.length, 'rows');
-
     rows.forEach(row => {
         // Prevent links and buttons from being draggable
         row.querySelectorAll('a, button').forEach(el => {
@@ -593,7 +555,6 @@ function setupDragAndDrop(container, tickets) {
 
         // Dragstart event
         row.addEventListener('dragstart', (e) => {
-            console.log('Drag started on ticket:', row.dataset.ticketId);
             draggedElement = row;
             draggedTicketId = row.dataset.ticketId;
             row.style.opacity = '0.5';
@@ -629,15 +590,11 @@ function setupDragAndDrop(container, tickets) {
             e.preventDefault();
             e.stopPropagation();
 
-            console.log('Dropped on ticket:', row.dataset.ticketId);
-
             if (draggedElement !== row) {
                 // Calculate new priority using fractional indexing
                 const allRows = Array.from(tbody.querySelectorAll('.draggable-row'));
                 const targetIndex = allRows.indexOf(row);
                 const draggedIndex = allRows.indexOf(draggedElement);
-
-                console.log('Moving from index', draggedIndex, 'to', targetIndex);
 
                 let newPriority;
 
@@ -669,12 +626,9 @@ function setupDragAndDrop(container, tickets) {
                     }
                 }
 
-                console.log('New priority:', newPriority);
-
                 try {
                     // Update priority via API
                     await api.updateTicketPriority(draggedTicketId, newPriority);
-                    console.log('Priority updated successfully');
                     // Refresh the view
                     ticketsListView();
                 } catch (error) {

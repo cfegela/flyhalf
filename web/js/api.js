@@ -131,18 +131,6 @@ class APIClient {
         });
     }
 
-    async promoteTicketUp(id) {
-        return this.request(`/tickets/${id}/promote-up`, {
-            method: 'POST',
-        });
-    }
-
-    async demoteTicketDown(id) {
-        return this.request(`/tickets/${id}/demote-down`, {
-            method: 'POST',
-        });
-    }
-
     async updateTicketPriority(id, priority) {
         return this.request(`/tickets/${id}/priority`, {
             method: 'PATCH',
