@@ -42,13 +42,24 @@ export async function epicsListView() {
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${epics.map(epic => `
-                                <tr class="clickable-row" data-epic-id="${epic.id}" style="cursor: pointer;">
+                                <tr data-epic-id="${epic.id}">
                                     <td data-label="Name">
                                         <strong>${escapeHtml(epic.name)} (${getEpicAcronym(epic.name)})</strong>
+                                    </td>
+                                    <td data-label="Actions">
+                                        <div class="actions">
+                                            <a href="/epics/${epic.id}" class="btn btn-secondary action-btn" title="View details">
+                                                view
+                                            </a>
+                                            <a href="/epics/${epic.id}/edit" class="btn btn-secondary action-btn" title="Edit epic">
+                                                edit
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -57,15 +68,6 @@ export async function epicsListView() {
                 </div>
             </div>
         `;
-
-        // Make rows clickable to navigate to epic details
-        const clickableRows = epicsContainer.querySelectorAll('.clickable-row');
-        clickableRows.forEach(row => {
-            row.addEventListener('click', (e) => {
-                const epicId = row.dataset.epicId;
-                router.navigate(`/epics/${epicId}`);
-            });
-        });
 
     } catch (error) {
         const epicsContainer = container.querySelector('#epics-container');

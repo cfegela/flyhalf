@@ -68,7 +68,7 @@ export async function ticketsListView() {
                                 <th>Assignee</th>
                                 <th>Epic</th>
                                 <th>Sprint</th>
-                                <th>Arrange</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="tickets-tbody">
@@ -102,12 +102,20 @@ export async function ticketsListView() {
                                     <td data-label="Sprint">
                                         ${sprint ? escapeHtml(sprint.name) : '-'}
                                     </td>
-                                    <td data-label="Arrange">
-                                        <button class="btn btn-primary action-btn promote-top-btn"
-                                                data-id="${ticket.id}"
-                                                title="Promote to top">
-                                            top
-                                        </button>
+                                    <td data-label="Actions">
+                                        <div class="actions">
+                                            <button class="btn btn-primary action-btn promote-top-btn"
+                                                    data-id="${ticket.id}"
+                                                    title="Promote to top">
+                                                top
+                                            </button>
+                                            <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn" title="View details">
+                                                view
+                                            </a>
+                                            <a href="/tickets/${ticket.id}/edit" class="btn btn-secondary action-btn" title="Edit ticket">
+                                                edit
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 `;

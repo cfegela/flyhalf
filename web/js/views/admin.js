@@ -41,11 +41,12 @@ export async function usersListView() {
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${users.map(user => `
-                                <tr class="clickable-row" data-user-id="${user.id}" style="cursor: pointer;">
+                                <tr data-user-id="${user.id}">
                                     <td data-label="Name"><strong>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</strong></td>
                                     <td data-label="Email">${escapeHtml(user.email)}</td>
                                     <td data-label="Role">
@@ -58,6 +59,16 @@ export async function usersListView() {
                                             ${user.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
+                                    <td data-label="Actions">
+                                        <div class="actions">
+                                            <a href="/admin/users/${user.id}" class="btn btn-secondary action-btn" title="View details">
+                                                view
+                                            </a>
+                                            <a href="/admin/users/${user.id}/edit" class="btn btn-secondary action-btn" title="Edit user">
+                                                edit
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -65,15 +76,6 @@ export async function usersListView() {
                 </div>
             </div>
         `;
-
-        // Make rows clickable to navigate to user details
-        const clickableRows = usersContainer.querySelectorAll('.clickable-row');
-        clickableRows.forEach(row => {
-            row.addEventListener('click', (e) => {
-                const userId = row.dataset.userId;
-                router.navigate(`/admin/users/${userId}`);
-            });
-        });
 
     } catch (error) {
         const usersContainer = container.querySelector('#users-container');

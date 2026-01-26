@@ -58,7 +58,7 @@ export async function sprintsListView() {
                                 const isUpcoming = today < startDate;
 
                                 return `
-                                <tr class="clickable-row" data-sprint-id="${sprint.id}" style="cursor: pointer;">
+                                <tr data-sprint-id="${sprint.id}">
                                     <td data-label="Name">
                                         <strong>${escapeHtml(sprint.name)}</strong>
                                     </td>
@@ -75,11 +75,17 @@ export async function sprintsListView() {
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
-                                            <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn board-btn">
-                                                Board
+                                            <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn">
+                                                board
                                             </a>
-                                            <a href="/sprints/${sprint.id}/report" class="btn btn-primary action-btn report-btn">
-                                                Report
+                                            <a href="/sprints/${sprint.id}/report" class="btn btn-primary action-btn">
+                                                report
+                                            </a>
+                                            <a href="/sprints/${sprint.id}" class="btn btn-secondary action-btn" title="View details">
+                                                view
+                                            </a>
+                                            <a href="/sprints/${sprint.id}/edit" class="btn btn-secondary action-btn" title="Edit sprint">
+                                                edit
                                             </a>
                                         </div>
                                     </td>
@@ -92,7 +98,8 @@ export async function sprintsListView() {
             </div>
         `;
 
-        // Make rows clickable to navigate to sprint details
+        // Removed clickable row behavior - users now click buttons instead
+        /*
         const clickableRows = sprintsContainer.querySelectorAll('.clickable-row');
         clickableRows.forEach(row => {
             row.addEventListener('click', (e) => {
@@ -115,6 +122,7 @@ export async function sprintsListView() {
                 e.stopPropagation();
             });
         });
+        */
 
     } catch (error) {
         const sprintsContainer = container.querySelector('#sprints-container');
