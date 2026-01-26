@@ -19,7 +19,7 @@ type Ticket struct {
 	EpicID      *uuid.UUID `json:"epic_id,omitempty"`
 	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
 	Size        *int       `json:"size,omitempty"`
-	Priority    int        `json:"priority"`
+	Priority    float64    `json:"priority"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
@@ -124,14 +124,21 @@ func (r *TicketRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *TicketRepository) GetMaxPriority(ctx context.Context) (int, error) {
+func (r *TicketRepository) GetMaxPriority(ctx context.Context) (float64, error) {
 	query := `SELECT COALESCE(MAX(priority), 0) FROM tickets`
-	var maxPriority int
+	var maxPriority float64
 	err := r.db.QueryRow(ctx, query).Scan(&maxPriority)
 	return maxPriority, err
 }
 
-func (r *TicketRepository) UpdatePriority(ctx context.Context, id uuid.UUID, priority int) error {
+func (r *TicketRepository) GetMinPriority(ctx context.Context) (float64, error) {
+	query := `SELECT COALESCE(MIN(priority), 0) FROM tickets`
+	var minPriority float64
+	err := r.db.QueryRow(ctx, query).Scan(&minPriority)
+	return minPriority, err
+}
+
+func (r *TicketRepository) UpdatePriority(ctx context.Context, id uuid.UUID, priority float64) error {
 	query := `UPDATE tickets SET priority = $1, updated_at = NOW() WHERE id = $2`
 	result, err := r.db.Exec(ctx, query, priority, id)
 	if err != nil {
@@ -143,7 +150,7 @@ func (r *TicketRepository) UpdatePriority(ctx context.Context, id uuid.UUID, pri
 	return nil
 }
 
-func (r *TicketRepository) GetNextLowerPriorityTicket(ctx context.Context, priority int) (*Ticket, error) {
+func (r *TicketRepository) GetNextLowerPriorityTicket(ctx context.Context, priority float64) (*Ticket, error) {
 	query := `
 		SELECT id, user_id, title, description, status, assigned_to, epic_id, sprint_id, size, priority, created_at, updated_at
 		FROM tickets
@@ -162,7 +169,7 @@ func (r *TicketRepository) GetNextLowerPriorityTicket(ctx context.Context, prior
 	return ticket, nil
 }
 
-func (r *TicketRepository) GetNextHigherPriorityTicket(ctx context.Context, priority int) (*Ticket, error) {
+func (r *TicketRepository) GetNextHigherPriorityTicket(ctx context.Context, priority float64) (*Ticket, error) {
 	query := `
 		SELECT id, user_id, title, description, status, assigned_to, epic_id, sprint_id, size, priority, created_at, updated_at
 		FROM tickets
@@ -181,34 +188,41 @@ func (r *TicketRepository) GetNextHigherPriorityTicket(ctx context.Context, prio
 	return ticket, nil
 }
 
-func (r *TicketRepository) SwapPriorities(ctx context.Context, id1 uuid.UUID, id2 uuid.UUID) error {
-	// Use a transaction to swap priorities atomically
-	tx, err := r.db.Begin(ctx)
+func (r *TicketRepository) GetSecondHigherPriorityTicket(ctx context.Context, priority float64) (*Ticket, error) {
+	query := `
+		SELECT id, user_id, title, description, status, assigned_to, epic_id, sprint_id, size, priority, created_at, updated_at
+		FROM tickets
+		WHERE priority > $1
+		ORDER BY priority ASC, created_at ASC
+		LIMIT 1 OFFSET 1
+	`
+	ticket := &Ticket{}
+	err := r.db.QueryRow(ctx, query, priority).Scan(
+		&ticket.ID, &ticket.UserID, &ticket.Title, &ticket.Description,
+		&ticket.Status, &ticket.AssignedTo, &ticket.EpicID, &ticket.SprintID, &ticket.Size, &ticket.Priority, &ticket.CreatedAt, &ticket.UpdatedAt,
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer tx.Rollback(ctx)
-
-	// Get both tickets' priorities
-	var priority1, priority2 int
-	err = tx.QueryRow(ctx, `SELECT priority FROM tickets WHERE id = $1`, id1).Scan(&priority1)
-	if err != nil {
-		return err
-	}
-	err = tx.QueryRow(ctx, `SELECT priority FROM tickets WHERE id = $1`, id2).Scan(&priority2)
-	if err != nil {
-		return err
-	}
-
-	// Swap the priorities
-	_, err = tx.Exec(ctx, `UPDATE tickets SET priority = $1, updated_at = NOW() WHERE id = $2`, priority2, id1)
-	if err != nil {
-		return err
-	}
-	_, err = tx.Exec(ctx, `UPDATE tickets SET priority = $1, updated_at = NOW() WHERE id = $2`, priority1, id2)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
+	return ticket, nil
 }
+
+func (r *TicketRepository) GetSecondLowerPriorityTicket(ctx context.Context, priority float64) (*Ticket, error) {
+	query := `
+		SELECT id, user_id, title, description, status, assigned_to, epic_id, sprint_id, size, priority, created_at, updated_at
+		FROM tickets
+		WHERE priority < $1
+		ORDER BY priority DESC, created_at ASC
+		LIMIT 1 OFFSET 1
+	`
+	ticket := &Ticket{}
+	err := r.db.QueryRow(ctx, query, priority).Scan(
+		&ticket.ID, &ticket.UserID, &ticket.Title, &ticket.Description,
+		&ticket.Status, &ticket.AssignedTo, &ticket.EpicID, &ticket.SprintID, &ticket.Size, &ticket.Priority, &ticket.CreatedAt, &ticket.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return ticket, nil
+}
+

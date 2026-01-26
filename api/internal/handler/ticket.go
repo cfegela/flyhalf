@@ -107,6 +107,13 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		req.Status = "open"
 	}
 
+	// Get min priority to place new tickets at the bottom
+	minPriority, err := h.ticketRepo.GetMinPriority(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to get min priority"}`, http.StatusInternalServerError)
+		return
+	}
+
 	ticket := &model.Ticket{
 		UserID:      userID,
 		Title:       req.Title,
@@ -116,6 +123,7 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		EpicID:      req.EpicID,
 		SprintID:    req.SprintID,
 		Size:        req.Size,
+		Priority:    minPriority - 1.0,
 	}
 
 	if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
@@ -229,8 +237,8 @@ func (h *TicketHandler) PromoteTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set ticket priority to max + 1
-	if err := h.ticketRepo.UpdatePriority(r.Context(), id, maxPriority+1); err != nil {
+	// Set ticket priority to max + 1.0
+	if err := h.ticketRepo.UpdatePriority(r.Context(), id, maxPriority+1.0); err != nil {
 		http.Error(w, `{"error":"failed to promote ticket"}`, http.StatusInternalServerError)
 		return
 	}
@@ -267,8 +275,8 @@ func (h *TicketHandler) PromoteTicketUp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Get next higher priority ticket (higher priority = higher number)
-	higherTicket, err := h.ticketRepo.GetNextHigherPriorityTicket(r.Context(), ticket.Priority)
+	// Get next higher priority ticket B (priority > current)
+	ticketB, err := h.ticketRepo.GetNextHigherPriorityTicket(r.Context(), ticket.Priority)
 	if err != nil {
 		// No ticket with higher priority, already at top
 		w.Header().Set("Content-Type", "application/json")
@@ -276,8 +284,19 @@ func (h *TicketHandler) PromoteTicketUp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Swap priorities
-	if err := h.ticketRepo.SwapPriorities(r.Context(), id, higherTicket.ID); err != nil {
+	// Get ticket A above B (priority > B.priority)
+	ticketA, err := h.ticketRepo.GetNextHigherPriorityTicket(r.Context(), ticketB.Priority)
+	var newPriority float64
+	if err != nil {
+		// No ticket above B, so T becomes new top
+		newPriority = ticketB.Priority + 1.0
+	} else {
+		// Calculate midpoint between A and B
+		newPriority = (ticketA.Priority + ticketB.Priority) / 2.0
+	}
+
+	// Update ticket priority
+	if err := h.ticketRepo.UpdatePriority(r.Context(), id, newPriority); err != nil {
 		http.Error(w, `{"error":"failed to promote ticket"}`, http.StatusInternalServerError)
 		return
 	}
@@ -314,8 +333,8 @@ func (h *TicketHandler) DemoteTicketDown(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get next lower priority ticket
-	lowerTicket, err := h.ticketRepo.GetNextLowerPriorityTicket(r.Context(), ticket.Priority)
+	// Get next lower priority ticket B (priority < current)
+	ticketB, err := h.ticketRepo.GetNextLowerPriorityTicket(r.Context(), ticket.Priority)
 	if err != nil {
 		// No ticket with lower priority, already at bottom
 		w.Header().Set("Content-Type", "application/json")
@@ -323,8 +342,19 @@ func (h *TicketHandler) DemoteTicketDown(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Swap priorities
-	if err := h.ticketRepo.SwapPriorities(r.Context(), id, lowerTicket.ID); err != nil {
+	// Get ticket C below B (priority < B.priority)
+	ticketC, err := h.ticketRepo.GetNextLowerPriorityTicket(r.Context(), ticketB.Priority)
+	var newPriority float64
+	if err != nil {
+		// No ticket below B, so T becomes new bottom
+		newPriority = ticketB.Priority - 1.0
+	} else {
+		// Calculate midpoint between B and C
+		newPriority = (ticketB.Priority + ticketC.Priority) / 2.0
+	}
+
+	// Update ticket priority
+	if err := h.ticketRepo.UpdatePriority(r.Context(), id, newPriority); err != nil {
 		http.Error(w, `{"error":"failed to demote ticket"}`, http.StatusInternalServerError)
 		return
 	}

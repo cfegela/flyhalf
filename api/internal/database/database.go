@@ -93,6 +93,34 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS priority INTEGER NOT NULL DEFAULT 0`,
 		`CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`,
 
+		// Convert priority from INTEGER to DOUBLE PRECISION with fractional indexing
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS priority_new DOUBLE PRECISION`,
+
+		`DO $$
+		BEGIN
+			IF EXISTS (SELECT 1 FROM information_schema.columns
+					   WHERE table_name = 'tickets'
+					   AND column_name = 'priority_new'
+					   AND data_type = 'double precision') THEN
+				-- Reindex existing tickets with unique values (assigns N, N-1, N-2... based on current order)
+				WITH ranked AS (
+					SELECT id, ROW_NUMBER() OVER (ORDER BY priority DESC, created_at ASC) as rn,
+						   COUNT(*) OVER () as total
+					FROM tickets
+				)
+				UPDATE tickets SET priority_new = (SELECT total - rn + 1 FROM ranked WHERE ranked.id = tickets.id);
+
+				-- Set default for any NULLs (shouldn't happen, but safety)
+				UPDATE tickets SET priority_new = 0 WHERE priority_new IS NULL;
+
+				-- Drop old column and rename
+				ALTER TABLE tickets DROP COLUMN IF EXISTS priority;
+				ALTER TABLE tickets RENAME COLUMN priority_new TO priority;
+				ALTER TABLE tickets ALTER COLUMN priority SET NOT NULL;
+				ALTER TABLE tickets ALTER COLUMN priority SET DEFAULT 0;
+			END IF;
+		END $$`,
+
 		`CREATE TABLE IF NOT EXISTS epics (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
