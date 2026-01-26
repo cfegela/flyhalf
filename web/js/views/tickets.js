@@ -104,16 +104,16 @@ export async function ticketsListView() {
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
-                                            <button class="btn btn-primary action-btn promote-top-btn"
+                                            <button class="btn btn-secondary action-btn promote-top-btn"
                                                     data-id="${ticket.id}"
                                                     title="Promote to top">
-                                                top
+                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Arrows/arrow-up-circle-fill.svg" alt="Promote to top" style="width: 20px; height: 20px; display: block;">
                                             </button>
                                             <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn" title="View details">
-                                                view
+                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
                                             </a>
                                             <a href="/tickets/${ticket.id}/edit" class="btn btn-secondary action-btn" title="Edit ticket">
-                                                edit
+                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Design/pencil-ai-fill.svg" alt="Edit" style="width: 20px; height: 20px; display: block;">
                                             </a>
                                         </div>
                                     </td>

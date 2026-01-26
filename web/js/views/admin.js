@@ -62,10 +62,10 @@ export async function usersListView() {
                                     <td data-label="Actions">
                                         <div class="actions">
                                             <a href="/admin/users/${user.id}" class="btn btn-secondary action-btn" title="View details">
-                                                view
+                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
                                             </a>
                                             <a href="/admin/users/${user.id}/edit" class="btn btn-secondary action-btn" title="Edit user">
-                                                edit
+                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Design/pencil-ai-fill.svg" alt="Edit" style="width: 20px; height: 20px; display: block;">
                                             </a>
                                         </div>
                                     </td>

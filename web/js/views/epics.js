@@ -54,10 +54,10 @@ export async function epicsListView() {
                                     <td data-label="Actions">
                                         <div class="actions">
                                             <a href="/epics/${epic.id}" class="btn btn-secondary action-btn" title="View details">
-                                                view
+                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
                                             </a>
                                             <a href="/epics/${epic.id}/edit" class="btn btn-secondary action-btn" title="Edit epic">
-                                                edit
+                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Design/pencil-ai-fill.svg" alt="Edit" style="width: 20px; height: 20px; display: block;">
                                             </a>
                                         </div>
                                     </td>
