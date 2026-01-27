@@ -78,6 +78,36 @@ nav {
     font-weight: 500;
 }
 
+.navbar-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.navbar-toggle span {
+    display: block;
+    width: 1.5rem;
+    height: 2px;
+    background-color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.navbar-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translateY(7px);
+}
+
+.navbar-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translateY(-7px);
+}
+
 #main-content {
     flex: 1;
     max-width: 1200px;
@@ -590,13 +620,55 @@ tr:hover {
 }
 
 @media (max-width: 768px) {
+    .navbar {
+        flex-wrap: wrap;
+    }
+
+    .navbar-toggle {
+        display: flex;
+        order: 2;
+    }
+
+    .navbar-brand {
+        order: 1;
+    }
+
     .navbar-menu {
-        gap: 0.75rem;
+        order: 3;
+        width: 100%;
+        flex-direction: column;
+        gap: 0;
+        align-items: stretch;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        background: white;
+        margin: 0 -1.5rem;
+        padding: 0 1.5rem;
+    }
+
+    .navbar-menu.active {
+        max-height: 500px;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        margin-top: 1rem;
     }
 
     .navbar-link {
-        padding: 0.375rem 0.625rem;
-        font-size: 0.875rem;
+        padding: 0.75rem 0;
+        font-size: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .navbar-link:hover {
+        background-color: transparent;
+        color: var(--primary);
+    }
+
+    #logout-btn {
+        margin-top: 0.75rem;
+        margin-bottom: 0.5rem;
+        width: 100%;
     }
 
     .page-header {
@@ -684,6 +756,31 @@ tr:hover {
 
     .actions {
         flex-wrap: wrap;
+    }
+
+    /* Hide Size, Assignee, Project, and Sprint columns on ticket list for mobile */
+    table td[data-label="Size"],
+    table td[data-label="Assignee"],
+    table td[data-label="Project"],
+    table td[data-label="Sprint"] {
+        display: none;
+    }
+
+    /* Hide Start Date and End Date columns on sprint list for mobile */
+    table td[data-label="Start Date"],
+    table td[data-label="End Date"] {
+        display: none;
+    }
+
+    /* Hide Email and Team columns on user list for mobile */
+    table td[data-label="Email"],
+    table td[data-label="Team"] {
+        display: none;
+    }
+
+    /* Hide Description column on team list for mobile */
+    table td[data-label="Description"] {
+        display: none;
     }
 }
 

@@ -36,12 +36,17 @@ class Navbar {
         this.container.innerHTML = `
             <div class="navbar">
                 <a href="/" class="navbar-brand">Flyhalf</a>
-                <div class="navbar-menu">
+                <button class="navbar-toggle" id="navbar-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="navbar-menu" id="navbar-menu">
                     <a href="/tickets" class="navbar-link">Tickets</a>
                     <a href="/sprints" class="navbar-link">Sprints</a>
                     <a href="/projects" class="navbar-link">Projects</a>
-                    ${isAdmin ? '<a href="/admin/teams" class="navbar-link">Teams</a>' : ''}
                     ${isAdmin ? '<a href="/admin/users" class="navbar-link">Users</a>' : ''}
+                    ${isAdmin ? '<a href="/admin/teams" class="navbar-link">Teams</a>' : ''}
                     <a href="/settings" class="navbar-link">${user.first_name} ${user.last_name}</a>
                     <button class="btn btn-secondary btn-sm" id="logout-btn">Logout</button>
                 </div>
@@ -51,6 +56,25 @@ class Navbar {
         const logoutBtn = this.container.querySelector('#logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => this.handleLogout(e));
+        }
+
+        const navbarToggle = this.container.querySelector('#navbar-toggle');
+        const navbarMenu = this.container.querySelector('#navbar-menu');
+
+        if (navbarToggle && navbarMenu) {
+            navbarToggle.addEventListener('click', () => {
+                navbarMenu.classList.toggle('active');
+                navbarToggle.classList.toggle('active');
+            });
+
+            // Close menu when clicking a link
+            const navbarLinks = navbarMenu.querySelectorAll('.navbar-link');
+            navbarLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    navbarMenu.classList.remove('active');
+                    navbarToggle.classList.remove('active');
+                });
+            });
         }
 
         this.updateActiveLink();
