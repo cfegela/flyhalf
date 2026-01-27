@@ -183,9 +183,10 @@ function renderBurndownChart(report, today, startDate, endDate) {
 
     const idealData = report.ideal_burndown.map(point => point.points);
 
-    // Create actual burndown data (current state)
-    // For a simple version, we show a line from total points at start to current remaining at today
-    const actualData = [];
+    // Use actual burndown data from backend
+    const actualData = report.actual_burndown.map(point => point.points);
+
+    // Determine where to cut off the actual data (only show up to today)
     const todayIndex = report.ideal_burndown.findIndex(point => {
         const pointDate = parseLocalDate(point.date);
         pointDate.setHours(0, 0, 0, 0);
@@ -194,32 +195,13 @@ function renderBurndownChart(report, today, startDate, endDate) {
         return pointDate >= compareDate;
     });
 
-    // Fill actual data: start with total points, then null until today, then show remaining
-    for (let i = 0; i < report.ideal_burndown.length; i++) {
-        if (i === 0) {
-            actualData.push(report.total_points);
-        } else if (i <= todayIndex || todayIndex === -1) {
-            // For simplicity, show linear progress to current point
-            if (todayIndex !== -1 && todayIndex > 0) {
-                const progress = i / todayIndex;
-                actualData.push(report.total_points - (progress * report.completed_points));
-            } else {
-                actualData.push(null);
-            }
-        } else {
-            actualData.push(null);
+    // Set future days to null so they don't display
+    const displayActualData = actualData.map((points, index) => {
+        if (todayIndex !== -1 && index > todayIndex) {
+            return null;
         }
-    }
-
-    // If sprint is active, set the current point
-    if (todayIndex !== -1 && todayIndex < actualData.length) {
-        actualData[todayIndex] = report.remaining_points;
-    }
-
-    // For completed sprints, show final remaining at the end
-    if (today > endDate) {
-        actualData[actualData.length - 1] = report.remaining_points;
-    }
+        return points;
+    });
 
     new Chart(ctx, {
         type: 'line',
@@ -228,7 +210,7 @@ function renderBurndownChart(report, today, startDate, endDate) {
             datasets: [
                 {
                     label: 'Remaining Points',
-                    data: actualData,
+                    data: displayActualData,
                     borderColor: 'rgb(59, 130, 246)',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 3,

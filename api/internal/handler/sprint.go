@@ -208,6 +208,7 @@ type SprintReportResponse struct {
 	TotalTickets        int                 `json:"total_tickets"`
 	CompletedTickets    int                 `json:"completed_tickets"`
 	IdealBurndown       []BurndownPoint     `json:"ideal_burndown"`
+	ActualBurndown      []BurndownPoint     `json:"actual_burndown"`
 	TicketsByStatus     map[string]int      `json:"tickets_by_status"`
 	PointsByStatus      map[string]int      `json:"points_by_status"`
 }
@@ -272,6 +273,9 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 	// Generate ideal burndown line
 	idealBurndown := generateIdealBurndown(sprint.StartDate, sprint.EndDate, totalPoints)
 
+	// Generate actual burndown based on ticket completion dates
+	actualBurndown := generateActualBurndown(sprint.StartDate, sprint.EndDate, totalPoints, sprintTickets)
+
 	response := SprintReportResponse{
 		Sprint:           sprint,
 		TotalPoints:      totalPoints,
@@ -280,6 +284,7 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 		TotalTickets:     len(sprintTickets),
 		CompletedTickets: ticketsByStatus["closed"],
 		IdealBurndown:    idealBurndown,
+		ActualBurndown:   actualBurndown,
 		TicketsByStatus:  ticketsByStatus,
 		PointsByStatus:   pointsByStatus,
 	}
@@ -302,6 +307,50 @@ func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []Burn
 	for i := 0; i < days; i++ {
 		date := startDate.AddDate(0, 0, i)
 		remainingPoints := totalPoints - int(float64(i)*pointsPerDay)
+		if remainingPoints < 0 {
+			remainingPoints = 0
+		}
+
+		points = append(points, BurndownPoint{
+			Date:   date.Format("2006-01-02"),
+			Points: remainingPoints,
+		})
+	}
+
+	return points
+}
+
+func generateActualBurndown(startDate, endDate time.Time, totalPoints int, tickets []*model.Ticket) []BurndownPoint {
+	var points []BurndownPoint
+
+	// Calculate number of days in the sprint
+	duration := endDate.Sub(startDate).Hours() / 24
+	days := int(duration) + 1 // Include both start and end day
+
+	// Generate actual burndown for each day
+	for i := 0; i < days; i++ {
+		date := startDate.AddDate(0, 0, i)
+		// Calculate end of day (23:59:59)
+		endOfDay := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, date.Location())
+
+		// Calculate points completed by end of this day
+		completedPoints := 0
+		for _, ticket := range tickets {
+			// If ticket is closed and was closed by end of this day, count its points as completed
+			if ticket.Status == "closed" {
+				// Use updated_at as proxy for when ticket was closed
+				closedDate := ticket.UpdatedAt.UTC()
+				if closedDate.Before(endOfDay) || closedDate.Equal(endOfDay) {
+					points := 0
+					if ticket.Size != nil {
+						points = *ticket.Size
+					}
+					completedPoints += points
+				}
+			}
+		}
+
+		remainingPoints := totalPoints - completedPoints
 		if remainingPoints < 0 {
 			remainingPoints = 0
 		}
