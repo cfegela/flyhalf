@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Epic struct {
+type Project struct {
 	ID          uuid.UUID `json:"id"`
 	UserID      uuid.UUID `json:"user_id"`
 	Name        string    `json:"name"`
@@ -18,57 +18,57 @@ type Epic struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-type EpicRepository struct {
+type ProjectRepository struct {
 	db *pgxpool.Pool
 }
 
-func NewEpicRepository(db *pgxpool.Pool) *EpicRepository {
-	return &EpicRepository{db: db}
+func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
+	return &ProjectRepository{db: db}
 }
 
-func (r *EpicRepository) Create(ctx context.Context, epic *Epic) error {
+func (r *ProjectRepository) Create(ctx context.Context, project *Project) error {
 	query := `
-		INSERT INTO epics (user_id, name, description)
+		INSERT INTO projects (user_id, name, description)
 		VALUES ($1, $2, $3)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		epic.UserID, epic.Name, epic.Description,
-	).Scan(&epic.ID, &epic.CreatedAt, &epic.UpdatedAt)
+		project.UserID, project.Name, project.Description,
+	).Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt)
 }
 
-func (r *EpicRepository) GetByID(ctx context.Context, id uuid.UUID) (*Epic, error) {
+func (r *ProjectRepository) GetByID(ctx context.Context, id uuid.UUID) (*Project, error) {
 	query := `
 		SELECT id, user_id, name, description, created_at, updated_at
-		FROM epics WHERE id = $1
+		FROM projects WHERE id = $1
 	`
-	epic := &Epic{}
+	project := &Project{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&epic.ID, &epic.UserID, &epic.Name, &epic.Description,
-		&epic.CreatedAt, &epic.UpdatedAt,
+		&project.ID, &project.UserID, &project.Name, &project.Description,
+		&project.CreatedAt, &project.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return epic, nil
+	return project, nil
 }
 
-func (r *EpicRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Epic, error) {
+func (r *ProjectRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Project, error) {
 	var query string
 	var args []interface{}
 
 	if userID != nil {
 		query = `
 			SELECT id, user_id, name, description, created_at, updated_at
-			FROM epics WHERE user_id = $1
+			FROM projects WHERE user_id = $1
 			ORDER BY created_at DESC
 		`
 		args = append(args, *userID)
 	} else {
 		query = `
 			SELECT id, user_id, name, description, created_at, updated_at
-			FROM epics
+			FROM projects
 			ORDER BY created_at DESC
 		`
 	}
@@ -79,41 +79,41 @@ func (r *EpicRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Epic, 
 	}
 	defer rows.Close()
 
-	var epics []*Epic
+	var projects []*Project
 	for rows.Next() {
-		epic := &Epic{}
+		project := &Project{}
 		if err := rows.Scan(
-			&epic.ID, &epic.UserID, &epic.Name, &epic.Description,
-			&epic.CreatedAt, &epic.UpdatedAt,
+			&project.ID, &project.UserID, &project.Name, &project.Description,
+			&project.CreatedAt, &project.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 
-		epics = append(epics, epic)
+		projects = append(projects, project)
 	}
-	return epics, rows.Err()
+	return projects, rows.Err()
 }
 
-func (r *EpicRepository) Update(ctx context.Context, epic *Epic) error {
+func (r *ProjectRepository) Update(ctx context.Context, project *Project) error {
 	query := `
-		UPDATE epics
+		UPDATE projects
 		SET name = $1, description = $2, updated_at = NOW()
 		WHERE id = $3
 		RETURNING updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		epic.Name, epic.Description, epic.ID,
-	).Scan(&epic.UpdatedAt)
+		project.Name, project.Description, project.ID,
+	).Scan(&project.UpdatedAt)
 }
 
-func (r *EpicRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM epics WHERE id = $1`
+func (r *ProjectRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM projects WHERE id = $1`
 	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("epic not found")
+		return fmt.Errorf("project not found")
 	}
 	return nil
 }

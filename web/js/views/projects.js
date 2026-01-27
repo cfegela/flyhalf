@@ -2,40 +2,40 @@ import { api } from '../api.js';
 import { router } from '../router.js';
 import { auth } from '../auth.js';
 
-export async function epicsListView() {
+export async function projectsListView() {
     const container = document.getElementById('view-container');
 
     container.innerHTML = `
         <div>
             <div class="page-header">
-                <h1 class="page-title">Epics</h1>
-                <a href="/epics/new" class="btn btn-primary">Create Epic</a>
+                <h1 class="page-title">Projects</h1>
+                <a href="/projects/new" class="btn btn-primary">Create Project</a>
             </div>
-            <div id="epics-container">
-                <div class="loading">Loading epics...</div>
+            <div id="projects-container">
+                <div class="loading">Loading projects...</div>
             </div>
         </div>
     `;
 
     try {
-        const epics = await api.getEpics();
-        const epicsContainer = container.querySelector('#epics-container');
+        const projects = await api.getProjects();
+        const projectsContainer = container.querySelector('#projects-container');
 
-        if (epics.length === 0) {
-            epicsContainer.innerHTML = `
+        if (projects.length === 0) {
+            projectsContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📚</div>
-                    <h2>No epics yet</h2>
-                    <p>Create your first epic to get started</p>
-                    <a href="/epics/new" class="btn btn-primary" style="margin-top: 1rem;">
-                        Create Epic
+                    <h2>No projects yet</h2>
+                    <p>Create your first project to get started</p>
+                    <a href="/projects/new" class="btn btn-primary" style="margin-top: 1rem;">
+                        Create Project
                     </a>
                 </div>
             `;
             return;
         }
 
-        epicsContainer.innerHTML = `
+        projectsContainer.innerHTML = `
             <div class="card">
                 <div class="table-container">
                     <table>
@@ -46,17 +46,17 @@ export async function epicsListView() {
                             </tr>
                         </thead>
                         <tbody>
-                            ${epics.map(epic => `
-                                <tr data-epic-id="${epic.id}">
+                            ${projects.map(project => `
+                                <tr data-project-id="${project.id}">
                                     <td data-label="Name">
-                                        <strong>${escapeHtml(epic.name)} (${getEpicAcronym(epic.name)})</strong>
+                                        <strong>${escapeHtml(project.name)} (${getProjectAcronym(project.name)})</strong>
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
-                                            <a href="/epics/${epic.id}" class="btn btn-secondary action-btn" title="View details">
+                                            <a href="/projects/${project.id}" class="btn btn-secondary action-btn" title="View details">
                                                 <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
                                             </a>
-                                            <a href="/epics/${epic.id}/edit" class="btn btn-secondary action-btn" title="Edit epic">
+                                            <a href="/projects/${project.id}/edit" class="btn btn-secondary action-btn" title="Edit project">
                                                 <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Design/pencil-ai-fill.svg" alt="Edit" style="width: 20px; height: 20px; display: block;">
                                             </a>
                                         </div>
@@ -70,65 +70,63 @@ export async function epicsListView() {
         `;
 
     } catch (error) {
-        const epicsContainer = container.querySelector('#epics-container');
-        epicsContainer.innerHTML = `
+        const projectsContainer = container.querySelector('#projects-container');
+        projectsContainer.innerHTML = `
             <div class="card">
-                <p style="color: var(--danger);">Failed to load epics: ${error.message}</p>
+                <p style="color: var(--danger);">Failed to load projects: ${error.message}</p>
             </div>
         `;
     }
 }
 
-export async function epicDetailView(params) {
+export async function projectDetailView(params) {
     const container = document.getElementById('view-container');
     const [id] = params;
 
     if (!id) {
-        router.navigate('/epics');
+        router.navigate('/projects');
         return;
     }
 
     container.innerHTML = `
         <div>
-            <div class="loading">Loading epic...</div>
+            <div class="loading">Loading project...</div>
         </div>
     `;
 
     try {
-        const epic = await api.getEpic(id);
+        const project = await api.getProject(id);
         const allTickets = await api.getTickets();
 
-        // Filter tickets for this epic
-        const epicTickets = allTickets.filter(ticket => ticket.epic_id === id);
+        // Filter tickets for this project
+        const projectTickets = allTickets.filter(ticket => ticket.project_id === id);
 
         container.innerHTML = `
             <div>
                 <div class="page-header">
-                    <h1 class="page-title">${escapeHtml(epic.name)}</h1>
+                    <h1 class="page-title">${escapeHtml(project.name)}</h1>
                     <div class="actions">
-                        <a href="/epics/${id}/edit" class="btn btn-primary">Edit</a>
-                        <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || epic.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
+                        <a href="/projects/${id}/edit" class="btn btn-primary">Edit</a>
+                        <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || project.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
                     </div>
                 </div>
 
-                <!-- Epic Information Card -->
+                <!-- Project Information Card -->
                 <div class="card">
-                    <h2 class="card-header">Epic Details</h2>
+                    <h2 class="card-header">Project Details</h2>
                     <div>
                         <label class="form-label">Description</label>
-                        <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary); margin-top: 0.25rem;">
-                            ${escapeHtml(epic.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}
-                        </p>
+                        <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary); margin-top: 0.25rem;">${escapeHtml(project.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}</p>
                     </div>
                 </div>
 
                 <!-- Tickets Card -->
                 <div class="card">
-                    <h2 class="card-header">Tickets (${epicTickets.length})</h2>
-                    ${epicTickets.length === 0 ? `
+                    <h2 class="card-header">Tickets (${projectTickets.length})</h2>
+                    ${projectTickets.length === 0 ? `
                         <div class="empty-state">
                             <div class="empty-state-icon">🎫</div>
-                            <p>No tickets assigned to this epic</p>
+                            <p>No tickets assigned to this project</p>
                         </div>
                     ` : `
                         <div class="table-container">
@@ -140,7 +138,7 @@ export async function epicDetailView(params) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${epicTickets.map(ticket => `
+                                    ${projectTickets.map(ticket => `
                                         <tr class="clickable-row" data-ticket-id="${ticket.id}" style="cursor: pointer;">
                                             <td data-label="Title">
                                                 <strong>${escapeHtml(ticket.title)}</strong>
@@ -163,10 +161,10 @@ export async function epicDetailView(params) {
         const deleteBtn = container.querySelector('#delete-btn');
         deleteBtn.addEventListener('click', async () => {
             if (deleteBtn.disabled) return;
-            if (confirm('Are you sure you want to delete this epic?')) {
+            if (confirm('Are you sure you want to delete this project?')) {
                 try {
-                    await api.deleteEpic(id);
-                    router.navigate('/epics');
+                    await api.deleteProject(id);
+                    router.navigate('/projects');
                 } catch (error) {
                 }
             }
@@ -183,25 +181,25 @@ export async function epicDetailView(params) {
     } catch (error) {
         container.innerHTML = `
             <div class="card">
-                <p style="color: var(--danger);">Failed to load epic: ${error.message}</p>
-                <a href="/epics" class="btn btn-secondary" style="margin-top: 1rem;">Back to Epics</a>
+                <p style="color: var(--danger);">Failed to load project: ${error.message}</p>
+                <a href="/projects" class="btn btn-secondary" style="margin-top: 1rem;">Back to Projects</a>
             </div>
         `;
     }
 }
 
-export async function epicFormView(params) {
+export async function projectFormView(params) {
     const container = document.getElementById('view-container');
     const [id, action] = params;
     const isEdit = action === 'edit';
 
-    let epic = null;
+    let project = null;
     if (isEdit && id) {
-        container.innerHTML = '<div class="loading">Loading epic...</div>';
+        container.innerHTML = '<div class="loading">Loading project...</div>';
         try {
-            epic = await api.getEpic(id);
+            project = await api.getProject(id);
         } catch (error) {
-            router.navigate('/epics');
+            router.navigate('/projects');
             return;
         }
     }
@@ -209,13 +207,13 @@ export async function epicFormView(params) {
     container.innerHTML = `
         <div>
             <div class="page-header">
-                <h1 class="page-title">${isEdit ? 'Edit' : 'Create'} Epic</h1>
+                <h1 class="page-title">${isEdit ? 'Edit' : 'Create'} Project</h1>
             </div>
 
-            <form id="epic-form">
-                <!-- Epic Information Card -->
+            <form id="project-form">
+                <!-- Project Information Card -->
                 <div class="card">
-                    <h2 class="card-header">Epic Information</h2>
+                    <h2 class="card-header">Project Information</h2>
                     <div class="form-group">
                         <label class="form-label" for="name">Name *</label>
                         <input
@@ -224,9 +222,9 @@ export async function epicFormView(params) {
                             class="form-input"
                             required
                             placeholder="e.g., User Authentication System"
-                            value="${epic ? escapeHtml(epic.name) : ''}"
+                            value="${project ? escapeHtml(project.name) : ''}"
                         >
-                        <small style="color: var(--text-secondary);">Use title case for clarity. Uppercase letters will form the epic acronym.</small>
+                        <small style="color: var(--text-secondary);">The first 6 characters (excluding spaces) will be used as the project acronym (shown in uppercase).</small>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="description">Description *</label>
@@ -234,8 +232,8 @@ export async function epicFormView(params) {
                             id="description"
                             class="form-textarea"
                             required
-                            placeholder="Provide a detailed description of the epic's goals and scope..."
-                        >${epic ? escapeHtml(epic.description || '') : ''}</textarea>
+                            placeholder="Provide a detailed description of the project's goals and scope..."
+                        >${project ? escapeHtml(project.description || '') : ''}</textarea>
                     </div>
                 </div>
 
@@ -243,16 +241,16 @@ export async function epicFormView(params) {
                 <div class="card">
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" class="btn btn-primary">
-                            ${isEdit ? 'Update' : 'Create'} Epic
+                            ${isEdit ? 'Update' : 'Create'} Project
                         </button>
-                        <a href="${isEdit ? `#/epics/${id}` : '#/epics'}" class="btn btn-secondary">Cancel</a>
+                        <a href="${isEdit ? `#/projects/${id}` : '#/projects'}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </div>
             </form>
         </div>
     `;
 
-    const form = container.querySelector('#epic-form');
+    const form = container.querySelector('#project-form');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -267,15 +265,15 @@ export async function epicFormView(params) {
 
         try {
             if (isEdit) {
-                await api.updateEpic(id, data);
-                router.navigate('/epics');
+                await api.updateProject(id, data);
+                router.navigate('/projects');
             } else {
-                await api.createEpic(data);
-                router.navigate('/epics');
+                await api.createProject(data);
+                router.navigate('/projects');
             }
         } catch (error) {
             submitBtn.disabled = false;
-            submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} Epic`;
+            submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} Project`;
         }
     });
 }
@@ -302,7 +300,7 @@ function getStatusBadgeClass(status) {
     }
 }
 
-function getEpicAcronym(epicName) {
-    // Remove spaces and lowercase letters, keeping only uppercase letters
-    return epicName.replace(/[a-z\s]/g, '');
+function getProjectAcronym(projectName) {
+    // Remove all whitespace, take first 6 characters, and convert to uppercase
+    return projectName.replace(/\s+/g, '').substring(0, 6).toUpperCase();
 }

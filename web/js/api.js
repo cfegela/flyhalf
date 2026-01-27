@@ -138,30 +138,30 @@ class APIClient {
         });
     }
 
-    async getEpics() {
-        return this.request('/epics');
+    async getProjects() {
+        return this.request('/projects');
     }
 
-    async getEpic(id) {
-        return this.request(`/epics/${id}`);
+    async getProject(id) {
+        return this.request(`/projects/${id}`);
     }
 
-    async createEpic(epic) {
-        return this.request('/epics', {
+    async createProject(project) {
+        return this.request('/projects', {
             method: 'POST',
-            body: JSON.stringify(epic),
+            body: JSON.stringify(project),
         });
     }
 
-    async updateEpic(id, epic) {
-        return this.request(`/epics/${id}`, {
+    async updateProject(id, project) {
+        return this.request(`/projects/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(epic),
+            body: JSON.stringify(project),
         });
     }
 
-    async deleteEpic(id) {
-        return this.request(`/epics/${id}`, {
+    async deleteProject(id) {
+        return this.request(`/projects/${id}`, {
             method: 'DELETE',
         });
     }

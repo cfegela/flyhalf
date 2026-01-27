@@ -19,15 +19,15 @@ export async function ticketsListView() {
 
     try {
         const tickets = await api.getTickets();
-        const epics = await api.getEpics();
+        const projects = await api.getProjects();
         const sprints = await api.getSprints();
         const users = await api.getUsersForAssignment();
         const ticketsContainer = container.querySelector('#tickets-container');
 
-        // Create a map of epic_id to epic for quick lookup
-        const epicMap = {};
-        epics.forEach(epic => {
-            epicMap[epic.id] = epic;
+        // Create a map of project_id to project for quick lookup
+        const projectMap = {};
+        projects.forEach(project => {
+            projectMap[project.id] = project;
         });
 
         // Create a map of sprint_id to sprint for quick lookup
@@ -66,7 +66,7 @@ export async function ticketsListView() {
                                 <th>Status</th>
                                 <th>Size</th>
                                 <th>Assignee</th>
-                                <th>Epic</th>
+                                <th>Project</th>
                                 <th>Sprint</th>
                                 <th>Actions</th>
                             </tr>
@@ -74,7 +74,7 @@ export async function ticketsListView() {
                         <tbody id="tickets-tbody">
                             ${tickets.map(ticket => {
                                 const assignee = ticket.assigned_to ? userMap[ticket.assigned_to] : null;
-                                const epic = ticket.epic_id ? epicMap[ticket.epic_id] : null;
+                                const project = ticket.project_id ? projectMap[ticket.project_id] : null;
                                 const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
                                 return `
                                 <tr class="draggable-row"
@@ -96,8 +96,8 @@ export async function ticketsListView() {
                                     <td data-label="Assignee">
                                         ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
                                     </td>
-                                    <td data-label="Epic">
-                                        ${epic ? `<span title="${escapeHtml(epic.name)}">${getEpicAcronym(epic.name)}</span>` : '-'}
+                                    <td data-label="Project">
+                                        ${project ? `<span title="${escapeHtml(project.name)}">${getProjectAcronym(project.name)}</span>` : '-'}
                                     </td>
                                     <td data-label="Sprint">
                                         ${sprint ? escapeHtml(sprint.name) : '-'}
@@ -181,13 +181,13 @@ export async function ticketDetailView(params) {
             }
         }
 
-        // Fetch epic if ticket is assigned to one
-        let epic = null;
-        if (ticket.epic_id) {
+        // Fetch project if ticket is assigned to one
+        let project = null;
+        if (ticket.project_id) {
             try {
-                epic = await api.getEpic(ticket.epic_id);
+                project = await api.getProject(ticket.project_id);
             } catch (error) {
-                // Epic might have been deleted, continue without it
+                // Project might have been deleted, continue without it
             }
         }
 
@@ -242,9 +242,7 @@ export async function ticketDetailView(params) {
                 <!-- Description Card -->
                 <div class="card">
                     <h2 class="card-header">Description</h2>
-                    <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary);">
-                        ${escapeHtml(ticket.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}
-                    </p>
+                    <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary);">${escapeHtml(ticket.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}</p>
                 </div>
 
                 <!-- Project Details Card -->
@@ -252,9 +250,9 @@ export async function ticketDetailView(params) {
                     <h2 class="card-header">Project Details</h2>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
                         <div>
-                            <label class="form-label">Epic</label>
+                            <label class="form-label">Project</label>
                             <p style="margin-top: 0.25rem; font-size: 1rem;">
-                                ${epic ? `<a href="/epics/${epic.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(epic.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
+                                ${project ? `<a href="/projects/${project.id}" style="color: var(--primary); text-decoration: none; font-weight: 500;">${escapeHtml(project.name)}</a>` : '<span style="color: var(--text-secondary);">None</span>'}
                             </p>
                         </div>
                         <div>
@@ -314,7 +312,7 @@ export async function ticketFormView(params) {
     const isEdit = action === 'edit';
 
     let ticket = null;
-    let epics = [];
+    let projects = [];
     let sprints = [];
     let users = [];
 
@@ -326,7 +324,7 @@ export async function ticketFormView(params) {
 
         if (isEdit && id) {
             ticket = await api.getTicket(id);
-            epics = await api.getEpics();
+            projects = await api.getProjects();
             sprints = await api.getSprints();
         }
     } catch (error) {
@@ -410,12 +408,12 @@ export async function ticketFormView(params) {
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="epic">Epic</label>
-                            <select id="epic" class="form-select">
+                            <label class="form-label" for="project">Project</label>
+                            <select id="project" class="form-select">
                                 <option value="">None</option>
-                                ${epics.map(epic => `
-                                    <option value="${epic.id}" ${ticket && ticket.epic_id === epic.id ? 'selected' : ''}>
-                                        ${escapeHtml(epic.name)}
+                                ${projects.map(project => `
+                                    <option value="${project.id}" ${ticket && ticket.project_id === project.id ? 'selected' : ''}>
+                                        ${escapeHtml(project.name)}
                                     </option>
                                 `).join('')}
                             </select>
@@ -473,14 +471,14 @@ export async function ticketFormView(params) {
             data.size = null;
         }
 
-        // Only include status, epic, and sprint when editing
+        // Only include status, project, and sprint when editing
         if (isEdit) {
             data.status = form.status.value;
-            const epicValue = form.epic.value;
-            if (epicValue) {
-                data.epic_id = epicValue;
+            const projectValue = form.project.value;
+            if (projectValue) {
+                data.project_id = projectValue;
             } else {
-                data.epic_id = null;
+                data.project_id = null;
             }
             const sprintValue = form.sprint.value;
             if (sprintValue) {
@@ -543,9 +541,9 @@ function getSizeLabel(size) {
     }
 }
 
-function getEpicAcronym(epicName) {
-    // Remove spaces and lowercase letters, keeping only uppercase letters
-    return epicName.replace(/[a-z\s]/g, '');
+function getProjectAcronym(projectName) {
+    // Remove all whitespace, take first 6 characters, and convert to uppercase
+    return projectName.replace(/\s+/g, '').substring(0, 6).toUpperCase();
 }
 
 function setupDragAndDrop(container, tickets) {

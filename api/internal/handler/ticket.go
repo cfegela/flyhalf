@@ -23,7 +23,7 @@ type CreateTicketRequest struct {
 	Description string     `json:"description"`
 	Status      string     `json:"status"`
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
-	EpicID      *uuid.UUID `json:"epic_id,omitempty"`
+	ProjectID   *uuid.UUID `json:"project_id,omitempty"`
 	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
 	Size        *int       `json:"size,omitempty"`
 }
@@ -33,7 +33,7 @@ type UpdateTicketRequest struct {
 	Description string     `json:"description"`
 	Status      string     `json:"status"`
 	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
-	EpicID      *uuid.UUID `json:"epic_id,omitempty"`
+	ProjectID   *uuid.UUID `json:"project_id,omitempty"`
 	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
 	Size        *int       `json:"size,omitempty"`
 }
@@ -120,7 +120,7 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		Description: req.Description,
 		Status:      req.Status,
 		AssignedTo:  req.AssignedTo,
-		EpicID:      req.EpicID,
+		ProjectID:   req.ProjectID,
 		SprintID:    req.SprintID,
 		Size:        req.Size,
 		Priority:    minPriority - 1.0,
@@ -172,7 +172,7 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		ticket.Status = req.Status
 	}
 	ticket.AssignedTo = req.AssignedTo
-	ticket.EpicID = req.EpicID
+	ticket.ProjectID = req.ProjectID
 	ticket.SprintID = req.SprintID
 	ticket.Size = req.Size
 

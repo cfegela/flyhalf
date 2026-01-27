@@ -30,16 +30,16 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
     - Priorities persist between application restarts
   - Optional ticket sizing (Small=1, Medium=2, Large=3, X-Large=5, Danger=8)
   - Ticket assignment to users with assignee display in ticket list
-  - Assign tickets to epics for organization (epic names shown as acronyms in list)
+  - Assign tickets to projects for organization (project names shown as acronyms in list)
   - Assign tickets to sprints for sprint planning
   - Required title and description fields
   - 6-character unique ID for each ticket
   - Quick actions in list view: View and Edit buttons with clean icon interface
-- **Epic Management**:
-  - CRUD operations for epics with required name and description fields
-  - Organize tickets by assigning them to epics
-  - Epic detail view shows all tickets assigned to that epic
-  - Epic names displayed as acronyms in ticket list (uppercase letters only)
+- **Project Management**:
+  - CRUD operations for projects with required name and description fields
+  - Organize tickets by assigning them to projects
+  - Project detail view shows all tickets assigned to that project
+  - Project names displayed as acronyms in ticket list (first 6 characters excluding spaces, uppercased)
   - Full list and detail views
   - Simplified list view with detail-level actions (edit/delete available in detail view only)
 - **Sprint Management**:
@@ -62,8 +62,8 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
     - Powered by Chart.js for interactive visualization
   - Full list and detail views
   - Simplified list view with Board and Report buttons for quick access
-- All users can view and edit all tickets and epics (collaborative workspace)
-- Users can delete tickets/epics they created; admins can delete any ticket/epic
+- All users can view and edit all tickets and projects (collaborative workspace)
+- Users can delete tickets/projects they created; admins can delete any ticket/project
 - Forced password change for newly created users
 - Admin user management
 - User settings page with account information
@@ -75,27 +75,27 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
 ## Permission Model
 
 ### Regular Users (role: 'user')
-- ✅ View all tickets, epics, and sprints
-- ✅ Create new tickets, epics, and sprints
-- ✅ Edit any ticket, epic, or sprint
-- ✅ Delete tickets, epics, and sprints they created
-- ✅ Assign tickets to epics and sprints
+- ✅ View all tickets, projects, and sprints
+- ✅ Create new tickets, projects, and sprints
+- ✅ Edit any ticket, project, or sprint
+- ✅ Delete tickets, projects, and sprints they created
+- ✅ Assign tickets to projects and sprints
 - ✅ Manage ticket priorities (promote to top, promote up, demote down)
 - ✅ Use sprint board with drag-and-drop to update ticket status
 - ✅ Change own password
 - ✅ View own account settings
-- ❌ Delete tickets/epics/sprints created by others
+- ❌ Delete tickets/projects/sprints created by others
 - ❌ Manage users
 
 ### Administrators (role: 'admin')
 - ✅ All user permissions
-- ✅ Delete any ticket, epic, or sprint (including those created by others)
+- ✅ Delete any ticket, project, or sprint (including those created by others)
 - ✅ Create new users (with forced password change)
 - ✅ Edit user accounts
 - ✅ Delete users
 - ✅ Deactivate/activate users
 
-This collaborative permission model allows all team members to view and update tickets, epics, and sprints while protecting data integrity. Users can manage their own items completely, but cannot delete items created by others.
+This collaborative permission model allows all team members to view and update tickets, projects, and sprints while protecting data integrity. Users can manage their own items completely, but cannot delete items created by others.
 
 ## Project Structure
 
@@ -220,7 +220,7 @@ All detail pages and forms now use organized card-based layouts with clear secti
 
 **Detail Pages**:
 - **Ticket Details**: Organized into Key Information, Description, Project Details, and Metadata cards
-- **Epic Details**: Organized into Epic Details (with acronym display) and Tickets cards
+- **Project Details**: Organized into Project Details (with acronym display) and Tickets cards
 - **Sprint Details**: Organized into Sprint Details (with status calculation), Timeline, and Tickets cards
   - Shows active/completed/upcoming status with color-coded badges
   - Displays duration and days remaining/until start
@@ -231,7 +231,7 @@ All detail pages and forms now use organized card-based layouts with clear secti
 - **Ticket Form**: Organized into Basic Information, Assignment & Sizing, Project Organization (edit only), and Form Actions cards
   - Responsive 2-column grids for related fields
   - Helpful placeholders and contextual hints
-- **Epic Form**: Organized into Epic Information and Form Actions cards
+- **Project Form**: Organized into Project Information and Form Actions cards
   - Guidance about acronym generation from uppercase letters
 - **Sprint Form**: Organized into Sprint Information and Form Actions cards
   - Clear explanation of automatic end date calculation
@@ -258,7 +258,7 @@ The application provides the following pages:
 ### For All Users
 - **Login Page** - Email/password authentication
 - **Force Password Change** - Required for newly created users on first login
-- **Tickets List** - View all tickets with title, status badges, size, assignee, epic (shown as acronym), and sprint
+- **Tickets List** - View all tickets with title, status badges, size, assignee, project (shown as acronym), and sprint
   - Sorted by priority (promoted tickets at top), then by creation date (oldest first)
   - New unpromoted tickets appear at bottom of list
   - **Icon-based Actions Column** with 5 intuitive controls:
@@ -271,24 +271,24 @@ The application provides the following pages:
 - **Ticket Detail** - Enhanced card-based layout displaying ticket information in organized sections
   - Key Information card: Status, size, and assignee with email
   - Description card: Full description with preserved line breaks
-  - Project Details card: Epic and sprint assignments with links
+  - Project Details card: Project and sprint assignments with links
   - Metadata card: Creation and last updated timestamps
   - Edit and delete buttons enabled only for ticket creator or admin
 - **Create/Edit Ticket** - Structured form with organized card sections
   - Basic Information card: Title and description with helpful placeholders
   - Assignment & Sizing card: Assignee and size in responsive 2-column grid
-  - Project Organization card (edit only): Status, epic, and sprint assignment
+  - Project Organization card (edit only): Status, project, and sprint assignment
   - Create mode: Required title and description, optional size and assignee (status defaults to "open")
-  - Edit mode: Additional fields for status (5 options), epic, and sprint
-- **Epics List** - View all epics with name column
-  - Click "View" to access epic details, edit, and delete actions
-- **Epic Detail** - Enhanced card-based layout for epic information
-  - Epic Details card: Acronym (displayed prominently) and description with preserved line breaks
-  - Tickets card: Table showing all tickets assigned to the epic with count in header
+  - Edit mode: Additional fields for status (5 options), project, and sprint
+- **Projects List** - View all projects with name column
+  - Click "View" to access project details, edit, and delete actions
+- **Project Detail** - Enhanced card-based layout for project information
+  - Project Details card: Acronym (first 6 characters excluding spaces, uppercased) and description with preserved line breaks
+  - Tickets card: Table showing all tickets assigned to the project with count in header
   - Edit and delete buttons available in detail view
-- **Create/Edit Epic** - Structured form with organized sections
-  - Epic Information card: Name and description with placeholders and acronym generation guidance
-  - Helpful hint about using title case for clarity
+- **Create/Edit Project** - Structured form with organized sections
+  - Project Information card: Name and description with placeholders and acronym generation guidance
+  - Helpful hint explaining first 6 characters (excluding spaces) form the acronym
 - **Sprints List** - View all sprints with name, status, start date, and end date columns
   - "Board" and "Report" buttons for quick access to sprint board and analytics
   - Click sprint row to view full details
@@ -332,13 +332,13 @@ The application provides the following pages:
   - Access & Permissions card: Role selector with permission explanation, account status toggle (edit only)
   - New users must change password on first login
 - **Delete Users** - Delete button available in user detail view
-- **Delete Any Ticket/Epic/Sprint** - Delete button enabled for all tickets, epics, and sprints in their respective detail views
+- **Delete Any Ticket/Project/Sprint** - Delete button enabled for all tickets, projects, and sprints in their respective detail views
 
 ### Navigation
 - Click the **Flyhalf** logo to return to the tickets list
 - Click your **username** in the navbar to access settings
 - **Tickets** link shows all tickets
-- **Epics** link shows all epics
+- **Projects** link shows all projects
 - **Sprints** link shows all sprints
   - From sprints list, click "Board" or "Report" buttons for quick access
   - From sprint detail page, click "View Board" for the interactive kanban board or "View Report" for analytics
@@ -398,7 +398,7 @@ https://flyhalf-prod-api-oas33witna-uc.a.run.app/api/v1
 - `description` (string, required)
 - `status` (string: open, in-progress, blocked, needs-review, closed, default: 'open')
 - `assigned_to` (UUID, optional) - Assign ticket to a user
-- `epic_id` (UUID, optional) - Assign ticket to an epic
+- `project_id` (UUID, optional) - Assign ticket to a project
 - `sprint_id` (UUID, optional) - Assign ticket to a sprint
 - `size` (integer, optional: 1=Small, 2=Medium, 3=Large, 5=X-Large, 8=Danger)
 - `priority` (integer, default: 0) - Automatically managed by promote feature
@@ -409,19 +409,19 @@ https://flyhalf-prod-api-oas33witna-uc.a.run.app/api/v1
 - Tickets with status `closed` appear in the **Completed** column
 - Dragging a ticket to a column updates its status accordingly (Committed→open, Underway→in-progress, Completed→closed)
 
-### Epic Endpoints
+### Project Endpoints
 
 | Method | Endpoint | Description | Auth Required | Role |
 |--------|----------|-------------|---------------|------|
-| GET | `/epics` | List all epics | Yes | Any |
-| POST | `/epics` | Create epic | Yes | Any |
-| GET | `/epics/{id}` | Get epic by ID | Yes | Any |
-| PUT | `/epics/{id}` | Update epic | Yes | Any |
-| DELETE | `/epics/{id}` | Delete epic | Yes | Creator or Admin |
+| GET | `/projects` | List all projects | Yes | Any |
+| POST | `/projects` | Create project | Yes | Any |
+| GET | `/projects/{id}` | Get project by ID | Yes | Any |
+| PUT | `/projects/{id}` | Update project | Yes | Any |
+| DELETE | `/projects/{id}` | Delete project | Yes | Creator or Admin |
 
-**Note**: All authenticated users can view and edit all epics. Users can delete epics they created; admins can delete any epic.
+**Note**: All authenticated users can view and edit all projects. Users can delete projects they created; admins can delete any project.
 
-**Epic Fields**:
+**Project Fields**:
 - `name` (string, required)
 - `description` (string, required)
 
@@ -534,9 +534,9 @@ Frontend: No package manager needed - just add ES module imports!
 - `revoked_at` (timestamp, nullable)
 - `created_at` (timestamp)
 
-### Epics Table
+### Projects Table
 - `id` (UUID, primary key)
-- `user_id` (FK to users - epic creator)
+- `user_id` (FK to users - project creator)
 - `name` (varchar(255), not null)
 - `description` (text, not null)
 - `created_at`, `updated_at` (timestamps)
@@ -557,7 +557,7 @@ Frontend: No package manager needed - just add ES module imports!
 - `description` (text, not null)
 - `status` (varchar(50): open, in-progress, blocked, needs-review, closed, default: 'open')
 - `assigned_to` (UUID, FK to users, nullable)
-- `epic_id` (UUID, FK to epics, nullable)
+- `project_id` (UUID, FK to projects, nullable)
 - `sprint_id` (UUID, FK to sprints, nullable)
 - `size` (integer, nullable: 1=Small, 2=Medium, 3=Large, 5=X-Large, 8=Danger)
 - `priority` (integer, default: 0)

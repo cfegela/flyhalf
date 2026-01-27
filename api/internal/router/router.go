@@ -16,7 +16,7 @@ type Router struct {
 	authHandler      *handler.AuthHandler
 	adminHandler     *handler.AdminHandler
 	ticketHandler    *handler.TicketHandler
-	epicHandler      *handler.EpicHandler
+	projectHandler   *handler.ProjectHandler
 	sprintHandler    *handler.SprintHandler
 	retroItemHandler *handler.RetroItemHandler
 	authMiddleware   *auth.AuthMiddleware
@@ -27,7 +27,7 @@ func New(
 	authHandler *handler.AuthHandler,
 	adminHandler *handler.AdminHandler,
 	ticketHandler *handler.TicketHandler,
-	epicHandler *handler.EpicHandler,
+	projectHandler *handler.ProjectHandler,
 	sprintHandler *handler.SprintHandler,
 	retroItemHandler *handler.RetroItemHandler,
 	authMiddleware *auth.AuthMiddleware,
@@ -37,7 +37,7 @@ func New(
 		authHandler:      authHandler,
 		adminHandler:     adminHandler,
 		ticketHandler:    ticketHandler,
-		epicHandler:      epicHandler,
+		projectHandler:   projectHandler,
 		sprintHandler:    sprintHandler,
 		retroItemHandler: retroItemHandler,
 		authMiddleware:   authMiddleware,
@@ -87,14 +87,14 @@ func (rt *Router) Setup() http.Handler {
 			r.Patch("/{id}/priority", rt.ticketHandler.UpdateTicketPriority)
 		})
 
-		r.Route("/epics", func(r chi.Router) {
+		r.Route("/projects", func(r chi.Router) {
 			r.Use(rt.authMiddleware.Authenticate)
 
-			r.Get("/", rt.epicHandler.ListEpics)
-			r.Post("/", rt.epicHandler.CreateEpic)
-			r.Get("/{id}", rt.epicHandler.GetEpic)
-			r.Put("/{id}", rt.epicHandler.UpdateEpic)
-			r.Delete("/{id}", rt.epicHandler.DeleteEpic)
+			r.Get("/", rt.projectHandler.ListProjects)
+			r.Post("/", rt.projectHandler.CreateProject)
+			r.Get("/{id}", rt.projectHandler.GetProject)
+			r.Put("/{id}", rt.projectHandler.UpdateProject)
+			r.Delete("/{id}", rt.projectHandler.DeleteProject)
 		})
 
 		r.Route("/sprints", func(r chi.Router) {

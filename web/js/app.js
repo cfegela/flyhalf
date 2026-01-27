@@ -8,10 +8,10 @@ import {
     ticketFormView
 } from './views/tickets.js';
 import {
-    epicsListView,
-    epicDetailView,
-    epicFormView
-} from './views/epics.js';
+    projectsListView,
+    projectDetailView,
+    projectFormView
+} from './views/projects.js';
 import {
     sprintsListView,
     sprintDetailView,
@@ -37,10 +37,10 @@ async function initApp() {
     router.addRoute('/tickets/new', (params) => ticketFormView(['new']), { requireAuth: true });
     router.addRoute('/tickets/:id/edit', (params) => ticketFormView([params[0], 'edit']), { requireAuth: true });
     router.addRoute('/tickets/:id', ticketDetailView, { requireAuth: true });
-    router.addRoute('/epics', epicsListView, { requireAuth: true });
-    router.addRoute('/epics/new', (params) => epicFormView(['new']), { requireAuth: true });
-    router.addRoute('/epics/:id/edit', (params) => epicFormView([params[0], 'edit']), { requireAuth: true });
-    router.addRoute('/epics/:id', epicDetailView, { requireAuth: true });
+    router.addRoute('/projects', projectsListView, { requireAuth: true });
+    router.addRoute('/projects/new', (params) => projectFormView(['new']), { requireAuth: true });
+    router.addRoute('/projects/:id/edit', (params) => projectFormView([params[0], 'edit']), { requireAuth: true });
+    router.addRoute('/projects/:id', projectDetailView, { requireAuth: true });
     router.addRoute('/sprints', sprintsListView, { requireAuth: true });
     router.addRoute('/sprints/new', (params) => sprintFormView(['new']), { requireAuth: true });
     router.addRoute('/sprints/:id/board', sprintBoardView, { requireAuth: true });

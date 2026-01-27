@@ -121,7 +121,7 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 			END IF;
 		END $$`,
 
-		`CREATE TABLE IF NOT EXISTS epics (
+		`CREATE TABLE IF NOT EXISTS projects (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			name VARCHAR(255) NOT NULL,
@@ -130,10 +130,10 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
 
-		`CREATE INDEX IF NOT EXISTS idx_epics_user_id ON epics(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)`,
 
-		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS epic_id UUID REFERENCES epics(id) ON DELETE SET NULL`,
-		`CREATE INDEX IF NOT EXISTS idx_tickets_epic_id ON tickets(epic_id)`,
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE SET NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_project_id ON tickets(project_id)`,
 
 		`CREATE TABLE IF NOT EXISTS sprints (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

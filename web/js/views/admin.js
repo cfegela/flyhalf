@@ -270,7 +270,7 @@ export async function userFormView(params) {
                             <option value="user" ${user && user.role === 'user' ? 'selected' : ''}>User</option>
                             <option value="admin" ${user && user.role === 'admin' ? 'selected' : ''}>Admin</option>
                         </select>
-                        <small style="color: var(--text-secondary);">Admins can manage users, epics, and sprints. Users can manage their own tickets.</small>
+                        <small style="color: var(--text-secondary);">Admins can manage users, projects, and sprints. Users can manage their own tickets.</small>
                     </div>
                     ${isEdit ? `
                         <div class="form-group" style="margin-bottom: 0;">
