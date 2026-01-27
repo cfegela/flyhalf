@@ -118,12 +118,12 @@ func (r *UserRepository) List(ctx context.Context) ([]*User, error) {
 func (r *UserRepository) Update(ctx context.Context, user *User) error {
 	query := `
 		UPDATE users
-		SET email = $1, role = $2, first_name = $3, last_name = $4, is_active = $5, team_id = $6, updated_at = NOW()
-		WHERE id = $7
+		SET email = $1, password_hash = $2, role = $3, first_name = $4, last_name = $5, is_active = $6, must_change_password = $7, team_id = $8, updated_at = NOW()
+		WHERE id = $9
 		RETURNING updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		user.Email, user.Role, user.FirstName, user.LastName, user.IsActive, user.TeamID, user.ID,
+		user.Email, user.PasswordHash, user.Role, user.FirstName, user.LastName, user.IsActive, user.MustChangePassword, user.TeamID, user.ID,
 	).Scan(&user.UpdatedAt)
 }
 

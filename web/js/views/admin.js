@@ -328,6 +328,24 @@ export async function userFormView(params) {
                     ` : ''}
                 </div>
 
+                ${isEdit ? `
+                <!-- Password Reset Card -->
+                <div class="card">
+                    <h2 class="card-header">Password Reset</h2>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="new_password">New Password</label>
+                        <input
+                            type="password"
+                            id="new_password"
+                            class="form-input"
+                            minlength="8"
+                            placeholder="Leave blank to keep current password"
+                        >
+                        <small style="color: var(--text-secondary);">If you enter a new password, the user will be required to change it on their next login.</small>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- Form Actions -->
                 <div class="card">
                     <div style="display: flex; gap: 1rem;">
@@ -361,6 +379,15 @@ export async function userFormView(params) {
 
         if (isEdit) {
             data.is_active = form.is_active.checked;
+            // Include new password if provided
+            const newPassword = form.new_password.value;
+            if (newPassword) {
+                if (newPassword.length < 8) {
+                    alert('Password must be at least 8 characters long');
+                    return;
+                }
+                data.password = newPassword;
+            }
         } else {
             const password = form.password.value;
             if (password.length < 8) {

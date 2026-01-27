@@ -29,6 +29,7 @@ type CreateUserRequest struct {
 
 type UpdateUserRequest struct {
 	Email     string          `json:"email"`
+	Password  string          `json:"password,omitempty"`
 	Role      model.UserRole  `json:"role"`
 	FirstName string          `json:"first_name"`
 	LastName  string          `json:"last_name"`
@@ -181,6 +182,17 @@ func (h *AdminHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user.IsActive = req.IsActive
 	user.TeamID = req.TeamID
+
+	// Handle password reset
+	if req.Password != "" {
+		passwordHash, err := auth.HashPassword(req.Password)
+		if err != nil {
+			http.Error(w, `{"error":"failed to hash password"}`, http.StatusInternalServerError)
+			return
+		}
+		user.PasswordHash = passwordHash
+		user.MustChangePassword = true
+	}
 
 	if err := h.userRepo.Update(r.Context(), user); err != nil {
 		http.Error(w, `{"error":"failed to update user"}`, http.StatusInternalServerError)
