@@ -328,6 +328,9 @@ export async function sprintFormView(params) {
         return date.toISOString().split('T')[0];
     };
 
+    // Get today's date in YYYY-MM-DD format for min attribute
+    const today = new Date().toISOString().split('T')[0];
+
     container.innerHTML = `
         <div>
             <div class="page-header">
@@ -356,6 +359,7 @@ export async function sprintFormView(params) {
                             id="start_date"
                             class="form-input"
                             required
+                            ${isEdit ? '' : `min="${today}"`}
                             value="${sprint ? formatDateForInput(sprint.start_date) : ''}"
                         >
                     </div>

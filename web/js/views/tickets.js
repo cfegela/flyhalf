@@ -420,7 +420,7 @@ export async function ticketFormView(params) {
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label class="form-label" for="sprint">Sprint</label>
-                            <select id="sprint" class="form-select">
+                            <select id="sprint" class="form-select" ${ticket && !ticket.size ? 'disabled' : ''}>
                                 <option value="">None</option>
                                 ${sprints.map(sprint => `
                                     <option value="${sprint.id}" ${ticket && ticket.sprint_id === sprint.id ? 'selected' : ''}>
@@ -428,6 +428,7 @@ export async function ticketFormView(params) {
                                     </option>
                                 `).join('')}
                             </select>
+                            <small style="color: var(--text-secondary); margin-top: 0.25rem; display: block;">Tickets must be sized before adding to a sprint</small>
                         </div>
                     </div>
                 </div>
@@ -447,11 +448,38 @@ export async function ticketFormView(params) {
     `;
 
     const form = container.querySelector('#ticket-form');
+
+    // Enable/disable sprint dropdown based on size selection
+    if (isEdit) {
+        const sizeSelect = form.querySelector('#size');
+        const sprintSelect = form.querySelector('#sprint');
+
+        sizeSelect.addEventListener('change', () => {
+            const hasSize = sizeSelect.value !== '';
+            sprintSelect.disabled = !hasSize;
+
+            // Clear sprint selection if size is removed
+            if (!hasSize) {
+                sprintSelect.value = '';
+            }
+        });
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const title = form.title.value.trim();
         const description = form.description.value.trim();
+
+        // Validate: if sprint is selected, size must be set
+        if (isEdit) {
+            const sprintValue = form.sprint.value;
+            const sizeValue = form.size.value;
+            if (sprintValue && !sizeValue) {
+                alert('Tickets must be sized before adding to a sprint');
+                return;
+            }
+        }
 
         const data = { title, description };
 
