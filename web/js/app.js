@@ -25,6 +25,11 @@ import {
     userDetailView,
     userFormView
 } from './views/admin.js';
+import {
+    teamsListView,
+    teamDetailView,
+    teamFormView
+} from './views/teams.js';
 import { settingsView, forcePasswordChangeView } from './views/settings.js';
 
 async function initApp() {
@@ -53,6 +58,10 @@ async function initApp() {
     router.addRoute('/admin/users/new', (params) => userFormView(['admin', 'new']), { requireAuth: true, requireAdmin: true });
     router.addRoute('/admin/users/:id/edit', (params) => userFormView(['admin', params[0], 'edit']), { requireAuth: true, requireAdmin: true });
     router.addRoute('/admin/users/:id', (params) => userDetailView(['admin', params[0]]), { requireAuth: true, requireAdmin: true });
+    router.addRoute('/admin/teams', teamsListView, { requireAuth: true, requireAdmin: true });
+    router.addRoute('/admin/teams/new', (params) => teamFormView(['admin', 'new']), { requireAuth: true, requireAdmin: true });
+    router.addRoute('/admin/teams/:id/edit', (params) => teamFormView(['admin', params[0], 'edit']), { requireAuth: true, requireAdmin: true });
+    router.addRoute('/admin/teams/:id', (params) => teamDetailView(['admin', params[0]]), { requireAuth: true, requireAdmin: true });
 
     await auth.init();
 

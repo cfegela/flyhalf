@@ -15,6 +15,7 @@ import (
 type Router struct {
 	authHandler      *handler.AuthHandler
 	adminHandler     *handler.AdminHandler
+	teamHandler      *handler.TeamHandler
 	ticketHandler    *handler.TicketHandler
 	projectHandler   *handler.ProjectHandler
 	sprintHandler    *handler.SprintHandler
@@ -26,6 +27,7 @@ type Router struct {
 func New(
 	authHandler *handler.AuthHandler,
 	adminHandler *handler.AdminHandler,
+	teamHandler *handler.TeamHandler,
 	ticketHandler *handler.TicketHandler,
 	projectHandler *handler.ProjectHandler,
 	sprintHandler *handler.SprintHandler,
@@ -36,6 +38,7 @@ func New(
 	return &Router{
 		authHandler:      authHandler,
 		adminHandler:     adminHandler,
+		teamHandler:      teamHandler,
 		ticketHandler:    ticketHandler,
 		projectHandler:   projectHandler,
 		sprintHandler:    sprintHandler,
@@ -135,6 +138,14 @@ func (rt *Router) Setup() http.Handler {
 				r.Get("/{id}", rt.adminHandler.GetUser)
 				r.Put("/{id}", rt.adminHandler.UpdateUser)
 				r.Delete("/{id}", rt.adminHandler.DeleteUser)
+			})
+
+			r.Route("/teams", func(r chi.Router) {
+				r.Get("/", rt.teamHandler.ListTeams)
+				r.Post("/", rt.teamHandler.CreateTeam)
+				r.Get("/{id}", rt.teamHandler.GetTeam)
+				r.Put("/{id}", rt.teamHandler.UpdateTeam)
+				r.Delete("/{id}", rt.teamHandler.DeleteTeam)
 			})
 		})
 	})

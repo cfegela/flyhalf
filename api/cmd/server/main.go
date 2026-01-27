@@ -49,6 +49,7 @@ func run() error {
 	log.Println("Database migrations completed successfully")
 
 	userRepo := model.NewUserRepository(pool)
+	teamRepo := model.NewTeamRepository(pool)
 	ticketRepo := model.NewTicketRepository(pool)
 	projectRepo := model.NewProjectRepository(pool)
 	sprintRepo := model.NewSprintRepository(pool)
@@ -59,12 +60,13 @@ func run() error {
 
 	authHandler := handler.NewAuthHandler(userRepo, jwtService)
 	adminHandler := handler.NewAdminHandler(userRepo)
+	teamHandler := handler.NewTeamHandler(teamRepo)
 	ticketHandler := handler.NewTicketHandler(ticketRepo)
 	projectHandler := handler.NewProjectHandler(projectRepo)
 	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo)
 	retroItemHandler := handler.NewRetroItemHandler(retroItemRepo, userRepo)
 
-	rt := router.New(authHandler, adminHandler, ticketHandler, projectHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)
+	rt := router.New(authHandler, adminHandler, teamHandler, ticketHandler, projectHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)
 	httpHandler := rt.Setup()
 
 	srv := &http.Server{

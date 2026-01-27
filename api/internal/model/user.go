@@ -17,16 +17,17 @@ const (
 )
 
 type User struct {
-	ID                 uuid.UUID `json:"id"`
-	Email              string    `json:"email"`
-	PasswordHash       string    `json:"-"`
-	Role               UserRole  `json:"role"`
-	FirstName          string    `json:"first_name"`
-	LastName           string    `json:"last_name"`
-	IsActive           bool      `json:"is_active"`
-	MustChangePassword bool      `json:"must_change_password"`
-	CreatedAt          time.Time `json:"created_at"`
-	UpdatedAt          time.Time `json:"updated_at"`
+	ID                 uuid.UUID  `json:"id"`
+	Email              string     `json:"email"`
+	PasswordHash       string     `json:"-"`
+	Role               UserRole   `json:"role"`
+	FirstName          string     `json:"first_name"`
+	LastName           string     `json:"last_name"`
+	IsActive           bool       `json:"is_active"`
+	MustChangePassword bool       `json:"must_change_password"`
+	TeamID             *uuid.UUID `json:"team_id,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }
 
 type RefreshToken struct {
@@ -48,24 +49,24 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, user *User) error {
 	query := `
-		INSERT INTO users (email, password_hash, role, first_name, last_name, is_active, must_change_password)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO users (email, password_hash, role, first_name, last_name, is_active, must_change_password, team_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		user.Email, user.PasswordHash, user.Role, user.FirstName, user.LastName, user.IsActive, user.MustChangePassword,
+		user.Email, user.PasswordHash, user.Role, user.FirstName, user.LastName, user.IsActive, user.MustChangePassword, user.TeamID,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	query := `
-		SELECT id, email, password_hash, role, first_name, last_name, is_active, must_change_password, created_at, updated_at
+		SELECT id, email, password_hash, role, first_name, last_name, is_active, must_change_password, team_id, created_at, updated_at
 		FROM users WHERE id = $1
 	`
 	user := &User{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Role,
-		&user.FirstName, &user.LastName, &user.IsActive, &user.MustChangePassword, &user.CreatedAt, &user.UpdatedAt,
+		&user.FirstName, &user.LastName, &user.IsActive, &user.MustChangePassword, &user.TeamID, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -75,13 +76,13 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*User, erro
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
-		SELECT id, email, password_hash, role, first_name, last_name, is_active, must_change_password, created_at, updated_at
+		SELECT id, email, password_hash, role, first_name, last_name, is_active, must_change_password, team_id, created_at, updated_at
 		FROM users WHERE email = $1
 	`
 	user := &User{}
 	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Role,
-		&user.FirstName, &user.LastName, &user.IsActive, &user.MustChangePassword, &user.CreatedAt, &user.UpdatedAt,
+		&user.FirstName, &user.LastName, &user.IsActive, &user.MustChangePassword, &user.TeamID, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -91,7 +92,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*User, e
 
 func (r *UserRepository) List(ctx context.Context) ([]*User, error) {
 	query := `
-		SELECT id, email, password_hash, role, first_name, last_name, is_active, must_change_password, created_at, updated_at
+		SELECT id, email, password_hash, role, first_name, last_name, is_active, must_change_password, team_id, created_at, updated_at
 		FROM users ORDER BY created_at DESC
 	`
 	rows, err := r.db.Query(ctx, query)
@@ -105,7 +106,7 @@ func (r *UserRepository) List(ctx context.Context) ([]*User, error) {
 		user := &User{}
 		if err := rows.Scan(
 			&user.ID, &user.Email, &user.PasswordHash, &user.Role,
-			&user.FirstName, &user.LastName, &user.IsActive, &user.MustChangePassword, &user.CreatedAt, &user.UpdatedAt,
+			&user.FirstName, &user.LastName, &user.IsActive, &user.MustChangePassword, &user.TeamID, &user.CreatedAt, &user.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -117,12 +118,12 @@ func (r *UserRepository) List(ctx context.Context) ([]*User, error) {
 func (r *UserRepository) Update(ctx context.Context, user *User) error {
 	query := `
 		UPDATE users
-		SET email = $1, role = $2, first_name = $3, last_name = $4, is_active = $5, updated_at = NOW()
-		WHERE id = $6
+		SET email = $1, role = $2, first_name = $3, last_name = $4, is_active = $5, team_id = $6, updated_at = NOW()
+		WHERE id = $7
 		RETURNING updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		user.Email, user.Role, user.FirstName, user.LastName, user.IsActive, user.ID,
+		user.Email, user.Role, user.FirstName, user.LastName, user.IsActive, user.TeamID, user.ID,
 	).Scan(&user.UpdatedAt)
 }
 

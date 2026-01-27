@@ -265,6 +265,34 @@ class APIClient {
             method: 'DELETE',
         });
     }
+
+    async getTeams() {
+        return this.request('/admin/teams');
+    }
+
+    async getTeam(id) {
+        return this.request(`/admin/teams/${id}`);
+    }
+
+    async createTeam(team) {
+        return this.request('/admin/teams', {
+            method: 'POST',
+            body: JSON.stringify(team),
+        });
+    }
+
+    async updateTeam(id, team) {
+        return this.request(`/admin/teams/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(team),
+        });
+    }
+
+    async deleteTeam(id) {
+        return this.request(`/admin/teams/${id}`, {
+            method: 'DELETE',
+        });
+    }
 }
 
 export const api = new APIClient();

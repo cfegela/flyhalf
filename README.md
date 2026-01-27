@@ -62,10 +62,16 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
     - Powered by Chart.js for interactive visualization
   - Full list and detail views
   - Simplified list view with Board and Report buttons for quick access
+- **Team Management** (Admin only):
+  - CRUD operations for teams with name and description
+  - Assign users to teams for organization
+  - Team detail view shows all members assigned to that team
+  - User list and detail views display team assignments
+  - Teams link in navbar for administrators
 - All users can view and edit all tickets and projects (collaborative workspace)
 - Users can delete tickets/projects they created; admins can delete any ticket/project
 - Forced password change for newly created users
-- Admin user management
+- Admin user management with team assignment
 - User settings page with account information
 - Password change functionality
 - Responsive UI with modern CSS
@@ -94,6 +100,8 @@ The flyhalf is rugby’s primary playmaker and tactical leader who directs the t
 - ✅ Edit user accounts
 - ✅ Delete users
 - ✅ Deactivate/activate users
+- ✅ Manage teams (create, edit, delete)
+- ✅ Assign users to teams
 
 This collaborative permission model allows all team members to view and update tickets, projects, and sprints while protecting data integrity. Users can manage their own items completely, but cannot delete items created by others.
 
@@ -320,16 +328,27 @@ The application provides the following pages:
   - Security card: Password change form with helpful security guidance
 
 ### Admin Only
+- **Team Management** - List all teams with view access
+  - Click "View" to access team details, edit, and delete actions
+- **Team Detail** - Enhanced card-based layout for team information
+  - Team Information card: Name and description
+  - Team Members card: Table showing all users assigned to this team with count in header
+  - Clickable user rows navigate to user detail page
+  - Edit and delete buttons available
+- **Create/Edit Team** - Structured form with organized sections
+  - Team Information card: Name and description with helpful placeholders
+  - Teams can be deleted (members are unassigned but not deleted)
 - **User Management** - List all users with view access
+  - Team column shows team assignment for each user
   - Click "View" to access user details, edit, and delete actions
 - **User Detail** - Enhanced card-based layout for user information
   - User Information card: Full name and email in responsive grid
-  - Access & Permissions card: Role and account status badges
+  - Access & Permissions card: Role, account status badges, and team assignment with clickable link
   - Edit and delete buttons available
 - **Create/Edit User** - Structured form with organized sections
   - Personal Information card: First and last name in 2-column grid, email below
   - Security card (create only): Password field with hint about required change on first login
-  - Access & Permissions card: Role selector with permission explanation, account status toggle (edit only)
+  - Access & Permissions card: Role selector with permission explanation, team assignment dropdown, account status toggle (edit only)
   - New users must change password on first login
 - **Delete Users** - Delete button available in user detail view
 - **Delete Any Ticket/Project/Sprint** - Delete button enabled for all tickets, projects, and sprints in their respective detail views
@@ -342,6 +361,7 @@ The application provides the following pages:
 - **Sprints** link shows all sprints
   - From sprints list, click "Board" or "Report" buttons for quick access
   - From sprint detail page, click "View Board" for the interactive kanban board or "View Report" for analytics
+- **Teams** link (admins only) for team management
 - **Users** link (admins only) for user management
 - **Logout** button to end session
 - **Active link highlighting** - Navbar automatically highlights the current section, including when viewing detail pages (e.g., viewing a specific ticket highlights the Tickets link)
@@ -472,6 +492,15 @@ The `/sprints/{id}/report` endpoint returns comprehensive sprint analytics inclu
 | GET | `/admin/users/{id}` | Get user by ID | Yes | Admin |
 | PUT | `/admin/users/{id}` | Update user | Yes | Admin |
 | DELETE | `/admin/users/{id}` | Delete user | Yes | Admin |
+| GET | `/admin/teams` | List all teams | Yes | Admin |
+| POST | `/admin/teams` | Create team | Yes | Admin |
+| GET | `/admin/teams/{id}` | Get team by ID | Yes | Admin |
+| PUT | `/admin/teams/{id}` | Update team | Yes | Admin |
+| DELETE | `/admin/teams/{id}` | Delete team | Yes | Admin |
+
+**Team Fields**:
+- `name` (string, required)
+- `description` (string, optional)
 
 ### Authentication Header
 
@@ -515,6 +544,12 @@ Frontend: No package manager needed - just add ES module imports!
 
 ## Database Schema
 
+### Teams Table
+- `id` (UUID, primary key)
+- `name` (varchar(255), not null)
+- `description` (text, nullable)
+- `created_at`, `updated_at` (timestamps)
+
 ### Users Table
 - `id` (UUID, primary key)
 - `email` (unique, not null)
@@ -524,6 +559,7 @@ Frontend: No package manager needed - just add ES module imports!
 - `last_name` (not null)
 - `is_active` (boolean)
 - `must_change_password` (boolean, default: false)
+- `team_id` (UUID, FK to teams, nullable)
 - `created_at`, `updated_at` (timestamps)
 
 ### Refresh Tokens Table

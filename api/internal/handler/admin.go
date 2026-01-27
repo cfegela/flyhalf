@@ -24,6 +24,7 @@ type CreateUserRequest struct {
 	Role      model.UserRole  `json:"role"`
 	FirstName string          `json:"first_name"`
 	LastName  string          `json:"last_name"`
+	TeamID    *uuid.UUID      `json:"team_id,omitempty"`
 }
 
 type UpdateUserRequest struct {
@@ -32,6 +33,7 @@ type UpdateUserRequest struct {
 	FirstName string          `json:"first_name"`
 	LastName  string          `json:"last_name"`
 	IsActive  bool            `json:"is_active"`
+	TeamID    *uuid.UUID      `json:"team_id,omitempty"`
 }
 
 func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
@@ -130,6 +132,7 @@ func (h *AdminHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		LastName:           req.LastName,
 		IsActive:           true,
 		MustChangePassword: true,
+		TeamID:             req.TeamID,
 	}
 
 	if err := h.userRepo.Create(r.Context(), user); err != nil {
@@ -177,6 +180,7 @@ func (h *AdminHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		user.LastName = req.LastName
 	}
 	user.IsActive = req.IsActive
+	user.TeamID = req.TeamID
 
 	if err := h.userRepo.Update(r.Context(), user); err != nil {
 		http.Error(w, `{"error":"failed to update user"}`, http.StatusInternalServerError)

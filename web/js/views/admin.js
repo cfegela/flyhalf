@@ -18,7 +18,14 @@ export async function usersListView() {
 
     try {
         const users = await api.getUsers();
+        const teams = await api.getTeams();
         const usersContainer = container.querySelector('#users-container');
+
+        // Create a map of team IDs to team names for quick lookup
+        const teamMap = {};
+        teams.forEach(team => {
+            teamMap[team.id] = team.name;
+        });
 
         if (users.length === 0) {
             usersContainer.innerHTML = `
@@ -39,6 +46,7 @@ export async function usersListView() {
                             <tr>
                                 <th>Name</th>
                                 <th>Email</th>
+                                <th>Team</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -49,6 +57,7 @@ export async function usersListView() {
                                 <tr data-user-id="${user.id}">
                                     <td data-label="Name"><strong>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</strong></td>
                                     <td data-label="Email">${escapeHtml(user.email)}</td>
+                                    <td data-label="Team">${user.team_id && teamMap[user.team_id] ? escapeHtml(teamMap[user.team_id]) : '<span style="color: var(--text-secondary);">-</span>'}</td>
                                     <td data-label="Role">
                                         <span class="badge ${user.role === 'admin' ? 'badge-primary' : 'badge-success'}">
                                             ${escapeHtml(user.role)}
@@ -104,6 +113,15 @@ export async function userDetailView(params) {
 
     try {
         const user = await api.getUser(id);
+        let team = null;
+
+        if (user.team_id) {
+            try {
+                team = await api.getTeam(user.team_id);
+            } catch (error) {
+                // Team not found, continue without it
+            }
+        }
 
         container.innerHTML = `
             <div>
@@ -154,6 +172,12 @@ export async function userDetailView(params) {
                                 </span>
                             </div>
                         </div>
+                        <div>
+                            <label class="form-label">Team</label>
+                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
+                                ${team ? `<a href="/admin/teams/${team.id}" style="color: var(--primary); text-decoration: none;">${escapeHtml(team.name)}</a>` : '<span style="color: var(--text-secondary);">No team assigned</span>'}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -184,15 +208,19 @@ export async function userFormView(params) {
     const [, id, action] = params;
     const isEdit = action === 'edit';
 
+    container.innerHTML = '<div class="loading">Loading...</div>';
+
     let user = null;
-    if (isEdit && id) {
-        container.innerHTML = '<div class="loading">Loading user...</div>';
-        try {
+    let teams = [];
+
+    try {
+        teams = await api.getTeams();
+        if (isEdit && id) {
             user = await api.getUser(id);
-        } catch (error) {
-            router.navigate('/admin/users');
-            return;
         }
+    } catch (error) {
+        router.navigate('/admin/users');
+        return;
     }
 
     container.innerHTML = `
@@ -264,13 +292,25 @@ export async function userFormView(params) {
                 <!-- Access & Permissions Card -->
                 <div class="card">
                     <h2 class="card-header">Access & Permissions</h2>
-                    <div class="form-group" ${!isEdit ? 'style="margin-bottom: 0;"' : ''}>
+                    <div class="form-group">
                         <label class="form-label" for="role">Role *</label>
                         <select id="role" class="form-select" required>
                             <option value="user" ${user && user.role === 'user' ? 'selected' : ''}>User</option>
                             <option value="admin" ${user && user.role === 'admin' ? 'selected' : ''}>Admin</option>
                         </select>
                         <small style="color: var(--text-secondary);">Admins can manage users, projects, and sprints. Users can manage their own tickets.</small>
+                    </div>
+                    <div class="form-group" ${!isEdit ? 'style="margin-bottom: 0;"' : ''}>
+                        <label class="form-label" for="team_id">Team</label>
+                        <select id="team_id" class="form-select">
+                            <option value="">No Team</option>
+                            ${teams.map(team => `
+                                <option value="${team.id}" ${user && user.team_id === team.id ? 'selected' : ''}>
+                                    ${escapeHtml(team.name)}
+                                </option>
+                            `).join('')}
+                        </select>
+                        <small style="color: var(--text-secondary);">Assign this user to a team (optional).</small>
                     </div>
                     ${isEdit ? `
                         <div class="form-group" style="margin-bottom: 0;">
@@ -309,12 +349,14 @@ export async function userFormView(params) {
         const lastName = form.last_name.value.trim();
         const email = form.email.value.trim();
         const role = form.role.value;
+        const teamId = form.team_id.value;
 
         const data = {
             first_name: firstName,
             last_name: lastName,
             email,
             role,
+            team_id: teamId || null,
         };
 
         if (isEdit) {

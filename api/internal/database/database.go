@@ -173,6 +173,19 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 		`ALTER TABLE retro_items ADD COLUMN IF NOT EXISTS vote_count INTEGER NOT NULL DEFAULT 0`,
 
+		`CREATE TABLE IF NOT EXISTS teams (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			name VARCHAR(255) NOT NULL,
+			description TEXT,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_teams_name ON teams(name)`,
+
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES teams(id) ON DELETE SET NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_users_team_id ON users(team_id)`,
+
 		// Create default admin user if it doesn't exist
 		// Default password: admin123 (bcrypt hash with cost 12)
 		// IMPORTANT: Admin must change password on first login!
