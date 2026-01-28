@@ -4,7 +4,7 @@
 
 **flyhalf /ˈflaɪˌhɑːf/ noun**
 
-The flyhalf is rugby's primary playmaker and tactical leader who directs the team's attack. Flyhalves possess exceptional vision, game management, accuracy, and resilience.
+The flyhalf is a rugby team's primary playmaker and tactical leader who directs the team's attack. Flyhalves possess exceptional vision, game management, accuracy, and resilience.
 
 ---
 
