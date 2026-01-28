@@ -1,0 +1,6 @@
+# Copy this file to backend.hcl and fill in your values
+# Use with: terraform init -backend-config=backend.hcl
+
+bucket = "your-terraform-state-bucket-name"
+key    = "flyhalf/terraform.tfstate"
+region = "us-east-1"
