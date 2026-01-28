@@ -1,10 +1,19 @@
 # Flyhalf
 
-### A Very, Very Opinionated Agile Scrum Management System
+### It Shouldn't Take an Atlas to Navigate Scrum
 
-**flyhalf /ˈflaɪˌhɑːf/ noun**
+**flyhalf /ˈflaɪˌhɑːf/** 
 
-The flyhalf is a rugby team's primary playmaker and tactical leader who directs the team's attack. Flyhalves possess exceptional vision, game management, accuracy, and resilience.
+**Noun**
+
+1. A rugby team's primary playmaker and tactical leader who directs the team's attack. Flyhalves possess exceptional vision, game management, accuracy, and resilience.
+
+2. A very, very opinionated Agile Scrum management system
+
+**Verb**
+
+1. The act of freeing oneself from the bloat of mainstream Agile management software
+
 
 ---
 
