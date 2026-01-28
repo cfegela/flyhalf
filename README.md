@@ -68,12 +68,6 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 
 ### Ticket Management
 - CRUD operations with 5 status options: `open`, `in-progress`, `blocked`, `needs-review`, `closed`
-- **Icon-Based Priority Management** (Heroicons SVG):
-  - ⇈ Promote to top: Send ticket to highest priority
-  - ↑ Promote up one: Move ticket up one position
-  - ↓ Demote down one: Move ticket down one position
-  - 👁 View: Navigate to ticket details
-  - ✏️ Edit: Navigate to ticket edit form
 - Priorities persist between application restarts using fractional indexing
 - Optional ticket sizing: Small(1), Medium(2), Large(3), X-Large(5), Danger(8)
 - Ticket assignment to users
@@ -90,8 +84,6 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 
 ### Sprint Management
 - CRUD operations for sprints (name and start date)
-- End date automatically calculated as 2 weeks after start date
-- **Dynamic Status Calculation**: Sprint status (upcoming/active/completed) automatically calculated server-side based on current date
 - **Sprint Board**: Interactive kanban with drag-and-drop
   - Three columns: Committed (open), Underway (in-progress/blocked/needs-review), Completed (closed)
   - Drag tickets between columns to update status
