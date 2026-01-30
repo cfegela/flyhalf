@@ -370,7 +370,7 @@ export async function sprintFormView(params) {
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label">End Date</label>
                         <p style="color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.6;">
-                            The end date will be automatically set to 2 weeks (14 days) after the start date.
+                            The end date will be automatically set to create a 14-day sprint (start date + 13 days).
                         </p>
                     </div>
                 </div>

@@ -327,7 +327,7 @@ go mod tidy
   - Burndown chart (Chart.js)
   - Total/completed/remaining breakdown
 - **Create/Edit Sprint** - Form with name and start date
-  - End date automatically calculated (+14 days)
+  - End date automatically calculated (14-day sprint: start date + 13 days)
 
 #### Settings
 - **Settings Page** - Account information and password change form
@@ -454,7 +454,7 @@ Authorization: Bearer <access_token>
 **Sprint Fields**:
 - `name` (string, required)
 - `start_date` (date, required, format: YYYY-MM-DD)
-- `end_date` (date, auto-calculated as start_date + 14 days)
+- `end_date` (date, auto-calculated as start_date + 13 days for 14-day sprint)
 - `status` (computed: upcoming/active/completed based on current date)
 
 **Sprint Report Response**:

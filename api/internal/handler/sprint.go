@@ -105,8 +105,8 @@ func (h *SprintHandler) CreateSprint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Calculate end date (2 weeks after start date)
-	endDate := startDate.AddDate(0, 0, 14)
+	// Calculate end date (14 days total: start date + 13 days)
+	endDate := startDate.AddDate(0, 0, 13)
 
 	sprint := &model.Sprint{
 		UserID:    userID,
@@ -156,8 +156,8 @@ func (h *SprintHandler) UpdateSprint(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sprint.StartDate = startDate
-		// Recalculate end date when start date changes
-		sprint.EndDate = startDate.AddDate(0, 0, 14)
+		// Recalculate end date when start date changes (14 days total: start date + 13 days)
+		sprint.EndDate = startDate.AddDate(0, 0, 13)
 	}
 
 	if err := h.sprintRepo.Update(r.Context(), sprint); err != nil {
