@@ -115,31 +115,28 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 
 ## Permission Model
 
-### Regular Users (role: 'user')
-✅ **Allowed**:
-- View all tickets, projects, and sprints
-- Create new tickets, projects, and sprints
-- Edit any ticket, project, or sprint
-- Delete tickets, projects, and sprints they created
-- Assign tickets to projects and sprints
-- Manage ticket priorities (promote to top, promote up, demote down)
-- Use sprint board with drag-and-drop to update ticket status
-- Change own password
-- View own account settings
-
-❌ **Not Allowed**:
-- Delete tickets/projects/sprints created by others
-- Manage users or teams
-
-### Administrators (role: 'admin')
-✅ **All User Permissions**, Plus:
-- Delete any ticket, project, or sprint (including those created by others)
-- Create new users (with forced password change)
-- Edit user accounts
-- Delete users
-- Deactivate/activate users
-- Manage teams (create, edit, delete)
-- Assign users to teams
+| Permission | Regular Users | Administrators |
+|------------|---------------|----------------|
+| **Tickets, Projects, Sprints** | | |
+| View all items | ✅ | ✅ |
+| Create new items | ✅ | ✅ |
+| Edit any item | ✅ | ✅ |
+| Delete own items | ✅ | ✅ |
+| Delete items created by others | ❌ | ✅ |
+| **Ticket Management** | | |
+| Assign tickets to projects and sprints | ✅ | ✅ |
+| Manage ticket priorities (promote/demote) | ✅ | ✅ |
+| Use sprint board with drag-and-drop | ✅ | ✅ |
+| **User Management** | | |
+| View own account settings | ✅ | ✅ |
+| Change own password | ✅ | ✅ |
+| Create new users | ❌ | ✅ |
+| Edit user accounts | ❌ | ✅ |
+| Delete users | ❌ | ✅ |
+| Deactivate/activate users | ❌ | ✅ |
+| **Team Management** | | |
+| Create, edit, delete teams | ❌ | ✅ |
+| Assign users to teams | ❌ | ✅ |
 
 This collaborative permission model allows all team members to view and update work items while protecting data integrity.
 
