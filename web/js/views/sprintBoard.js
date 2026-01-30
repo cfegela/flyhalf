@@ -236,8 +236,14 @@ function initializeDragAndDrop(container, sprintId) {
     if (targetColumnName === 'committed') {
       newStatus = 'open';
     } else if (targetColumnName === 'underway') {
-      // Default to in-progress when moving to underway
-      newStatus = 'in-progress';
+      // If already in underway column, keep the current status
+      const underwayStatuses = ['in-progress', 'blocked', 'needs-review'];
+      if (underwayStatuses.includes(oldStatus)) {
+        newStatus = oldStatus;
+      } else {
+        // Default to in-progress when moving to underway from another column
+        newStatus = 'in-progress';
+      }
     } else if (targetColumnName === 'completed') {
       newStatus = 'closed';
     }
