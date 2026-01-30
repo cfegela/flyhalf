@@ -175,7 +175,11 @@ function renderBurndownChart(report, today, startDate, endDate) {
     };
 
     // Prepare data for the chart
-    const labels = report.ideal_burndown.map(point => {
+    const labels = report.ideal_burndown.map((point, index) => {
+        // Use "Start" for the first day (day before sprint begins)
+        if (index === 0) {
+            return 'Start';
+        }
         const date = parseLocalDate(point.date);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     });
