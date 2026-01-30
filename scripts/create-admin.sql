@@ -4,7 +4,7 @@
 
 INSERT INTO users (email, password_hash, role, first_name, last_name, is_active)
 VALUES (
-    'admin@flyhalf.local',
+    'admin@flyhalf.app',
     '$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi',
     'admin',
     'System',

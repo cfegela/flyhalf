@@ -197,7 +197,7 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		// Default password: admin123 (bcrypt hash with cost 12)
 		// IMPORTANT: Admin must change password on first login!
 		`INSERT INTO users (email, password_hash, role, first_name, last_name, is_active, must_change_password)
-VALUES ('admin@flyhalf.local', '$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi', 'admin', 'System', 'Administrator', true, true)
+VALUES ('admin@flyhalf.app', '$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi', 'admin', 'System', 'Administrator', true, true)
 ON CONFLICT (email) DO NOTHING`,
 	}
 

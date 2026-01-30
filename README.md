@@ -245,7 +245,7 @@ docker exec -i flyhalf-db psql -U flyhalf -d flyhalf < scripts/create-admin.sql
 ```
 
 **Default Admin Credentials:**
-- Email: `admin@flyhalf.local`
+- Email: `admin@flyhalf.app`
 - Password: `admin123`
 
 **⚠️ IMPORTANT**: Change this password immediately after first login!
