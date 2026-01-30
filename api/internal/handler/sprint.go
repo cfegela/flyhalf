@@ -203,9 +203,13 @@ func (h *SprintHandler) DeleteSprint(w http.ResponseWriter, r *http.Request) {
 type SprintReportResponse struct {
 	Sprint              *model.Sprint       `json:"sprint"`
 	TotalPoints         int                 `json:"total_points"`
+	CommittedPoints     int                 `json:"committed_points"`
+	AdoptedPoints       int                 `json:"adopted_points"`
 	CompletedPoints     int                 `json:"completed_points"`
 	RemainingPoints     int                 `json:"remaining_points"`
 	TotalTickets        int                 `json:"total_tickets"`
+	CommittedTickets    int                 `json:"committed_tickets"`
+	AdoptedTickets      int                 `json:"adopted_tickets"`
 	CompletedTickets    int                 `json:"completed_tickets"`
 	IdealBurndown       []BurndownPoint     `json:"ideal_burndown"`
 	ActualBurndown      []BurndownPoint     `json:"actual_burndown"`
@@ -249,6 +253,8 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 
 	// Calculate statistics
 	totalPoints := 0
+	committedPoints := 0
+	committedTickets := 0
 	completedPoints := 0
 	ticketsByStatus := make(map[string]int)
 	pointsByStatus := make(map[string]int)
@@ -263,12 +269,24 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 		ticketsByStatus[ticket.Status]++
 		pointsByStatus[ticket.Status] += points
 
+		// Calculate committed points and tickets: added at or before sprint start
+		if ticket.AddedToSprintAt != nil {
+			addedDate := ticket.AddedToSprintAt.Truncate(24 * time.Hour)
+			startDate := sprint.StartDate.Truncate(24 * time.Hour)
+			if !addedDate.After(startDate) {
+				committedPoints += points
+				committedTickets++
+			}
+		}
+
 		if ticket.Status == "closed" {
 			completedPoints += points
 		}
 	}
 
 	remainingPoints := totalPoints - completedPoints
+	adoptedPoints := totalPoints - committedPoints
+	adoptedTickets := len(sprintTickets) - committedTickets
 
 	// Generate ideal burndown line
 	idealBurndown := generateIdealBurndown(sprint.StartDate, sprint.EndDate, totalPoints)
@@ -279,9 +297,13 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 	response := SprintReportResponse{
 		Sprint:           sprint,
 		TotalPoints:      totalPoints,
+		CommittedPoints:  committedPoints,
+		AdoptedPoints:    adoptedPoints,
 		CompletedPoints:  completedPoints,
 		RemainingPoints:  remainingPoints,
 		TotalTickets:     len(sprintTickets),
+		CommittedTickets: committedTickets,
+		AdoptedTickets:   adoptedTickets,
 		CompletedTickets: ticketsByStatus["closed"],
 		IdealBurndown:    idealBurndown,
 		ActualBurndown:   actualBurndown,

@@ -193,6 +193,13 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		// Initialize sprint_order values based on existing priority
 		`UPDATE tickets SET sprint_order = priority WHERE sprint_order = 0`,
 
+		// Add added_to_sprint_at timestamp for tracking when tickets were committed to sprints
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS added_to_sprint_at TIMESTAMP`,
+
+		// Backfill existing tickets: assume they were added at sprint start date
+		`UPDATE tickets t SET added_to_sprint_at = s.start_date
+		FROM sprints s WHERE t.sprint_id = s.id AND t.added_to_sprint_at IS NULL`,
+
 		// Create default admin user if it doesn't exist
 		// Default password: admin123 (bcrypt hash with cost 12)
 		// IMPORTANT: Admin must change password on first login!

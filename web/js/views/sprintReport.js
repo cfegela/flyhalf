@@ -74,11 +74,25 @@ export async function sprintReportView(params) {
                     <div class="card">
                         <h2 class="card-header">Story Points</h2>
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div>
-                                <label class="form-label">Total Points</label>
-                                <p style="font-size: 2rem; font-weight: bold; color: var(--text-primary); margin: 0;">
-                                    ${report.total_points}
-                                </p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label class="form-label">Total Points</label>
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--text-primary); margin: 0;">
+                                        ${report.total_points}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="form-label">Committed</label>
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--primary); margin: 0;">
+                                        ${report.committed_points}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="form-label">Adopted</label>
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--danger); margin: 0;">
+                                        ${report.adopted_points}
+                                    </p>
+                                </div>
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                                 <div>
@@ -109,11 +123,25 @@ export async function sprintReportView(params) {
                     <div class="card">
                         <h2 class="card-header">Tickets</h2>
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div>
-                                <label class="form-label">Total Tickets</label>
-                                <p style="font-size: 2rem; font-weight: bold; color: var(--text-primary); margin: 0;">
-                                    ${report.total_tickets}
-                                </p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                                <div>
+                                    <label class="form-label">Total Tickets</label>
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--text-primary); margin: 0;">
+                                        ${report.total_tickets}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="form-label">Committed</label>
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--primary); margin: 0;">
+                                        ${report.committed_tickets}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="form-label">Adopted</label>
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--danger); margin: 0;">
+                                        ${report.adopted_tickets}
+                                    </p>
+                                </div>
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                                 <div>

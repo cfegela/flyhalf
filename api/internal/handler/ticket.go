@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/model"
@@ -126,6 +127,12 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		Priority:    minPriority - 1.0,
 	}
 
+	// Set added_to_sprint_at timestamp if ticket is created with a sprint
+	if req.SprintID != nil {
+		now := time.Now()
+		ticket.AddedToSprintAt = &now
+	}
+
 	if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
 		http.Error(w, `{"error":"failed to create ticket"}`, http.StatusInternalServerError)
 		return
@@ -149,6 +156,9 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
 		return
 	}
+
+	// Capture old sprint ID before updates
+	oldSprintID := ticket.SprintID
 
 	// All authenticated users can update any ticket
 	var req UpdateTicketRequest
@@ -175,6 +185,17 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	ticket.ProjectID = req.ProjectID
 	ticket.SprintID = req.SprintID
 	ticket.Size = req.Size
+
+	// Handle sprint assignment timestamp
+	if ticket.SprintID == nil {
+		// Removed from sprint
+		ticket.AddedToSprintAt = nil
+	} else if oldSprintID == nil || *ticket.SprintID != *oldSprintID {
+		// Added to new sprint or changed sprint
+		now := time.Now()
+		ticket.AddedToSprintAt = &now
+	}
+	// If sprint unchanged, AddedToSprintAt stays as-is
 
 	if err := h.ticketRepo.Update(r.Context(), ticket); err != nil {
 		http.Error(w, `{"error":"failed to update ticket"}`, http.StatusInternalServerError)
