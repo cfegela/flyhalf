@@ -188,8 +188,8 @@ export async function settingsView() {
 
             ${auth.isAdmin() ? `
             <!-- Danger Zone Card (Admin Only) -->
-            <div class="card" style="border: 2px solid var(--danger);">
-                <h2 class="card-header" style="color: var(--danger);">Danger Zone</h2>
+            <div class="card">
+                <h2 class="card-header">Danger Zone</h2>
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
                     These actions are irreversible and will permanently delete data from the system.
                 </p>
