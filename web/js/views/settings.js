@@ -185,6 +185,25 @@ export async function settingsView() {
                     </div>
                 </form>
             </div>
+
+            ${auth.isAdmin() ? `
+            <!-- Danger Zone Card (Admin Only) -->
+            <div class="card" style="border: 2px solid var(--danger);">
+                <h2 class="card-header" style="color: var(--danger);">Danger Zone</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                    These actions are irreversible and will permanently delete data from the system.
+                </p>
+                <div>
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Reset Demo Environment</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+                        This will delete ALL tickets, sprints, and projects. This action cannot be undone.
+                    </p>
+                    <button type="button" class="btn btn-danger" id="reset-demo-btn">
+                        Reset Demo Environment
+                    </button>
+                </div>
+            </div>
+            ` : ''}
         </div>
     `;
 
@@ -229,6 +248,29 @@ export async function settingsView() {
             submitBtn.textContent = 'Change Password';
         }
     });
+
+    // Reset demo button (admin only)
+    const resetDemoBtn = container.querySelector('#reset-demo-btn');
+    if (resetDemoBtn) {
+        resetDemoBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to reset the demo environment? This will delete ALL tickets, sprints, and projects. This action cannot be undone.')) {
+                return;
+            }
+
+            resetDemoBtn.disabled = true;
+            resetDemoBtn.textContent = 'Resetting...';
+
+            try {
+                const result = await api.resetDemo();
+                alert(`Demo environment reset successfully.\n\nDeleted:\n- ${result.tickets_deleted} tickets\n- ${result.sprints_deleted} sprints\n- ${result.projects_deleted} projects`);
+                router.navigate('/tickets');
+            } catch (error) {
+                alert('Failed to reset demo environment: ' + (error.message || 'Unknown error'));
+                resetDemoBtn.disabled = false;
+                resetDemoBtn.textContent = 'Reset Demo Environment';
+            }
+        });
+    }
 }
 
 function escapeHtml(text) {

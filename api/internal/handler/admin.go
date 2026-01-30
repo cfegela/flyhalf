@@ -11,11 +11,19 @@ import (
 )
 
 type AdminHandler struct {
-	userRepo *model.UserRepository
+	userRepo    *model.UserRepository
+	ticketRepo  *model.TicketRepository
+	sprintRepo  *model.SprintRepository
+	projectRepo *model.ProjectRepository
 }
 
-func NewAdminHandler(userRepo *model.UserRepository) *AdminHandler {
-	return &AdminHandler{userRepo: userRepo}
+func NewAdminHandler(userRepo *model.UserRepository, ticketRepo *model.TicketRepository, sprintRepo *model.SprintRepository, projectRepo *model.ProjectRepository) *AdminHandler {
+	return &AdminHandler{
+		userRepo:    userRepo,
+		ticketRepo:  ticketRepo,
+		sprintRepo:  sprintRepo,
+		projectRepo: projectRepo,
+	}
 }
 
 type CreateUserRequest struct {
@@ -219,4 +227,37 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *AdminHandler) ResetDemo(w http.ResponseWriter, r *http.Request) {
+	// Delete tickets first due to foreign key constraints
+	ticketsDeleted, err := h.ticketRepo.DeleteAll(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to delete tickets"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Delete sprints
+	sprintsDeleted, err := h.sprintRepo.DeleteAll(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to delete sprints"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Delete projects
+	projectsDeleted, err := h.projectRepo.DeleteAll(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to delete projects"}`, http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"message":          "Demo environment reset successfully",
+		"tickets_deleted":  ticketsDeleted,
+		"sprints_deleted":  sprintsDeleted,
+		"projects_deleted": projectsDeleted,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

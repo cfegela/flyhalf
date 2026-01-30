@@ -148,6 +148,8 @@ func (rt *Router) Setup() http.Handler {
 				r.Put("/{id}", rt.teamHandler.UpdateTeam)
 				r.Delete("/{id}", rt.teamHandler.DeleteTeam)
 			})
+
+			r.Post("/reset-demo", rt.adminHandler.ResetDemo)
 		})
 	})
 

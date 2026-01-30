@@ -59,7 +59,7 @@ func run() error {
 	authMiddleware := auth.NewAuthMiddleware(jwtService)
 
 	authHandler := handler.NewAuthHandler(userRepo, jwtService)
-	adminHandler := handler.NewAdminHandler(userRepo)
+	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo)
 	teamHandler := handler.NewTeamHandler(teamRepo)
 	ticketHandler := handler.NewTicketHandler(ticketRepo)
 	projectHandler := handler.NewProjectHandler(projectRepo)

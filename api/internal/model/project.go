@@ -117,3 +117,11 @@ func (r *ProjectRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 	return nil
 }
+
+func (r *ProjectRepository) DeleteAll(ctx context.Context) (int64, error) {
+	result, err := r.db.Exec(ctx, "DELETE FROM projects")
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

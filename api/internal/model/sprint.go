@@ -152,3 +152,11 @@ func (r *SprintRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 	return nil
 }
+
+func (r *SprintRepository) DeleteAll(ctx context.Context) (int64, error) {
+	result, err := r.db.Exec(ctx, "DELETE FROM sprints")
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

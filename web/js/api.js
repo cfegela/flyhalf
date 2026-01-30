@@ -300,6 +300,12 @@ class APIClient {
             method: 'DELETE',
         });
     }
+
+    async resetDemo() {
+        return this.request('/admin/reset-demo', {
+            method: 'POST',
+        });
+    }
 }
 
 export const api = new APIClient();
