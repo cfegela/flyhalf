@@ -444,6 +444,11 @@ tr:hover {
     border-radius: 0.5rem;
 }
 
+.board-ticket.drag-over-ticket {
+    border: 2px solid var(--primary);
+    background-color: rgba(37, 99, 235, 0.05);
+}
+
 .board-ticket {
     background: white;
     border-radius: 0.5rem;

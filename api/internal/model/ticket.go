@@ -20,6 +20,7 @@ type Ticket struct {
 	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
 	Size        *int       `json:"size,omitempty"`
 	Priority    float64    `json:"priority"`
+	SprintOrder float64    `json:"sprint_order"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
@@ -34,24 +35,24 @@ func NewTicketRepository(db *pgxpool.Pool) *TicketRepository {
 
 func (r *TicketRepository) Create(ctx context.Context, ticket *Ticket) error {
 	query := `
-		INSERT INTO tickets (user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO tickets (user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority, sprint_order)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		ticket.UserID, ticket.Title, ticket.Description, ticket.Status, ticket.AssignedTo, ticket.ProjectID, ticket.SprintID, ticket.Size, ticket.Priority,
+		ticket.UserID, ticket.Title, ticket.Description, ticket.Status, ticket.AssignedTo, ticket.ProjectID, ticket.SprintID, ticket.Size, ticket.Priority, ticket.SprintOrder,
 	).Scan(&ticket.ID, &ticket.CreatedAt, &ticket.UpdatedAt)
 }
 
 func (r *TicketRepository) GetByID(ctx context.Context, id uuid.UUID) (*Ticket, error) {
 	query := `
-		SELECT id, user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority, created_at, updated_at
+		SELECT id, user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority, sprint_order, created_at, updated_at
 		FROM tickets WHERE id = $1
 	`
 	ticket := &Ticket{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&ticket.ID, &ticket.UserID, &ticket.Title, &ticket.Description,
-		&ticket.Status, &ticket.AssignedTo, &ticket.ProjectID, &ticket.SprintID, &ticket.Size, &ticket.Priority, &ticket.CreatedAt, &ticket.UpdatedAt,
+		&ticket.Status, &ticket.AssignedTo, &ticket.ProjectID, &ticket.SprintID, &ticket.Size, &ticket.Priority, &ticket.SprintOrder, &ticket.CreatedAt, &ticket.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -66,14 +67,14 @@ func (r *TicketRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Tick
 
 	if userID != nil {
 		query = `
-			SELECT id, user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority, created_at, updated_at
+			SELECT id, user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority, sprint_order, created_at, updated_at
 			FROM tickets WHERE user_id = $1
 			ORDER BY priority DESC, created_at ASC
 		`
 		args = append(args, *userID)
 	} else {
 		query = `
-			SELECT id, user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority, created_at, updated_at
+			SELECT id, user_id, title, description, status, assigned_to, project_id, sprint_id, size, priority, sprint_order, created_at, updated_at
 			FROM tickets
 			ORDER BY priority DESC, created_at ASC
 		`
@@ -90,7 +91,7 @@ func (r *TicketRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Tick
 		ticket := &Ticket{}
 		if err := rows.Scan(
 			&ticket.ID, &ticket.UserID, &ticket.Title, &ticket.Description,
-			&ticket.Status, &ticket.AssignedTo, &ticket.ProjectID, &ticket.SprintID, &ticket.Size, &ticket.Priority, &ticket.CreatedAt, &ticket.UpdatedAt,
+			&ticket.Status, &ticket.AssignedTo, &ticket.ProjectID, &ticket.SprintID, &ticket.Size, &ticket.Priority, &ticket.SprintOrder, &ticket.CreatedAt, &ticket.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -103,12 +104,12 @@ func (r *TicketRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Tick
 func (r *TicketRepository) Update(ctx context.Context, ticket *Ticket) error {
 	query := `
 		UPDATE tickets
-		SET title = $1, description = $2, status = $3, assigned_to = $4, project_id = $5, sprint_id = $6, size = $7, priority = $8, updated_at = NOW()
-		WHERE id = $9
+		SET title = $1, description = $2, status = $3, assigned_to = $4, project_id = $5, sprint_id = $6, size = $7, priority = $8, sprint_order = $9, updated_at = NOW()
+		WHERE id = $10
 		RETURNING updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		ticket.Title, ticket.Description, ticket.Status, ticket.AssignedTo, ticket.ProjectID, ticket.SprintID, ticket.Size, ticket.Priority, ticket.ID,
+		ticket.Title, ticket.Description, ticket.Status, ticket.AssignedTo, ticket.ProjectID, ticket.SprintID, ticket.Size, ticket.Priority, ticket.SprintOrder, ticket.ID,
 	).Scan(&ticket.UpdatedAt)
 }
 
@@ -141,6 +142,18 @@ func (r *TicketRepository) GetMinPriority(ctx context.Context) (float64, error) 
 func (r *TicketRepository) UpdatePriority(ctx context.Context, id uuid.UUID, priority float64) error {
 	query := `UPDATE tickets SET priority = $1, updated_at = NOW() WHERE id = $2`
 	result, err := r.db.Exec(ctx, query, priority, id)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("ticket not found")
+	}
+	return nil
+}
+
+func (r *TicketRepository) UpdateSprintOrder(ctx context.Context, id uuid.UUID, sprintOrder float64) error {
+	query := `UPDATE tickets SET sprint_order = $1, updated_at = NOW() WHERE id = $2`
+	result, err := r.db.Exec(ctx, query, sprintOrder, id)
 	if err != nil {
 		return err
 	}

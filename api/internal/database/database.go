@@ -186,6 +186,13 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES teams(id) ON DELETE SET NULL`,
 		`CREATE INDEX IF NOT EXISTS idx_users_team_id ON users(team_id)`,
 
+		// Add sprint_order column for independent sprint board ordering
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS sprint_order DOUBLE PRECISION NOT NULL DEFAULT 0`,
+		`CREATE INDEX IF NOT EXISTS idx_tickets_sprint_order ON tickets(sprint_order)`,
+
+		// Initialize sprint_order values based on existing priority
+		`UPDATE tickets SET sprint_order = priority WHERE sprint_order = 0`,
+
 		// Create default admin user if it doesn't exist
 		// Default password: admin123 (bcrypt hash with cost 12)
 		// IMPORTANT: Admin must change password on first login!

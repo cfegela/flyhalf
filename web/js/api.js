@@ -138,6 +138,13 @@ class APIClient {
         });
     }
 
+    async updateTicketSprintOrder(id, sprintOrder) {
+        return this.request(`/tickets/${id}/sprint-order`, {
+            method: 'PATCH',
+            body: JSON.stringify({ sprint_order: sprintOrder }),
+        });
+    }
+
     async getProjects() {
         return this.request('/projects');
     }

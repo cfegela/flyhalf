@@ -42,9 +42,9 @@ async function loadSprintBoard(container, sprintId) {
       completed: sprintTickets.filter(t => t.status === 'closed')
     };
 
-    // Sort each column by priority (highest first)
+    // Sort each column by sprint_order (highest first)
     Object.keys(columns).forEach(col => {
-      columns[col].sort((a, b) => b.priority - a.priority);
+      columns[col].sort((a, b) => b.sprint_order - a.sprint_order);
     });
 
     // Helper to parse date strings as local dates (avoiding timezone issues)
@@ -129,7 +129,7 @@ function renderTickets(tickets, userMap) {
     const sizeDisplay = getSizeLabel(ticket.size);
 
     return `
-      <div class="board-ticket" draggable="true" data-ticket-id="${ticket.id}" data-status="${ticket.status}">
+      <div class="board-ticket" draggable="true" data-ticket-id="${ticket.id}" data-status="${ticket.status}" data-sprint-order="${ticket.sprint_order}">
         <div class="board-ticket-header">
           <span class="board-ticket-id">#${ticket.id.slice(0, 8)}</span>
           <span class="${badgeClass}" ${isUnderway ? 'data-ticket-id="' + ticket.id + '"' : ''}>${ticket.status}</span>
@@ -165,23 +165,29 @@ function initializeDragAndDrop(container, sprintId) {
   const columns = container.querySelectorAll('.board-column-content');
 
   let draggedTicket = null;
+  let draggedFromColumn = null;
 
   // Add drag event listeners to tickets
   tickets.forEach(ticket => {
     ticket.addEventListener('dragstart', handleDragStart);
     ticket.addEventListener('dragend', handleDragEnd);
+    ticket.addEventListener('dragover', handleTicketDragOver);
+    ticket.addEventListener('drop', handleTicketDrop);
+    ticket.addEventListener('dragenter', handleTicketDragEnter);
+    ticket.addEventListener('dragleave', handleTicketDragLeave);
   });
 
   // Add drop event listeners to columns
   columns.forEach(column => {
     column.addEventListener('dragover', handleDragOver);
-    column.addEventListener('drop', handleDrop);
+    column.addEventListener('drop', handleColumnDrop);
     column.addEventListener('dragenter', handleDragEnter);
     column.addEventListener('dragleave', handleDragLeave);
   });
 
   function handleDragStart(e) {
     draggedTicket = this;
+    draggedFromColumn = this.closest('.board-column-content');
     this.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', this.innerHTML);
@@ -189,8 +195,9 @@ function initializeDragAndDrop(container, sprintId) {
 
   function handleDragEnd(e) {
     this.classList.remove('dragging');
-    // Remove drag-over class from all columns
+    // Remove drag-over class from all columns and tickets
     columns.forEach(col => col.classList.remove('drag-over'));
+    tickets.forEach(ticket => ticket.classList.remove('drag-over-ticket'));
   }
 
   function handleDragOver(e) {
@@ -199,6 +206,28 @@ function initializeDragAndDrop(container, sprintId) {
     }
     e.dataTransfer.dropEffect = 'move';
     return false;
+  }
+
+  function handleTicketDragOver(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+
+    if (draggedTicket !== this) {
+      this.classList.add('drag-over-ticket');
+    }
+    return false;
+  }
+
+  function handleTicketDragEnter(e) {
+    if (draggedTicket !== this) {
+      this.classList.add('drag-over-ticket');
+    }
+  }
+
+  function handleTicketDragLeave(e) {
+    this.classList.remove('drag-over-ticket');
   }
 
   function handleDragEnter(e) {
@@ -213,20 +242,95 @@ function initializeDragAndDrop(container, sprintId) {
     }
   }
 
-  async function handleDrop(e) {
+  async function handleTicketDrop(e) {
     if (e.stopPropagation) {
       e.stopPropagation();
     }
     e.preventDefault();
 
-    const targetColumn = e.target.closest('.board-column-content');
+    const targetTicket = e.currentTarget;
+    const targetColumn = targetTicket.closest('.board-column-content');
+
+    if (!draggedTicket || draggedTicket === targetTicket) {
+      targetTicket.classList.remove('drag-over-ticket');
+      return false;
+    }
+
+    targetTicket.classList.remove('drag-over-ticket');
+
+    // Check if we're reordering within the same column
+    if (draggedFromColumn === targetColumn) {
+      // Reorder within column using fractional indexing
+      const allTicketsInColumn = Array.from(targetColumn.querySelectorAll('.board-ticket'));
+      const targetIndex = allTicketsInColumn.indexOf(targetTicket);
+      const draggedIndex = allTicketsInColumn.indexOf(draggedTicket);
+
+      let newSprintOrder;
+
+      if (draggedIndex < targetIndex) {
+        // Moving down - insert after the target ticket
+        const nextTicket = allTicketsInColumn[targetIndex + 1];
+        if (nextTicket) {
+          const targetSprintOrder = parseFloat(targetTicket.dataset.sprintOrder || 0);
+          const nextSprintOrder = parseFloat(nextTicket.dataset.sprintOrder || 0);
+          newSprintOrder = (targetSprintOrder + nextSprintOrder) / 2.0;
+        } else {
+          const targetSprintOrder = parseFloat(targetTicket.dataset.sprintOrder || 0);
+          newSprintOrder = targetSprintOrder - 1.0;
+        }
+      } else {
+        // Moving up - insert before the target ticket
+        const prevTicket = allTicketsInColumn[targetIndex - 1];
+        if (prevTicket) {
+          const prevSprintOrder = parseFloat(prevTicket.dataset.sprintOrder || 0);
+          const targetSprintOrder = parseFloat(targetTicket.dataset.sprintOrder || 0);
+          newSprintOrder = (prevSprintOrder + targetSprintOrder) / 2.0;
+        } else {
+          const targetSprintOrder = parseFloat(targetTicket.dataset.sprintOrder || 0);
+          newSprintOrder = targetSprintOrder + 1.0;
+        }
+      }
+
+      try {
+        const ticketId = draggedTicket.dataset.ticketId;
+        await api.updateTicketSprintOrder(ticketId, newSprintOrder);
+        await loadSprintBoard(container, sprintId);
+      } catch (error) {
+        console.error('Failed to update ticket sprint order:', error);
+        await loadSprintBoard(container, sprintId);
+      }
+    } else {
+      // Moving to a different column - change status
+      await handleStatusChange(targetColumn);
+    }
+
+    return false;
+  }
+
+  async function handleColumnDrop(e) {
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    e.preventDefault();
+
+    const targetColumn = e.currentTarget;
     if (!targetColumn || !draggedTicket) {
       return false;
     }
 
     targetColumn.classList.remove('drag-over');
 
-    // Get ticket data
+    // Only handle status change if dropping on empty column area
+    // (not on a ticket, which is handled by handleTicketDrop)
+    if (!e.target.classList.contains('board-ticket') &&
+        !e.target.closest('.board-ticket')) {
+      await handleStatusChange(targetColumn);
+    }
+
+    return false;
+  }
+
+  async function handleStatusChange(targetColumn) {
     const ticketId = draggedTicket.dataset.ticketId;
     const oldStatus = draggedTicket.dataset.status;
     const targetColumnName = targetColumn.dataset.column;
@@ -260,14 +364,12 @@ function initializeDragAndDrop(container, sprintId) {
       await api.updateTicket(ticketId, ticket);
 
       // Reload the board to reflect changes
-      loadSprintBoard(container, sprintId);
+      await loadSprintBoard(container, sprintId);
 
     } catch (error) {
       // Reload to revert visual change
-      loadSprintBoard(container, sprintId);
+      await loadSprintBoard(container, sprintId);
     }
-
-    return false;
   }
 }
 

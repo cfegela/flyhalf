@@ -294,3 +294,44 @@ func (h *TicketHandler) UpdateTicketPriority(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
 }
+
+type UpdateSprintOrderRequest struct {
+	SprintOrder float64 `json:"sprint_order"`
+}
+
+func (h *TicketHandler) UpdateTicketSprintOrder(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	var req UpdateSprintOrderRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Update ticket sprint order
+	if err := h.ticketRepo.UpdateSprintOrder(r.Context(), id, req.SprintOrder); err != nil {
+		http.Error(w, `{"error":"failed to update ticket sprint order"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated ticket and return it
+	ticket, err := h.ticketRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"ticket not found"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ticket)
+}
