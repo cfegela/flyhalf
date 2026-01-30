@@ -19,6 +19,10 @@ export async function sprintsListView() {
 
     try {
         const sprints = await api.getSprints();
+
+        // Sort sprints from oldest to newest by start date
+        sprints.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
         const sprintsContainer = container.querySelector('#sprints-container');
 
         if (sprints.length === 0) {
@@ -377,7 +381,7 @@ export async function sprintFormView(params) {
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Sprint
                         </button>
-                        <a href="${isEdit ? `#/sprints/${id}` : '#/sprints'}" class="btn btn-secondary">Cancel</a>
+                        <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
                     </div>
                 </div>
             </form>

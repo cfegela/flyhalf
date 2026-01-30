@@ -440,7 +440,7 @@ export async function ticketFormView(params) {
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Ticket
                         </button>
-                        <a href="${isEdit ? `/tickets/${id}` : '/tickets'}" class="btn btn-secondary">Cancel</a>
+                        <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
                     </div>
                 </div>
             </form>

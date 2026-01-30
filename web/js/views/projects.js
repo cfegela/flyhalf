@@ -243,7 +243,7 @@ export async function projectFormView(params) {
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update' : 'Create'} Project
                         </button>
-                        <a href="${isEdit ? `#/projects/${id}` : '#/projects'}" class="btn btn-secondary">Cancel</a>
+                        <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
                     </div>
                 </div>
             </form>

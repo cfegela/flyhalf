@@ -29,7 +29,7 @@ export async function sprintRetroView(params) {
                 <div class="page-header">
                     <h1 class="page-title">Sprint Retrospective: ${escapeHtml(sprint.name)}</h1>
                     <div class="actions">
-                        <a href="/sprints/${sprintId}" class="btn btn-secondary">Back to Sprint</a>
+                        <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>
 
