@@ -296,6 +296,13 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []BurndownPoint {
 	var points []BurndownPoint
 
+	// Start one day before the sprint to show initial capacity
+	dayBeforeSprint := startDate.AddDate(0, 0, -1)
+	points = append(points, BurndownPoint{
+		Date:   dayBeforeSprint.Format("2006-01-02"),
+		Points: totalPoints,
+	})
+
 	// Calculate number of days in the sprint
 	duration := endDate.Sub(startDate).Hours() / 24
 	days := int(duration) + 1 // Include both start and end day
@@ -322,6 +329,13 @@ func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []Burn
 
 func generateActualBurndown(startDate, endDate time.Time, totalPoints int, tickets []*model.Ticket) []BurndownPoint {
 	var points []BurndownPoint
+
+	// Start one day before the sprint to show initial capacity
+	dayBeforeSprint := startDate.AddDate(0, 0, -1)
+	points = append(points, BurndownPoint{
+		Date:   dayBeforeSprint.Format("2006-01-02"),
+		Points: totalPoints,
+	})
 
 	// Calculate number of days in the sprint
 	duration := endDate.Sub(startDate).Hours() / 24
