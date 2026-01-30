@@ -489,6 +489,83 @@ Authorization: Bearer <access_token>
 
 ## Database Schema
 
+```mermaid
+erDiagram
+    TEAMS ||--o{ USERS : "contains"
+    USERS ||--o{ REFRESH_TOKENS : "has"
+    USERS ||--o{ TICKETS : "creates"
+    USERS ||--o{ TICKETS : "assigned_to"
+    USERS ||--o{ PROJECTS : "creates"
+    USERS ||--o{ SPRINTS : "creates"
+    PROJECTS ||--o{ TICKETS : "contains"
+    SPRINTS ||--o{ TICKETS : "contains"
+
+    TEAMS {
+        uuid id PK
+        varchar name
+        text description
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    USERS {
+        uuid id PK
+        varchar email UK
+        varchar password_hash
+        enum role
+        varchar first_name
+        varchar last_name
+        boolean is_active
+        boolean must_change_password
+        uuid team_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    REFRESH_TOKENS {
+        uuid id PK
+        uuid user_id FK
+        varchar token_hash
+        timestamp expires_at
+        timestamp revoked_at
+        timestamp created_at
+    }
+
+    PROJECTS {
+        uuid id PK
+        uuid user_id FK
+        varchar name
+        text description
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    SPRINTS {
+        uuid id PK
+        uuid user_id FK
+        varchar name
+        date start_date
+        date end_date
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    TICKETS {
+        uuid id PK
+        uuid user_id FK
+        varchar title
+        text description
+        varchar status
+        uuid assigned_to FK
+        uuid project_id FK
+        uuid sprint_id FK
+        integer size
+        double priority
+        timestamp created_at
+        timestamp updated_at
+    }
+```
+
 ### Teams
 - `id` (UUID, PK)
 - `name` (VARCHAR, not null)
