@@ -100,7 +100,7 @@ export async function ticketsListView() {
                                         ${project ? `<span title="${escapeHtml(project.name)}">${getProjectAcronym(project.name)}</span>` : '-'}
                                     </td>
                                     <td data-label="Sprint">
-                                        ${sprint ? escapeHtml(sprint.name) : '-'}
+                                        ${sprint ? `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
