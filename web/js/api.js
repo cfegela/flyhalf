@@ -306,6 +306,12 @@ class APIClient {
             method: 'POST',
         });
     }
+
+    async reseedDemo() {
+        return this.request('/admin/reseed-demo', {
+            method: 'POST',
+        });
+    }
 }
 
 export const api = new APIClient();

@@ -150,6 +150,7 @@ func (rt *Router) Setup() http.Handler {
 			})
 
 			r.Post("/reset-demo", rt.adminHandler.ResetDemo)
+			r.Post("/reseed-demo", rt.adminHandler.ReseedDemo)
 		})
 	})
 

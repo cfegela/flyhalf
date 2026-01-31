@@ -104,6 +104,18 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 - Team detail view shows all members
 - Teams link in navbar for administrators
 
+### Demo Environment Management (Admin Only)
+- **Reset Demo Environment**: Delete all tickets, sprints, and projects
+  - Accessible from Settings page Danger Zone
+  - Confirmation required before deletion
+  - Shows deletion counts after completion
+- **Reseed Demo Environment**: Create sample data for demonstration
+  - Creates 1 project: "Demo Project"
+  - Creates 1 sprint: "Demo Sprint" (14-day sprint starting today)
+  - Creates 5 tickets with valid statuses (open, in-progress, needs-review, blocked, closed)
+  - All demo items assigned to current admin user
+  - Useful for testing, demos, and training
+
 ### Collaboration Model
 - All users can view and edit all tickets, projects, and sprints
 - Users can delete items they created; admins can delete any item
@@ -137,6 +149,9 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 | **Team Management** | | |
 | Create, edit, delete teams | ❌ | ✅ |
 | Assign users to teams | ❌ | ✅ |
+| **Demo Environment** | | |
+| Reset demo environment (delete all data) | ❌ | ✅ |
+| Reseed demo environment (create sample data) | ❌ | ✅ |
 
 This collaborative permission model allows all team members to view and update work items while protecting data integrity.
 
@@ -331,6 +346,7 @@ go mod tidy
 
 #### Settings
 - **Settings Page** - Account information and password change form
+  - **Danger Zone** (admins only): Reset and reseed demo environment controls
 
 ### Admin Only
 
@@ -484,6 +500,8 @@ Authorization: Bearer <access_token>
 | GET | `/admin/teams/{id}` | Get team by ID | Admin |
 | PUT | `/admin/teams/{id}` | Update team | Admin |
 | DELETE | `/admin/teams/{id}` | Delete team | Admin |
+| POST | `/admin/reset-demo` | Delete all tickets, sprints, projects | Admin |
+| POST | `/admin/reseed-demo` | Create demo project, sprint, and 5 tickets | Admin |
 
 ---
 

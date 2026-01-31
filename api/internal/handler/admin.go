@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/model"
@@ -260,4 +261,89 @@ func (h *AdminHandler) ResetDemo(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *AdminHandler) ReseedDemo(w http.ResponseWriter, r *http.Request) {
+	// Get the authenticated user ID
+	userID, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	// Create a demo project
+	project := &model.Project{
+		UserID:      userID,
+		Name:        "Demo Project",
+		Description: "Sample project for demonstration purposes",
+	}
+	if err := h.projectRepo.Create(r.Context(), project); err != nil {
+		http.Error(w, `{"error":"failed to create demo project"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Create a demo sprint (2 week sprint starting today)
+	now := time.Now().UTC()
+	sprint := &model.Sprint{
+		UserID:    userID,
+		Name:      "Demo Sprint",
+		StartDate: now,
+		EndDate:   now.AddDate(0, 0, 13), // 14 day sprint (start date + 13 days)
+	}
+	if err := h.sprintRepo.Create(r.Context(), sprint); err != nil {
+		http.Error(w, `{"error":"failed to create demo sprint"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Create 5 demo tickets with different valid statuses
+	demoTickets := []struct {
+		title       string
+		description string
+		status      string
+		size        *int
+	}{
+		{"Implement user authentication", "Add JWT-based authentication to the API", "closed", intPtr(5)},
+		{"Create dashboard UI", "Design and implement the main dashboard interface", "in-progress", intPtr(8)},
+		{"Write API documentation", "Document all API endpoints with examples", "needs-review", intPtr(3)},
+		{"Fix database connection pooling", "Investigate and resolve connection pool issues", "blocked", intPtr(5)},
+		{"Add email notifications", "Implement email notifications for important events", "open", intPtr(3)},
+	}
+
+	ticketsCreated := 0
+	for i, demo := range demoTickets {
+		ticket := &model.Ticket{
+			UserID:          userID,
+			Title:           demo.title,
+			Description:     demo.description,
+			Status:          demo.status,
+			ProjectID:       &project.ID,
+			SprintID:        &sprint.ID,
+			Size:            demo.size,
+			Priority:        float64(5 - i), // Descending priority
+			SprintOrder:     float64(5 - i), // Descending order
+			AddedToSprintAt: &now,
+		}
+		if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
+			http.Error(w, `{"error":"failed to create demo tickets"}`, http.StatusInternalServerError)
+			return
+		}
+		ticketsCreated++
+	}
+
+	response := map[string]interface{}{
+		"message":          "Demo environment reseeded successfully",
+		"tickets_created":  ticketsCreated,
+		"sprints_created":  1,
+		"projects_created": 1,
+		"project_id":       project.ID,
+		"sprint_id":        sprint.ID,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// Helper function to create int pointer
+func intPtr(i int) *int {
+	return &i
 }

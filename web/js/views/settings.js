@@ -193,13 +193,22 @@ export async function settingsView() {
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
                     These actions are irreversible and will permanently delete data from the system.
                 </p>
-                <div>
+                <div style="margin-bottom: 1.5rem;">
                     <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Reset Demo Environment</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
                         This will delete ALL tickets, sprints, and projects. This action cannot be undone.
                     </p>
                     <button type="button" class="btn btn-danger" id="reset-demo-btn">
                         Reset Demo Environment
+                    </button>
+                </div>
+                <div>
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Reseed Demo Environment</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+                        This will create 1 sprint, 1 project, and 5 sample tickets for demonstration purposes.
+                    </p>
+                    <button type="button" class="btn btn-primary" id="reseed-demo-btn">
+                        Reseed Demo Environment
                     </button>
                 </div>
             </div>
@@ -268,6 +277,29 @@ export async function settingsView() {
                 alert('Failed to reset demo environment: ' + (error.message || 'Unknown error'));
                 resetDemoBtn.disabled = false;
                 resetDemoBtn.textContent = 'Reset Demo Environment';
+            }
+        });
+    }
+
+    // Reseed demo button (admin only)
+    const reseedDemoBtn = container.querySelector('#reseed-demo-btn');
+    if (reseedDemoBtn) {
+        reseedDemoBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to reseed the demo environment? This will create 1 sprint, 1 project, and 5 sample tickets.')) {
+                return;
+            }
+
+            reseedDemoBtn.disabled = true;
+            reseedDemoBtn.textContent = 'Reseeding...';
+
+            try {
+                const result = await api.reseedDemo();
+                alert(`Demo environment reseeded successfully.\n\nCreated:\n- ${result.tickets_created} tickets\n- ${result.sprints_created} sprint\n- ${result.projects_created} project`);
+                router.navigate('/tickets');
+            } catch (error) {
+                alert('Failed to reseed demo environment: ' + (error.message || 'Unknown error'));
+                reseedDemoBtn.disabled = false;
+                reseedDemoBtn.textContent = 'Reseed Demo Environment';
             }
         });
     }
