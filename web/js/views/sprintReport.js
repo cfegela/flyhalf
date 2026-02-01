@@ -94,16 +94,16 @@ export async function sprintReportView(params) {
                                     </p>
                                 </div>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                                 <div>
                                     <label class="form-label">Completed</label>
-                                    <p style="font-size: 1.5rem; font-weight: bold; color: var(--success); margin: 0;">
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--success); margin: 0;">
                                         ${report.completed_points}
                                     </p>
                                 </div>
                                 <div>
                                     <label class="form-label">Remaining</label>
-                                    <p style="font-size: 1.5rem; font-weight: bold; color: var(--warning); margin: 0;">
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--warning); margin: 0;">
                                         ${report.remaining_points}
                                     </p>
                                 </div>
@@ -143,16 +143,16 @@ export async function sprintReportView(params) {
                                     </p>
                                 </div>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                                 <div>
                                     <label class="form-label">Completed</label>
-                                    <p style="font-size: 1.5rem; font-weight: bold; color: var(--success); margin: 0;">
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--success); margin: 0;">
                                         ${report.completed_tickets}
                                     </p>
                                 </div>
                                 <div>
                                     <label class="form-label">Remaining</label>
-                                    <p style="font-size: 1.5rem; font-weight: bold; color: var(--warning); margin: 0;">
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--warning); margin: 0;">
                                         ${report.total_tickets - report.completed_tickets}
                                     </p>
                                 </div>
