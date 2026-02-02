@@ -16,10 +16,11 @@ export async function sprintBoardView(params) {
 
 async function loadSprintBoard(container, sprintId) {
   try {
-    const [sprint, allTickets, users] = await Promise.all([
+    const [sprint, allTickets, users, currentUser] = await Promise.all([
       api.getSprint(sprintId),
       api.getTickets(),
-      api.getUsersForAssignment()
+      api.getUsersForAssignment(),
+      api.getMe()
     ]);
 
     // Create a map of user_id to user for quick lookup
@@ -101,7 +102,7 @@ async function loadSprintBoard(container, sprintId) {
     `;
 
     // Initialize drag and drop
-    initializeDragAndDrop(container, sprintId);
+    initializeDragAndDrop(container, sprintId, currentUser);
 
     // Initialize status badge clicks for underway tickets
     initializeStatusBadgeClicks(container, sprintId);
@@ -160,7 +161,7 @@ function getSizeLabel(size) {
   }
 }
 
-function initializeDragAndDrop(container, sprintId) {
+function initializeDragAndDrop(container, sprintId, currentUser) {
   const tickets = container.querySelectorAll('.board-ticket');
   const columns = container.querySelectorAll('.board-column-content');
 
@@ -361,6 +362,12 @@ function initializeDragAndDrop(container, sprintId) {
       // Update ticket status via API
       const ticket = await api.getTicket(ticketId);
       ticket.status = newStatus;
+
+      // If ticket is unassigned, assign it to the current user
+      if (!ticket.assigned_to && currentUser) {
+        ticket.assigned_to = currentUser.id;
+      }
+
       await api.updateTicket(ticketId, ticket);
 
       // Reload the board to reflect changes
