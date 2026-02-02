@@ -63,8 +63,9 @@ async function loadSprintBoard(container, sprintId) {
             ${parseDate(sprint.end_date).toLocaleDateString()}
           </div>
         </div>
-        <div>
-          <a href="/sprints/${sprintId}/report" class="btn btn-primary">View Report</a>
+        <div class="actions">
+          <a href="/sprints/${sprintId}/report" class="btn btn-primary">Report</a>
+          <a href="/sprints/${sprintId}/retro" class="btn btn-primary">Retro</a>
           <button class="btn btn-secondary" onclick="history.back()">Back</button>
         </div>
       </div>
