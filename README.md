@@ -87,14 +87,20 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 - **Sprint Board**: Interactive kanban with drag-and-drop
   - Three columns: Committed (open), Underway (in-progress/blocked/needs-review), Completed (closed)
   - Drag tickets between columns to update status
+  - Auto-assigns unassigned tickets to the user who moves them
   - Clickable status badges in Underway column
   - Real-time status updates via API
-  - Tickets sorted by priority within each column
+  - Independent sprint board ordering with drag-and-drop reordering within columns
+  - Tickets sorted by sprint order within each column
   - Responsive design with mobile support
 - **Sprint Report**: Visual burndown chart and progress metrics
-  - Story points and ticket completion with progress bars
-  - Burndown chart showing remaining points over sprint duration
-  - Breakdown by total/completed/remaining points and tickets
+  - Story points and tickets cards with consistent layout and sizing
+  - Total Points/Tickets, Committed, and Adopted in top row
+  - Completed and Remaining in bottom row with matching alignment
+  - Progress bars showing completion percentage
+  - Burndown chart showing remaining points over sprint duration (starts one day before sprint)
+  - Chart uses "Start" label for initial day to avoid timezone confusion
+  - Accurate tracking with added_to_sprint_at timestamps
   - Powered by Chart.js for interactive visualization
 - **Sprint Retrospective**: Team reflection board with voting on items
 
@@ -310,6 +316,7 @@ go mod tidy
 #### Tickets
 - **Tickets List** - View all tickets with status badges, size, assignee, project (acronym), sprint
   - Sorted by priority (promoted first), then by creation date
+  - Sprint column shows sprint name with direct link to sprint board
   - Icon-based actions column: Promote to top, Promote up, Demote down, View, Edit
 - **Ticket Detail** - Card-based layout with Key Information, Description, Project Details, Metadata
   - Edit/delete buttons enabled for creator or admin
@@ -334,9 +341,12 @@ go mod tidy
   - "View Board" and "View Report" buttons
 - **Sprint Board** - Interactive kanban with drag-and-drop
   - Three columns: Committed, Underway, Completed
-  - Drag tickets to update status
-  - Clickable status badges
-  - Ticket counts in headers
+  - Drag tickets between columns to update status
+  - Drag tickets within columns to reorder (independent sprint board ordering)
+  - Automatically assigns unassigned tickets to the user who moves them
+  - Clickable status badges in Underway column for quick status changes
+  - Ticket counts in column headers
+  - View ticket details with "View" link
 - **Sprint Report** - Visual analytics
   - Story points and tickets progress with bars
   - Burndown chart (Chart.js)
@@ -431,6 +441,7 @@ Authorization: Bearer <access_token>
 | POST | `/tickets/{id}/promote` | Promote ticket to top | Any |
 | POST | `/tickets/{id}/promote-up` | Promote up one position | Any |
 | POST | `/tickets/{id}/demote-down` | Demote down one position | Any |
+| PATCH | `/tickets/{id}/sprint-order` | Update sprint board order | Any |
 
 **Ticket Fields**:
 - `title` (string, required)
@@ -579,6 +590,8 @@ erDiagram
         uuid sprint_id FK
         integer size
         double priority
+        double sprint_order
+        timestamp added_to_sprint_at
         timestamp created_at
         timestamp updated_at
     }
@@ -636,6 +649,8 @@ erDiagram
 - `sprint_id` (UUID, FK to sprints, nullable)
 - `size` (INTEGER: 1, 2, 3, 5, 8, nullable)
 - `priority` (DOUBLE PRECISION, default: 0, fractional indexing)
+- `sprint_order` (DOUBLE PRECISION, default: 0, fractional indexing for sprint board ordering)
+- `added_to_sprint_at` (TIMESTAMP, nullable, tracks when ticket was added to sprint for burndown accuracy)
 - `created_at`, `updated_at` (TIMESTAMP)
 
 ### Retro Items
