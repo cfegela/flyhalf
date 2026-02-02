@@ -363,7 +363,7 @@ export async function sprintFormView(params) {
                             id="start_date"
                             class="form-input"
                             required
-                            ${isEdit ? '' : `min="${today}"`}
+                            min="${today}"
                             value="${sprint ? formatDateForInput(sprint.start_date) : ''}"
                         >
                     </div>
