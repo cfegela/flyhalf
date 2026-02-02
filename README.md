@@ -31,7 +31,7 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 ### Backend
 - **Language**: Go 1.24
 - **Router**: chi v5 (lightweight HTTP router)
-- **Database**: PostgreSQL 16 with pgx v5 driver
+- **Database**: PostgreSQL 18 with pgx v5 driver
 - **Authentication**: JWT access tokens (15min) + refresh tokens (7 days, HttpOnly cookie)
 - **Password Hashing**: bcrypt (cost 12)
 - **Development**: Air hot reload for rapid iteration
@@ -44,10 +44,10 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 - **Charts**: Chart.js for burndown visualizations
 
 ### Infrastructure
-- **Development**: Docker Compose with PostgreSQL 16
+- **Development**: Docker Compose with PostgreSQL 18
 - **Production**: AWS (Terraform-managed)
   - **Compute**: ECS Fargate (serverless containers)
-  - **Database**: RDS PostgreSQL 16
+  - **Database**: RDS PostgreSQL 18
   - **CDN**: CloudFront with S3 origin
   - **Load Balancer**: Application Load Balancer with SSL/TLS
   - **Container Registry**: ECR with image scanning
@@ -737,7 +737,7 @@ The production deployment uses AWS services managed by Terraform:
 **Components**:
 - **VPC**: Custom VPC with public/private subnets across 2 AZs
 - **API**: ECS Fargate (0.25 vCPU / 512MB) in private subnet
-- **Database**: RDS PostgreSQL 16 (db.t4g.micro) in private subnet
+- **Database**: RDS PostgreSQL 18 (db.t4g.micro) in private subnet
 - **Load Balancer**: ALB with SSL/TLS termination
 - **CDN**: CloudFront distribution with S3 origin (OAC)
 - **Container Registry**: ECR with image scanning
