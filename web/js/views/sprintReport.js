@@ -64,6 +64,7 @@ export async function sprintReportView(params) {
                 <div class="page-header">
                     <h1 class="page-title">${escapeHtml(sprint.name)} - Report</h1>
                     <div class="actions">
+                        <a href="/sprints/${id}/board" class="btn btn-primary">View Board</a>
                         <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>

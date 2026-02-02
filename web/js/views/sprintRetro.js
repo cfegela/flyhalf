@@ -35,8 +35,8 @@ export async function sprintRetroView(params) {
 
                 <div class="board retro-board-2col">
                     <div class="board-column">
-                        <div class="board-column-header retro-header-good">
-                            <h2>Luke Skywalker</h2>
+                        <div class="board-column-header">
+                            <h2><span style="color: var(--success);">✓</span> Good</h2>
                             <span class="ticket-count">${goodItems.length}</span>
                         </div>
                         <div class="board-column-content" id="good-items">
@@ -55,8 +55,8 @@ export async function sprintRetroView(params) {
                     </div>
 
                     <div class="board-column">
-                        <div class="board-column-header retro-header-bad">
-                            <h2>Darth Vader</h2>
+                        <div class="board-column-header">
+                            <h2><span style="color: var(--danger);">✗</span> Bad</h2>
                             <span class="ticket-count">${badItems.length}</span>
                         </div>
                         <div class="board-column-content" id="bad-items">

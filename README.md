@@ -52,6 +52,7 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
   - **Load Balancer**: Application Load Balancer with SSL/TLS
   - **Container Registry**: ECR with image scanning
   - **DNS**: Route53
+  - **CI/CD**: GitHub Actions for automated deployment
   - **Estimated Cost**: $50-70/month
 
 ---
@@ -194,20 +195,20 @@ flyhalf/
 │   ├── index.html         # Single HTML entry point
 │   └── nginx.conf         # nginx configuration
 ├── ops/                     # Infrastructure & deployment
-│   ├── terraform/          # AWS infrastructure as code
-│   │   ├── vpc.tf         # VPC and networking
-│   │   ├── rds.tf         # PostgreSQL database
-│   │   ├── ecs.tf         # ECS Fargate cluster
-│   │   ├── alb.tf         # Application Load Balancer
-│   │   ├── ecr.tf         # Container registry
-│   │   ├── cloudfront.tf  # CDN for static files
-│   │   ├── security_groups.tf
-│   │   ├── outputs.tf
-│   │   ├── variables.tf
-│   │   └── backend.tf     # S3 remote state
-│   └── scripts/           # Deployment automation
-│       ├── deploy-api.sh  # Build & deploy API
-│       └── deploy-web.sh  # Deploy frontend to S3/CloudFront
+│   └── terraform/          # AWS infrastructure as code
+│       ├── vpc.tf         # VPC and networking
+│       ├── rds.tf         # PostgreSQL database
+│       ├── ecs.tf         # ECS Fargate cluster
+│       ├── alb.tf         # Application Load Balancer
+│       ├── ecr.tf         # Container registry
+│       ├── cloudfront.tf  # CDN for static files
+│       ├── security_groups.tf
+│       ├── outputs.tf
+│       ├── variables.tf
+│       └── backend.tf     # S3 remote state
+├── .github/
+│   └── workflows/
+│       └── deploy.yml     # GitHub Actions deployment pipeline
 ├── scripts/                # Utility scripts
 │   ├── create-admin.sql   # Initial admin user SQL
 │   └── hash-password.go   # Password hashing utility
@@ -838,41 +839,76 @@ This creates:
 - Route53 DNS records
 - Security groups, IAM roles, CloudWatch logs
 
-#### 4. Deploy the API
+#### 4. Configure GitHub Actions
 
-After infrastructure is created:
+After infrastructure is created, deployments are automated via GitHub Actions. The workflow triggers on:
+- Push to `main` branch
+- Manual workflow dispatch
 
-```bash
-cd ../scripts
-./deploy-api.sh
+**Setup GitHub Secrets**:
+1. Go to your GitHub repository → Settings → Secrets and variables → Actions
+2. Add the following secrets:
+   - `AWS_ACCESS_KEY_ID` - Your AWS access key
+   - `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
+
+**Update Workflow Variables** (`.github/workflows/deploy.yml`):
+```yaml
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: flyhalf-api
+  ECS_CLUSTER: flyhalf-cluster
+  ECS_SERVICE: flyhalf-api-service
+  S3_BUCKET: your-s3-bucket-name        # Get from terraform output
+  CLOUDFRONT_DISTRIBUTION_ID: YOUR_ID   # Get from terraform output
 ```
 
-**Expected Duration**: 3-5 minutes
+Get the S3 bucket name and CloudFront distribution ID:
+```bash
+terraform output web_bucket_name
+terraform output cloudfront_distribution_id
+```
 
-The script will:
-1. Detect docker or podman runtime
-2. Build the Go API Docker image (cross-compiled to AMD64)
-3. Log in to ECR
-4. Push image to ECR
-5. Update ECS service to deploy new image
+#### 5. Deploy via GitHub Actions
+
+**Automatic Deployment**:
+Push to main branch to trigger automatic deployment:
+```bash
+git push origin main
+```
+
+**Manual Deployment**:
+Alternatively, trigger a manual deployment from GitHub:
+1. Go to Actions tab in your repository
+2. Select "Deploy to AWS" workflow
+3. Click "Run workflow"
+4. Choose the branch and click "Run workflow"
+
+**Expected Duration**: 5-8 minutes
+
+The GitHub Actions workflow will:
+1. **Deploy API**:
+   - Build the Go API Docker image (cross-compiled to AMD64)
+   - Push image to ECR with both git SHA and `latest` tags
+   - Update ECS service to deploy new image
+   - Wait for deployment to stabilize
+2. **Deploy Web**:
+   - Swap config to production version (`config.production.js` → `config.js`)
+   - Upload static files to S3 with correct content types
+   - Invalidate CloudFront cache
 
 **Note**: The Dockerfile's `GOARCH=amd64` ensures the binary is x86-64 compatible even when building on Apple Silicon Macs.
 
-#### 5. Deploy the Web Frontend
+#### 6. Monitor Deployment
 
-```bash
-./deploy-web.sh
-```
+View the deployment progress in GitHub Actions:
+1. Go to your repository on GitHub
+2. Click the "Actions" tab
+3. Click on the running workflow
+4. Monitor the progress of both API and Web deployment jobs
 
-**Expected Duration**: 1-2 minutes
+#### 7. Verify Deployment
 
-The script will:
-1. Swap config to production version (`config.production.js` → `config.js`)
-2. Upload static files to S3
-3. Invalidate CloudFront cache
-4. Restore local development config
-
-#### 6. Verify Deployment
+After GitHub Actions completes:
 
 ```bash
 cd ../terraform
@@ -896,6 +932,39 @@ curl -H "Origin: https://demo.flyhalf.app" \
 # Open web app
 open https://demo.flyhalf.app
 ```
+
+### GitHub Actions CI/CD
+
+The project uses GitHub Actions for automated deployment. The workflow (`.github/workflows/deploy.yml`) runs two parallel jobs:
+
+#### Deploy API Job
+1. Checks out code
+2. Configures AWS credentials
+3. Logs into Amazon ECR
+4. Builds Docker image for AMD64 (Fargate-compatible)
+5. Pushes image to ECR with two tags:
+   - Git commit SHA (e.g., `abc1234`)
+   - `latest`
+6. Updates ECS service to force new deployment
+7. Waits for deployment to stabilize
+
+#### Deploy Web Job
+1. Checks out code
+2. Configures AWS credentials
+3. Prepares production config (`config.production.js` → `config.js`)
+4. Syncs files to S3 with correct content types:
+   - HTML files: `text/html`
+   - JavaScript files: `application/javascript`
+   - CSS files: `text/css`
+5. Invalidates CloudFront cache to serve updated files
+
+#### Workflow Triggers
+- **Automatic**: Pushes to `main` branch
+- **Manual**: Workflow dispatch from GitHub Actions tab
+
+#### Required Secrets
+- `AWS_ACCESS_KEY_ID` - AWS access key with permissions for ECR, ECS, S3, CloudFront
+- `AWS_SECRET_ACCESS_KEY` - AWS secret key
 
 ### Configuration Details
 
@@ -929,16 +998,13 @@ The ECS task definition sets these environment variables:
 
 ### Common Deployment Commands
 
-#### Update API
+#### Deploy via GitHub Actions
+Deployments are automated via GitHub Actions. To deploy:
 ```bash
-cd ops/scripts
-./deploy-api.sh
-```
+# Push to main branch triggers automatic deployment
+git push origin main
 
-#### Update Web
-```bash
-cd ops/scripts
-./deploy-web.sh
+# Or trigger manually from GitHub Actions tab in your repository
 ```
 
 #### Update Infrastructure
@@ -1058,7 +1124,7 @@ aws elbv2 describe-target-health \
 **Solution**:
 1. Verify API environment variable: `ALLOWED_ORIGIN=https://demo.flyhalf.app`
 2. Check ECS task definition in AWS Console
-3. Redeploy API if needed: `cd ops/scripts && ./deploy-api.sh`
+3. Redeploy API if needed: Push to main branch or trigger GitHub Actions workflow
 
 #### Issue: API Connection Refused
 **Symptom**: Web app can't connect to API
@@ -1158,25 +1224,32 @@ curl http://localhost:3000/js/app.js
 
 #### Rollback API
 ```bash
-# List recent images
+# List recent images with their commit SHAs
 aws ecr list-images \
     --repository-name flyhalf-api \
     --region us-east-1 \
     --query 'imageIds[*].imageTag'
 
-# Deploy previous version (if tagged)
-cd ops/scripts
-./deploy-api.sh <previous-tag>
+# Update ECS service to use previous image
+aws ecs update-service \
+    --cluster flyhalf-cluster \
+    --service flyhalf-api-service \
+    --force-new-deployment \
+    --region us-east-1
 
-# Note: If using 'latest' tags only, you'll need to rebuild from git history
+# Note: To deploy a specific git commit, checkout that commit and push to trigger GitHub Actions
+git checkout <previous-commit>
+git push origin main
 ```
 
 #### Rollback Web
 ```bash
-# Web files are version-controlled in git
+# Rollback to previous commit and trigger deployment
 git checkout <previous-commit> -- web/
-cd ops/scripts
-./deploy-web.sh
+git commit -m "Rollback web to previous version"
+git push origin main
+
+# GitHub Actions will automatically deploy the rolled-back version
 ```
 
 #### Rollback Infrastructure
