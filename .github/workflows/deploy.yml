@@ -1,0 +1,151 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: flyhalf-api
+  ECS_CLUSTER: flyhalf-cluster
+  ECS_SERVICE: flyhalf-api-service
+  S3_BUCKET: flyhalf-web-620743043986
+  CLOUDFRONT_DISTRIBUTION_ID: E1DIDONNZJ71M
+
+jobs:
+  deploy-api:
+    name: Deploy API to ECS
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build Docker image for AMD64 (Fargate)
+          docker build \
+            --platform linux/amd64 \
+            --target production \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -f api/Dockerfile \
+            api/
+
+          # Push both tags
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+          echo "✅ ECS service updated. New deployment initiated."
+
+      - name: Wait for ECS deployment to stabilize
+        run: |
+          echo "⏳ Waiting for ECS service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --region ${{ env.AWS_REGION }}
+
+          echo "✅ ECS deployment completed successfully"
+
+  deploy-web:
+    name: Deploy Web to S3/CloudFront
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Prepare production config
+        run: |
+          # Swap in production config
+          cp web/js/config.production.js web/js/config.js
+          echo "✅ Production config activated"
+
+      - name: Sync files to S3
+        run: |
+          # Sync all web files to S3
+          aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --exclude "js/config.production.js" \
+            --content-type "text/html" \
+            --exclude "*" \
+            --include "*.html"
+
+          # Sync JS files with correct content type
+          aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --exclude "*" \
+            --include "*.js" \
+            --content-type "application/javascript"
+
+          # Sync CSS files with correct content type
+          aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --exclude "*" \
+            --include "*.css" \
+            --content-type "text/css"
+
+          # Sync remaining files (images, icons, etc.)
+          aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --exclude "*.html" \
+            --exclude "*.js" \
+            --exclude "*.css" \
+            --exclude "js/config.production.js"
+
+          echo "✅ Files synced to S3"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+          echo "✅ CloudFront cache invalidation initiated"
+
+      - name: Deployment summary
+        run: |
+          echo "🎉 Web deployment completed successfully"
+          echo "📦 S3 Bucket: s3://${{ env.S3_BUCKET }}"
+          echo "🌐 CloudFront Distribution: ${{ env.CLOUDFRONT_DISTRIBUTION_ID }}"
