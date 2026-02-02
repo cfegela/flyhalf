@@ -49,7 +49,7 @@ export async function projectsListView() {
                             ${projects.map(project => `
                                 <tr data-project-id="${project.id}">
                                     <td data-label="Name">
-                                        <strong>${escapeHtml(project.name)} (${getProjectAcronym(project.name)})</strong>
+                                        <strong>${escapeHtml(project.name)} (${getProjectAcronym(project.name, projects, project.id)})</strong>
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
@@ -300,7 +300,31 @@ function getStatusBadgeClass(status) {
     }
 }
 
-function getProjectAcronym(projectName) {
-    // Remove all whitespace, take first 6 characters, and convert to uppercase
-    return projectName.replace(/\s+/g, '').substring(0, 6).toUpperCase();
+function getProjectAcronym(projectName, allProjects, currentProjectId) {
+    // Remove all whitespace for acronym generation
+    const baseName = projectName.replace(/\s+/g, '');
+    let length = 6;
+    let acronym;
+
+    // Start with 6 characters and extend if there's a collision
+    while (length <= baseName.length) {
+        acronym = baseName.substring(0, length).toUpperCase();
+
+        // Check if any other project has this same acronym
+        const hasCollision = allProjects.some(p => {
+            if (p.id === currentProjectId) return false; // Don't compare with self
+            const otherBaseName = p.name.replace(/\s+/g, '');
+            const otherAcronym = otherBaseName.substring(0, length).toUpperCase();
+            return acronym === otherAcronym;
+        });
+
+        if (!hasCollision) {
+            return acronym;
+        }
+
+        length++;
+    }
+
+    // If we've used all characters and still have collision, return full name uppercase
+    return baseName.toUpperCase();
 }
