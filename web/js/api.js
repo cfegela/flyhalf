@@ -145,6 +145,13 @@ class APIClient {
         });
     }
 
+    async updateAcceptanceCriteriaCompleted(ticketId, criteriaId, completed) {
+        return this.request(`/tickets/${ticketId}/acceptance-criteria/${criteriaId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ completed }),
+        });
+    }
+
     async getProjects() {
         return this.request('/projects');
     }

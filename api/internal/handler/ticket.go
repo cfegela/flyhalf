@@ -12,31 +12,43 @@ import (
 )
 
 type TicketHandler struct {
-	ticketRepo *model.TicketRepository
+	ticketRepo   *model.TicketRepository
+	criteriaRepo *model.AcceptanceCriteriaRepository
 }
 
-func NewTicketHandler(ticketRepo *model.TicketRepository) *TicketHandler {
-	return &TicketHandler{ticketRepo: ticketRepo}
+func NewTicketHandler(ticketRepo *model.TicketRepository, criteriaRepo *model.AcceptanceCriteriaRepository) *TicketHandler {
+	return &TicketHandler{
+		ticketRepo:   ticketRepo,
+		criteriaRepo: criteriaRepo,
+	}
+}
+
+type AcceptanceCriteriaInput struct {
+	ID        string `json:"id,omitempty"`
+	Content   string `json:"content"`
+	Completed bool   `json:"completed"`
 }
 
 type CreateTicketRequest struct {
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Status      string     `json:"status"`
-	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
-	ProjectID   *uuid.UUID `json:"project_id,omitempty"`
-	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
-	Size        *int       `json:"size,omitempty"`
+	Title              string                     `json:"title"`
+	Description        string                     `json:"description"`
+	Status             string                     `json:"status"`
+	AssignedTo         *uuid.UUID                 `json:"assigned_to,omitempty"`
+	ProjectID          *uuid.UUID                 `json:"project_id,omitempty"`
+	SprintID           *uuid.UUID                 `json:"sprint_id,omitempty"`
+	Size               *int                       `json:"size,omitempty"`
+	AcceptanceCriteria []AcceptanceCriteriaInput  `json:"acceptance_criteria"`
 }
 
 type UpdateTicketRequest struct {
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Status      string     `json:"status"`
-	AssignedTo  *uuid.UUID `json:"assigned_to,omitempty"`
-	ProjectID   *uuid.UUID `json:"project_id,omitempty"`
-	SprintID    *uuid.UUID `json:"sprint_id,omitempty"`
-	Size        *int       `json:"size,omitempty"`
+	Title              string                     `json:"title"`
+	Description        string                     `json:"description"`
+	Status             string                     `json:"status"`
+	AssignedTo         *uuid.UUID                 `json:"assigned_to,omitempty"`
+	ProjectID          *uuid.UUID                 `json:"project_id,omitempty"`
+	SprintID           *uuid.UUID                 `json:"sprint_id,omitempty"`
+	Size               *int                       `json:"size,omitempty"`
+	AcceptanceCriteria []AcceptanceCriteriaInput  `json:"acceptance_criteria"`
 }
 
 func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +74,11 @@ func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tickets)
 }
 
+type TicketWithCriteria struct {
+	*model.Ticket
+	AcceptanceCriteria []*model.AcceptanceCriteria `json:"acceptance_criteria"`
+}
+
 func (h *TicketHandler) GetTicket(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
@@ -76,9 +93,21 @@ func (h *TicketHandler) GetTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get acceptance criteria
+	criteriaList, err := h.criteriaRepo.ListByTicketID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"failed to get acceptance criteria"}`, http.StatusInternalServerError)
+		return
+	}
+
+	response := TicketWithCriteria{
+		Ticket:             ticket,
+		AcceptanceCriteria: criteriaList,
+	}
+
 	// All authenticated users can view any ticket
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ticket)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
@@ -102,6 +131,26 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 	if req.Description == "" {
 		http.Error(w, `{"error":"description is required"}`, http.StatusBadRequest)
 		return
+	}
+
+	// Validate acceptance criteria
+	if len(req.AcceptanceCriteria) < 1 {
+		http.Error(w, `{"error":"at least 1 acceptance criterion is required"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.AcceptanceCriteria) > 6 {
+		http.Error(w, `{"error":"maximum 6 acceptance criteria allowed"}`, http.StatusBadRequest)
+		return
+	}
+	for _, criterion := range req.AcceptanceCriteria {
+		if len(criterion.Content) < 1 {
+			http.Error(w, `{"error":"acceptance criteria cannot be empty"}`, http.StatusBadRequest)
+			return
+		}
+		if len(criterion.Content) > 256 {
+			http.Error(w, `{"error":"acceptance criteria must be 256 characters or less"}`, http.StatusBadRequest)
+			return
+		}
 	}
 
 	if req.Status == "" {
@@ -136,6 +185,20 @@ func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 	if err := h.ticketRepo.Create(r.Context(), ticket); err != nil {
 		http.Error(w, `{"error":"failed to create ticket"}`, http.StatusInternalServerError)
 		return
+	}
+
+	// Create acceptance criteria
+	for i, criterionInput := range req.AcceptanceCriteria {
+		criteria := &model.AcceptanceCriteria{
+			TicketID:  ticket.ID,
+			Content:   criterionInput.Content,
+			SortOrder: i,
+			Completed: criterionInput.Completed,
+		}
+		if err := h.criteriaRepo.Create(r.Context(), criteria); err != nil {
+			http.Error(w, `{"error":"failed to create acceptance criteria"}`, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -178,6 +241,27 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ticket.Description = req.Description
+
+	// Validate acceptance criteria
+	if len(req.AcceptanceCriteria) < 1 {
+		http.Error(w, `{"error":"at least 1 acceptance criterion is required"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.AcceptanceCriteria) > 6 {
+		http.Error(w, `{"error":"maximum 6 acceptance criteria allowed"}`, http.StatusBadRequest)
+		return
+	}
+	for _, criterion := range req.AcceptanceCriteria {
+		if len(criterion.Content) < 1 {
+			http.Error(w, `{"error":"acceptance criteria cannot be empty"}`, http.StatusBadRequest)
+			return
+		}
+		if len(criterion.Content) > 256 {
+			http.Error(w, `{"error":"acceptance criteria must be 256 characters or less"}`, http.StatusBadRequest)
+			return
+		}
+	}
+
 	if req.Status != "" {
 		ticket.Status = req.Status
 	}
@@ -200,6 +284,24 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	if err := h.ticketRepo.Update(r.Context(), ticket); err != nil {
 		http.Error(w, `{"error":"failed to update ticket"}`, http.StatusInternalServerError)
 		return
+	}
+
+	// Update acceptance criteria: delete old and insert new
+	if err := h.criteriaRepo.DeleteByTicketID(r.Context(), ticket.ID); err != nil {
+		http.Error(w, `{"error":"failed to update acceptance criteria"}`, http.StatusInternalServerError)
+		return
+	}
+	for i, criterionInput := range req.AcceptanceCriteria {
+		criteria := &model.AcceptanceCriteria{
+			TicketID:  ticket.ID,
+			Content:   criterionInput.Content,
+			SortOrder: i,
+			Completed: criterionInput.Completed,
+		}
+		if err := h.criteriaRepo.Create(r.Context(), criteria); err != nil {
+			http.Error(w, `{"error":"failed to update acceptance criteria"}`, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -355,4 +457,45 @@ func (h *TicketHandler) UpdateTicketSprintOrder(w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ticket)
+}
+
+type UpdateAcceptanceCriteriaCompletedRequest struct {
+	Completed bool `json:"completed"`
+}
+
+func (h *TicketHandler) UpdateAcceptanceCriteriaCompleted(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	criteriaIDParam := chi.URLParam(r, "criteriaId")
+	criteriaID, err := uuid.Parse(criteriaIDParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid acceptance criteria ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	var req UpdateAcceptanceCriteriaCompletedRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Update completion status
+	if err := h.criteriaRepo.UpdateCompleted(r.Context(), criteriaID, req.Completed); err != nil {
+		http.Error(w, `{"error":"failed to update acceptance criteria"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated criteria and return it
+	criteria, err := h.criteriaRepo.GetByID(r.Context(), criteriaID)
+	if err != nil {
+		http.Error(w, `{"error":"acceptance criteria not found"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(criteria)
 }

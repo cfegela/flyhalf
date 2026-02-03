@@ -206,6 +206,21 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		`INSERT INTO users (email, password_hash, role, first_name, last_name, is_active, must_change_password)
 VALUES ('admin@flyhalf.app', '$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi', 'admin', 'System', 'Administrator', true, true)
 ON CONFLICT (email) DO NOTHING`,
+
+		// Acceptance criteria table for tickets
+		`CREATE TABLE IF NOT EXISTS acceptance_criteria (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			ticket_id UUID NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+			content VARCHAR(256) NOT NULL,
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_acceptance_criteria_ticket_id ON acceptance_criteria(ticket_id)`,
+
+		// Add completed field to acceptance criteria
+		`ALTER TABLE acceptance_criteria ADD COLUMN IF NOT EXISTS completed BOOLEAN NOT NULL DEFAULT false`,
 	}
 
 	for _, migration := range migrations {

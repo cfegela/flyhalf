@@ -245,6 +245,28 @@ export async function ticketDetailView(params) {
                     <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary);">${escapeHtml(ticket.description) || '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}</p>
                 </div>
 
+                <!-- Acceptance Criteria Card -->
+                <div class="card">
+                    <h2 class="card-header">Acceptance Criteria</h2>
+                    ${ticket.acceptance_criteria && ticket.acceptance_criteria.length > 0 ? `
+                        <ul style="margin: 0; padding: 0; list-style: none; line-height: 1.8;">
+                            ${ticket.acceptance_criteria.map(criterion => `
+                                <li style="margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                                    <input
+                                        type="checkbox"
+                                        class="criteria-checkbox"
+                                        data-criteria-id="${criterion.id}"
+                                        data-ticket-id="${ticket.id}"
+                                        ${criterion.completed ? 'checked' : ''}
+                                        style="margin-top: 0.25rem; cursor: pointer; flex-shrink: 0;"
+                                    >
+                                    <span style="flex: 1; ${criterion.completed ? 'text-decoration: line-through; color: var(--text-secondary);' : 'color: var(--text-primary);'}">${escapeHtml(criterion.content)}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '<p style="color: var(--text-secondary); font-style: italic;">No acceptance criteria provided</p>'}
+                </div>
+
                 <!-- Project Details Card -->
                 <div class="card">
                     <h2 class="card-header">Project Details</h2>
@@ -295,6 +317,34 @@ export async function ticketDetailView(params) {
                 } catch (error) {
                 }
             }
+        });
+
+        // Handle acceptance criteria checkbox toggling
+        const criteriaCheckboxes = container.querySelectorAll('.criteria-checkbox');
+        criteriaCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', async (e) => {
+                const criteriaId = e.target.dataset.criteriaId;
+                const ticketId = e.target.dataset.ticketId;
+                const completed = e.target.checked;
+
+                try {
+                    await api.updateAcceptanceCriteriaCompleted(ticketId, criteriaId, completed);
+
+                    // Update the text styling
+                    const span = e.target.nextElementSibling;
+                    if (completed) {
+                        span.style.textDecoration = 'line-through';
+                        span.style.color = 'var(--text-secondary)';
+                    } else {
+                        span.style.textDecoration = 'none';
+                        span.style.color = 'var(--text-primary)';
+                    }
+                } catch (error) {
+                    // Revert checkbox on error
+                    e.target.checked = !completed;
+                    console.error('Failed to update acceptance criteria:', error);
+                }
+            });
         });
     } catch (error) {
         container.innerHTML = `
@@ -361,6 +411,17 @@ export async function ticketFormView(params) {
                             placeholder="Provide a detailed description of the ticket..."
                         >${ticket ? escapeHtml(ticket.description || '') : ''}</textarea>
                     </div>
+                </div>
+
+                <!-- Acceptance Criteria Card -->
+                <div class="card">
+                    <h2 class="card-header">Acceptance Criteria *</h2>
+                    <div id="acceptance-criteria-container">
+                        <!-- Criteria fields will be added here dynamically -->
+                    </div>
+                    <button type="button" id="add-criteria-btn" class="btn btn-secondary" style="margin-top: 1rem;">
+                        Add AC
+                    </button>
                 </div>
 
                 <!-- Assignment & Sizing Card -->
@@ -449,6 +510,94 @@ export async function ticketFormView(params) {
 
     const form = container.querySelector('#ticket-form');
 
+    // Setup acceptance criteria
+    const criteriaContainer = form.querySelector('#acceptance-criteria-container');
+    const addCriteriaBtn = form.querySelector('#add-criteria-btn');
+    let criteriaCount = 0;
+
+    function createCriteriaField(criterionData = {}, showCompleted = false) {
+        const content = criterionData.content || '';
+        const completed = criterionData.completed || false;
+
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'form-group';
+        fieldDiv.style.marginBottom = '0.5rem';
+        fieldDiv.innerHTML = `
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                ${showCompleted ? `
+                <input
+                    type="checkbox"
+                    class="criteria-completed-checkbox"
+                    ${completed ? 'checked' : ''}
+                    style="cursor: pointer; flex-shrink: 0;"
+                >
+                ` : ''}
+                <input
+                    type="text"
+                    class="form-input acceptance-criteria-input"
+                    placeholder="Enter acceptance criterion..."
+                    maxlength="256"
+                    value="${escapeHtml(content)}"
+                    style="flex: 1; ${completed ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}"
+                >
+                <button type="button" class="btn btn-danger remove-criteria-btn" style="flex-shrink: 0; padding: 0.375rem 0.75rem; font-size: 0.875rem;">
+                    Remove
+                </button>
+            </div>
+        `;
+
+        const input = fieldDiv.querySelector('.acceptance-criteria-input');
+        const removeBtn = fieldDiv.querySelector('.remove-criteria-btn');
+        const checkbox = fieldDiv.querySelector('.criteria-completed-checkbox');
+
+        // Handle checkbox toggle for strikethrough
+        if (checkbox) {
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    input.style.textDecoration = 'line-through';
+                    input.style.color = 'var(--text-secondary)';
+                } else {
+                    input.style.textDecoration = 'none';
+                    input.style.color = '';
+                }
+            });
+        }
+
+        // Remove button handler
+        removeBtn.addEventListener('click', () => {
+            if (criteriaContainer.querySelectorAll('.form-group').length > 1) {
+                fieldDiv.remove();
+                criteriaCount--;
+                updateAddButtonVisibility();
+            }
+        });
+
+        criteriaCount++;
+        return fieldDiv;
+    }
+
+    function updateAddButtonVisibility() {
+        addCriteriaBtn.style.display = criteriaCount >= 6 ? 'none' : 'block';
+    }
+
+    // Initialize with existing criteria or one empty field
+    if (isEdit && ticket && ticket.acceptance_criteria && ticket.acceptance_criteria.length > 0) {
+        ticket.acceptance_criteria.forEach(criterion => {
+            criteriaContainer.appendChild(createCriteriaField(criterion, isEdit));
+        });
+    } else {
+        criteriaContainer.appendChild(createCriteriaField({}, isEdit));
+    }
+    updateAddButtonVisibility();
+
+    // Add criteria button handler
+    addCriteriaBtn.addEventListener('click', () => {
+        if (criteriaCount < 6) {
+            criteriaContainer.appendChild(createCriteriaField({}, isEdit));
+            updateAddButtonVisibility();
+        }
+    });
+
     // Enable/disable sprint dropdown based on size selection
     if (isEdit) {
         const sizeSelect = form.querySelector('#size');
@@ -471,6 +620,28 @@ export async function ticketFormView(params) {
         const title = form.title.value.trim();
         const description = form.description.value.trim();
 
+        // Collect acceptance criteria
+        const criteriaFields = form.querySelectorAll('.form-group');
+        const acceptanceCriteria = Array.from(criteriaFields)
+            .map(field => {
+                const textarea = field.querySelector('.acceptance-criteria-input');
+                const checkbox = field.querySelector('.criteria-completed-checkbox');
+                const content = textarea ? textarea.value.trim() : '';
+                const completed = checkbox ? checkbox.checked : false;
+                return { content, completed };
+            })
+            .filter(criterion => criterion.content.length > 0);
+
+        // Validate acceptance criteria
+        if (acceptanceCriteria.length < 1) {
+            alert('At least one acceptance criterion is required');
+            return;
+        }
+        if (acceptanceCriteria.length > 6) {
+            alert('Maximum 6 acceptance criteria allowed');
+            return;
+        }
+
         // Validate: if sprint is selected, size must be set
         if (isEdit) {
             const sprintValue = form.sprint.value;
@@ -481,7 +652,7 @@ export async function ticketFormView(params) {
             }
         }
 
-        const data = { title, description };
+        const data = { title, description, acceptance_criteria: acceptanceCriteria };
 
         // Handle assignee (available for both create and edit)
         const assignedToValue = form.assigned_to.value;
