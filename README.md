@@ -75,6 +75,12 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 - Assign tickets to projects and sprints
 - 6-character unique ID for each ticket
 - New tickets default to "open" status and appear at bottom of list
+- **Acceptance Criteria**: Each ticket requires 1-6 acceptance criteria (max 256 chars each)
+  - Add/remove criteria when creating or editing tickets
+  - Check off criteria as completed with interactive checkboxes
+  - Completion status preserved when editing tickets
+  - Completed items shown with strikethrough styling
+  - Real-time updates on ticket detail page
 
 ### Project Management
 - CRUD operations with required name and description
@@ -146,6 +152,7 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 | Assign tickets to projects and sprints | ✅ | ✅ |
 | Manage ticket priorities (promote/demote) | ✅ | ✅ |
 | Use sprint board with drag-and-drop | ✅ | ✅ |
+| Check off acceptance criteria as completed | ✅ | ✅ |
 | **User Management** | | |
 | View own account settings | ✅ | ✅ |
 | Change own password | ✅ | ✅ |
@@ -319,10 +326,16 @@ go mod tidy
   - Sorted by priority (promoted first), then by creation date
   - Sprint column shows sprint name with direct link to sprint board
   - Icon-based actions column: Promote to top, Promote up, Demote down, View, Edit
-- **Ticket Detail** - Card-based layout with Key Information, Description, Project Details, Metadata
+- **Ticket Detail** - Card-based layout with Key Information, Description, Acceptance Criteria, Project Details, Metadata
+  - Interactive acceptance criteria checklist with real-time completion toggling
+  - Completed criteria shown with strikethrough styling
   - Edit/delete buttons enabled for creator or admin
 - **Create/Edit Ticket** - Structured form with organized sections
   - Basic Information: Title and description
+  - Acceptance Criteria: 1-6 criteria in compact single-line inputs
+    - Add/remove criteria with "Add AC" and "Remove" buttons
+    - Edit mode shows completion checkboxes with strikethrough for completed items
+    - Create mode has no completion status (all default to incomplete)
   - Assignment & Sizing: Assignee and size in 2-column grid
   - Project Organization (edit only): Status, project, sprint assignment
 
@@ -436,17 +449,21 @@ Authorization: Bearer <access_token>
 |--------|----------|-------------|------|
 | GET | `/tickets` | List all tickets | Any |
 | POST | `/tickets` | Create ticket | Any |
-| GET | `/tickets/{id}` | Get ticket by ID | Any |
+| GET | `/tickets/{id}` | Get ticket by ID (with acceptance criteria) | Any |
 | PUT | `/tickets/{id}` | Update ticket | Any |
 | DELETE | `/tickets/{id}` | Delete ticket | Creator or Admin |
 | POST | `/tickets/{id}/promote` | Promote ticket to top | Any |
 | POST | `/tickets/{id}/promote-up` | Promote up one position | Any |
 | POST | `/tickets/{id}/demote-down` | Demote down one position | Any |
 | PATCH | `/tickets/{id}/sprint-order` | Update sprint board order | Any |
+| PATCH | `/tickets/{id}/acceptance-criteria/{criteriaId}` | Toggle acceptance criteria completion | Any |
 
 **Ticket Fields**:
 - `title` (string, required)
 - `description` (string, required)
+- `acceptance_criteria` (array of objects, required, 1-6 items)
+  - `content` (string, required, 1-256 characters)
+  - `completed` (boolean, default: false)
 - `status` (string: open, in-progress, blocked, needs-review, closed, default: 'open')
 - `assigned_to` (UUID, optional)
 - `project_id` (UUID, optional)
@@ -527,8 +544,11 @@ erDiagram
     USERS ||--o{ TICKETS : "assigned_to"
     USERS ||--o{ PROJECTS : "creates"
     USERS ||--o{ SPRINTS : "creates"
+    USERS ||--o{ RETRO_ITEMS : "creates"
     PROJECTS ||--o{ TICKETS : "contains"
     SPRINTS ||--o{ TICKETS : "contains"
+    SPRINTS ||--o{ RETRO_ITEMS : "contains"
+    TICKETS ||--o{ ACCEPTANCE_CRITERIA : "has"
 
     TEAMS {
         uuid id PK
@@ -596,6 +616,27 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+    ACCEPTANCE_CRITERIA {
+        uuid id PK
+        uuid ticket_id FK
+        varchar content
+        integer sort_order
+        boolean completed
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    RETRO_ITEMS {
+        uuid id PK
+        uuid sprint_id FK
+        uuid user_id FK
+        text content
+        varchar category
+        integer vote_count
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ### Teams
@@ -654,18 +695,34 @@ erDiagram
 - `added_to_sprint_at` (TIMESTAMP, nullable, tracks when ticket was added to sprint for burndown accuracy)
 - `created_at`, `updated_at` (TIMESTAMP)
 
+### Acceptance Criteria
+- `id` (UUID, PK)
+- `ticket_id` (UUID, FK to tickets, ON DELETE CASCADE)
+- `content` (VARCHAR(256), not null)
+- `sort_order` (INTEGER, default: 0, for ordering criteria)
+- `completed` (BOOLEAN, default: false)
+- `created_at`, `updated_at` (TIMESTAMP)
+
 ### Retro Items
 - `id` (UUID, PK)
-- Sprint retrospective items with voting functionality
+- `sprint_id` (UUID, FK to sprints, ON DELETE CASCADE)
+- `user_id` (UUID, FK to users - creator)
+- `content` (TEXT, not null)
+- `category` (VARCHAR(10), 'good' or 'bad')
+- `vote_count` (INTEGER, default: 0)
+- `created_at`, `updated_at` (TIMESTAMP)
 
 **Relationships**:
 - Users → refresh_tokens (1:many)
 - Users → tickets (1:many as creator, 1:many as assignee)
 - Users → projects (1:many)
 - Users → sprints (1:many)
+- Users → retro_items (1:many)
 - Users → teams (many:1)
 - Tickets → projects (many:1)
 - Tickets → sprints (many:1)
+- Tickets → acceptance_criteria (1:many, CASCADE delete)
+- Sprints → retro_items (1:many, CASCADE delete)
 
 ---
 
