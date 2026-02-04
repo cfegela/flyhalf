@@ -34,6 +34,8 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 - **Database**: PostgreSQL 18 with pgx v5 driver
 - **Authentication**: JWT access tokens (15min) + refresh tokens (7 days, HttpOnly cookie)
 - **Password Hashing**: bcrypt (cost 12)
+- **Security**: Rate limiting (5 req/s), request size limits (1MB), timeouts (10s)
+- **Observability**: Health checks, metrics endpoint, structured logging
 - **Development**: Air hot reload for rapid iteration
 
 ### Frontend
@@ -52,6 +54,8 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
   - **Load Balancer**: Application Load Balancer with SSL/TLS
   - **Container Registry**: ECR with image scanning
   - **DNS**: Route53
+  - **Monitoring**: CloudWatch logs, metrics, and alarms (optional)
+  - **Secrets**: AWS Secrets Manager for credentials
   - **CI/CD**: GitHub Actions for automated deployment
   - **Estimated Cost**: $50-70/month
 
@@ -129,6 +133,13 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
   - All demo items assigned to current admin user
   - Useful for testing, demos, and training
 
+### Monitoring & Observability
+- **Health Check Endpoint**: `/health` for load balancer and external monitoring
+- **Metrics Endpoint**: `/metrics` returns runtime statistics (uptime, memory, goroutines)
+- **CloudWatch Integration**: Optional alarms for CPU, memory, storage, and error rates
+- **Structured Logging**: Comprehensive logging for debugging and auditing
+- **Application Insights**: Real-time visibility into system health and performance
+
 ### Collaboration Model
 - All users can view and edit all tickets, projects, and sprints
 - Users can delete items they created; admins can delete any item
@@ -182,9 +193,19 @@ flyhalf/
 │   │   ├── config/         # Configuration management
 │   │   ├── database/       # DB connection & migrations
 │   │   ├── handler/        # HTTP request handlers
-│   │   ├── middleware/     # HTTP middleware (CORS, auth)
+│   │   │   ├── health.go  # Health check endpoint
+│   │   │   ├── metrics.go # Metrics endpoint
+│   │   │   └── ...        # Other handlers
+│   │   ├── middleware/     # HTTP middleware
+│   │   │   ├── cors.go    # CORS configuration
+│   │   │   ├── ratelimit.go # Rate limiting
+│   │   │   └── ...        # Other middleware
 │   │   ├── model/          # Data models & repositories
-│   │   └── router/         # Route definitions
+│   │   ├── router/         # Route definitions
+│   │   └── util/           # Utility functions
+│   │       ├── logger.go   # Logging utilities
+│   │       ├── pagination.go # Pagination helpers
+│   │       └── sanitize.go # Input sanitization
 │   ├── Dockerfile          # Multi-stage build (dev/prod)
 │   ├── go.mod             # Go dependencies
 │   └── .air.toml          # Hot reload configuration
@@ -209,6 +230,8 @@ flyhalf/
 │       ├── alb.tf         # Application Load Balancer
 │       ├── ecr.tf         # Container registry
 │       ├── cloudfront.tf  # CDN for static files
+│       ├── monitoring.tf  # CloudWatch alarms & SNS
+│       ├── secrets.tf     # AWS Secrets Manager
 │       ├── security_groups.tf
 │       ├── outputs.tf
 │       ├── variables.tf
@@ -432,6 +455,31 @@ Authorization: Bearer <access_token>
 ```
 
 ### Endpoints
+
+#### Health & Monitoring
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/health` | Health check endpoint | No |
+| GET | `/metrics` | Application metrics (JSON) | No |
+
+**Health Check Response**:
+```json
+{
+  "status": "ok"
+}
+```
+
+**Metrics Response**:
+```json
+{
+  "uptime_seconds": 3600,
+  "goroutines": 10,
+  "memory_alloc_mb": 12.5,
+  "memory_total_mb": 15.2,
+  "memory_sys_mb": 20.1
+}
+```
 
 #### Authentication
 
@@ -765,7 +813,11 @@ erDiagram
 - **API**: Private subnet, only accessible via load balancer
 - **HTTPS/TLS**: SSL/TLS 1.2+ enforced on all endpoints
 - **Container Scanning**: ECR automatically scans images for vulnerabilities
-- **Secrets**: Never committed to git, stored in environment variables
+- **Secrets Management**:
+  - AWS Secrets Manager for database passwords and JWT secrets
+  - 7-day recovery window for deleted secrets
+  - Never committed to git, passed as environment variables to ECS tasks
+  - Local development uses `.env` file (not committed)
 
 ### Accessibility
 - **Section 508 Compliant**: All color combinations meet WCAG 2.0 Level AA standards
@@ -815,7 +867,15 @@ The production deployment uses AWS services managed by Terraform:
 - **CDN**: CloudFront distribution with S3 origin (OAC)
 - **Container Registry**: ECR with image scanning
 - **DNS**: Route53 A records for all services
-- **Monitoring**: CloudWatch logs for ECS and RDS
+- **Monitoring**: CloudWatch logs, metrics, and alarms (optional)
+  - ECS service CPU/memory alarms
+  - RDS performance and storage alarms
+  - ALB health and error rate alarms
+  - SNS notifications for alarm events
+- **Secrets Management**: AWS Secrets Manager for sensitive credentials
+  - Database password
+  - JWT access and refresh secrets
+  - 7-day recovery window
 
 **Estimated Monthly Cost**: $50-70
 - NAT Gateway: ~$32/month (largest cost)
@@ -883,6 +943,10 @@ jwt_refresh_secret = "your-jwt-refresh-secret"
 # api_desired_count = 1
 # api_cpu = 256
 # api_memory = 512
+
+# Optional: Enable CloudWatch alarms and notifications
+# enable_cloudwatch_alarms = true
+# alarm_email = "your-email@example.com"
 ```
 
 **⚠️ Security Note**: Never commit `terraform.tfvars` or `backend.hcl` to version control!
@@ -893,7 +957,7 @@ jwt_refresh_secret = "your-jwt-refresh-secret"
 # Initialize Terraform
 terraform init -backend-config=backend.hcl
 
-# Review the plan (creates 41 resources)
+# Review the plan (creates 50+ resources including optional monitoring)
 terraform plan
 
 # Deploy infrastructure
@@ -911,6 +975,8 @@ This creates:
 - ECR repository
 - Route53 DNS records
 - Security groups, IAM roles, CloudWatch logs
+- AWS Secrets Manager secrets (database password, JWT secrets)
+- CloudWatch alarms and SNS topic (if `enable_cloudwatch_alarms = true`)
 
 #### 4. Configure GitHub Actions
 
@@ -993,6 +1059,10 @@ terraform output web_url          # https://demo.flyhalf.app
 # Test API health
 curl https://api.flyhalf.app/health
 # Expected: {"status":"ok"}
+
+# Check application metrics
+curl https://api.flyhalf.app/metrics
+# Expected: {"uptime_seconds":123,"goroutines":10,"memory_alloc_mb":12.5,...}
 
 # Test CORS
 curl -H "Origin: https://demo.flyhalf.app" \
@@ -1140,6 +1210,72 @@ terraform destroy
 
 ## Monitoring & Troubleshooting
 
+### CloudWatch Monitoring
+
+The infrastructure includes comprehensive CloudWatch monitoring with automated alarms (optional, enabled via `enable_cloudwatch_alarms` variable):
+
+#### Available Alarms
+
+**ECS Service Alarms**:
+- **CPU Utilization**: Triggers when average CPU > 80% for 10 minutes
+- **Memory Utilization**: Triggers when average memory > 80% for 10 minutes
+
+**RDS Database Alarms**:
+- **CPU Utilization**: Triggers when average CPU > 80% for 10 minutes
+- **Free Storage Space**: Triggers when free storage < 2 GB
+- **Database Connections**: Triggers when connections > 20 (80% of max)
+
+**Application Load Balancer Alarms**:
+- **Unhealthy Hosts**: Triggers immediately when any target is unhealthy
+- **5XX Errors**: Triggers when > 10 errors occur in 5 minutes
+- **Response Time**: Triggers when average response time > 2 seconds for 10 minutes
+
+#### SNS Notifications
+
+All alarms publish to an SNS topic. To receive email notifications:
+
+1. Uncomment the SNS subscription in `ops/terraform/monitoring.tf`:
+   ```hcl
+   resource "aws_sns_topic_subscription" "cloudwatch_alarms_email" {
+     count     = var.enable_cloudwatch_alarms ? 1 : 0
+     topic_arn = aws_sns_topic.cloudwatch_alarms[0].arn
+     protocol  = "email"
+     endpoint  = "your-email@example.com"
+   }
+   ```
+
+2. Add `alarm_email` variable to `terraform.tfvars`:
+   ```hcl
+   enable_cloudwatch_alarms = true
+   alarm_email             = "your-email@example.com"
+   ```
+
+3. Apply changes:
+   ```bash
+   terraform apply
+   ```
+
+4. Confirm the subscription in your email inbox
+
+#### Viewing Metrics in AWS Console
+
+Navigate to CloudWatch → Alarms to view alarm status and history. Metrics are automatically collected for:
+- ECS service CPU and memory usage
+- RDS instance performance and storage
+- ALB request counts, response times, and error rates
+
+### Application Metrics
+
+The API exposes a `/metrics` endpoint (no authentication required) that returns:
+- **Uptime**: Time since server started
+- **Goroutines**: Number of active goroutines
+- **Memory Usage**: Allocated, total, and system memory in MB
+
+Example:
+```bash
+curl https://api.flyhalf.app/metrics
+```
+
 ### Viewing Logs
 
 #### API Logs
@@ -1190,6 +1326,32 @@ aws elbv2 describe-target-health \
 ```
 
 ### Common Issues & Solutions
+
+#### Issue: CloudWatch Alarms Triggering
+**Symptom**: Receiving alarm notifications
+
+**Solution**:
+1. **High CPU/Memory on ECS**: Consider increasing task resources
+   ```hcl
+   # In terraform.tfvars
+   api_cpu    = 512  # Increase from 256
+   api_memory = 1024 # Increase from 512
+   ```
+2. **High RDS CPU**: Upgrade instance class
+   ```hcl
+   # In rds.tf
+   instance_class = "db.t4g.small"  # Upgrade from db.t4g.micro
+   ```
+3. **Low RDS Storage**: Increase allocated storage
+   ```hcl
+   # In rds.tf
+   allocated_storage = 30  # Increase from 20
+   ```
+4. **ALB 5XX Errors**: Check API logs for application errors
+   ```bash
+   aws logs tail /ecs/flyhalf-api --follow --region us-east-1
+   ```
+5. **High Response Time**: Investigate slow database queries or API endpoints
 
 #### Issue: CORS Errors
 **Symptom**: Browser console shows CORS policy errors
@@ -1360,10 +1522,13 @@ aws ce get-cost-and-usage \
 - **CloudFront**: ~$1-5/month
   - $0.085/GB for first 10 TB
   - Pay per use
-- **S3, ECR, Logs**: ~$1-3/month
+- **S3, ECR, Logs, Secrets Manager**: ~$1-3/month
   - Minimal storage and data transfer
+  - Secrets Manager: $0.40/secret/month ($1.20 total for 3 secrets)
+- **CloudWatch Alarms** (if enabled): ~$0.70/month
+  - $0.10/alarm/month (7 alarms)
 
-**Total**: ~$50-70/month
+**Total**: ~$50-70/month (without alarms) or ~$51-71/month (with alarms)
 
 **Cost Optimization Tips**:
 - Use VPC endpoints for ECR to eliminate NAT Gateway ($32/month savings, but adds ~$7/month for endpoints)
