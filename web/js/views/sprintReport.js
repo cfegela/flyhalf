@@ -109,6 +109,15 @@ export async function sprintReportView(params) {
                                         ${report.remaining_points}
                                     </p>
                                 </div>
+                                <div>
+                                    <label class="form-label">Velocity</label>
+                                    <p style="font-size: 2rem; font-weight: bold; color: var(--primary); margin: 0;">
+                                        ${velocity}
+                                    </p>
+                                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.25rem 0 0 0;">
+                                        pts/day
+                                    </p>
+                                </div>
                             </div>
                             <div>
                                 <div style="background: var(--border); height: 8px; border-radius: 4px; overflow: hidden;">
