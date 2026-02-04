@@ -107,7 +107,7 @@ export async function projectDetailView(params) {
                     <h1 class="page-title">${escapeHtml(project.name)}</h1>
                     <div class="actions">
                         <a href="/projects/${id}/edit" class="btn btn-primary">Edit</a>
-                        <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || project.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
+                        <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>
 
@@ -155,20 +155,40 @@ export async function projectDetailView(params) {
                         </div>
                     `}
                 </div>
+
+                ${auth.isAdmin() ? `
+                <!-- Danger Zone Card -->
+                <div class="card">
+                    <h2 class="card-header">Danger Zone</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                        These actions are irreversible and will permanently delete data from the system.
+                    </p>
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Delete Project</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+                            Permanently delete this project. This action cannot be undone.
+                        </p>
+                        <button type="button" class="btn btn-danger" id="delete-btn">
+                            Delete Project
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
 
         const deleteBtn = container.querySelector('#delete-btn');
-        deleteBtn.addEventListener('click', async () => {
-            if (deleteBtn.disabled) return;
-            if (confirm('Are you sure you want to delete this project?')) {
-                try {
-                    await api.deleteProject(id);
-                    router.navigate('/projects');
-                } catch (error) {
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this project?')) {
+                    try {
+                        await api.deleteProject(id);
+                        router.navigate('/projects');
+                    } catch (error) {
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Make ticket rows clickable to navigate to ticket details
         const clickableRows = container.querySelectorAll('.clickable-row');

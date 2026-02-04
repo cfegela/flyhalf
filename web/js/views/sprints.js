@@ -192,7 +192,7 @@ export async function sprintDetailView(params) {
                         <a href="/sprints/${id}/report" class="btn btn-primary">Report</a>
                         <a href="/sprints/${id}/retro" class="btn btn-primary">Retro</a>
                         <a href="/sprints/${id}/edit" class="btn btn-secondary">Edit</a>
-                        <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || sprint.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
+                        <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>
 
@@ -277,20 +277,40 @@ export async function sprintDetailView(params) {
                         </div>
                     `}
                 </div>
+
+                ${auth.isAdmin() ? `
+                <!-- Danger Zone Card -->
+                <div class="card">
+                    <h2 class="card-header">Danger Zone</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                        These actions are irreversible and will permanently delete data from the system.
+                    </p>
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Delete Sprint</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+                            Permanently delete this sprint. This action cannot be undone.
+                        </p>
+                        <button type="button" class="btn btn-danger" id="delete-btn">
+                            Delete Sprint
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
 
         const deleteBtn = container.querySelector('#delete-btn');
-        deleteBtn.addEventListener('click', async () => {
-            if (deleteBtn.disabled) return;
-            if (confirm('Are you sure you want to delete this sprint?')) {
-                try {
-                    await api.deleteSprint(id);
-                    router.navigate('/sprints');
-                } catch (error) {
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this sprint?')) {
+                    try {
+                        await api.deleteSprint(id);
+                        router.navigate('/sprints');
+                    } catch (error) {
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Make ticket rows clickable to navigate to ticket details
         const clickableRows = container.querySelectorAll('.clickable-row');

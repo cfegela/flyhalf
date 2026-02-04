@@ -142,7 +142,7 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 
 ### Collaboration Model
 - All users can view and edit all tickets, projects, and sprints
-- Users can delete items they created; admins can delete any item
+- Only administrators can delete items
 - Secure HttpOnly cookies for refresh tokens
 - Client-side routing with hash-based navigation that preserves state on refresh
 - Responsive UI with modern card-based layouts
@@ -157,8 +157,7 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 | View all items | ✅ | ✅ |
 | Create new items | ✅ | ✅ |
 | Edit any item | ✅ | ✅ |
-| Delete own items | ✅ | ✅ |
-| Delete items created by others | ❌ | ✅ |
+| Delete any items | ❌ | ✅ |
 | **Ticket Management** | | |
 | Assign tickets to projects and sprints | ✅ | ✅ |
 | Manage ticket priorities (promote/demote) | ✅ | ✅ |
@@ -499,7 +498,7 @@ Authorization: Bearer <access_token>
 | POST | `/tickets` | Create ticket | Any |
 | GET | `/tickets/{id}` | Get ticket by ID (with acceptance criteria) | Any |
 | PUT | `/tickets/{id}` | Update ticket | Any |
-| DELETE | `/tickets/{id}` | Delete ticket | Creator or Admin |
+| DELETE | `/tickets/{id}` | Delete ticket | Admin |
 | POST | `/tickets/{id}/promote` | Promote ticket to top | Any |
 | POST | `/tickets/{id}/promote-up` | Promote up one position | Any |
 | POST | `/tickets/{id}/demote-down` | Demote down one position | Any |
@@ -527,7 +526,7 @@ Authorization: Bearer <access_token>
 | POST | `/projects` | Create project | Any |
 | GET | `/projects/{id}` | Get project by ID | Any |
 | PUT | `/projects/{id}` | Update project | Any |
-| DELETE | `/projects/{id}` | Delete project | Creator or Admin |
+| DELETE | `/projects/{id}` | Delete project | Admin |
 
 **Project Fields**:
 - `name` (string, required)
@@ -542,7 +541,7 @@ Authorization: Bearer <access_token>
 | GET | `/sprints/{id}` | Get sprint by ID | Any |
 | GET | `/sprints/{id}/report` | Get sprint report data | Any |
 | PUT | `/sprints/{id}` | Update sprint | Any |
-| DELETE | `/sprints/{id}` | Delete sprint | Creator or Admin |
+| DELETE | `/sprints/{id}` | Delete sprint | Admin |
 
 **Sprint Fields**:
 - `name` (string, required)

@@ -207,7 +207,7 @@ export async function ticketDetailView(params) {
                     <h1 class="page-title">${escapeHtml(ticket.title)}</h1>
                     <div class="actions">
                         <a href="/tickets/${id}/edit" class="btn btn-primary">Edit</a>
-                        <button class="btn btn-danger" id="delete-btn" ${auth.isAdmin() || ticket.user_id === auth.getUser().id ? '' : 'disabled'}>Delete</button>
+                        <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>
 
@@ -304,20 +304,40 @@ export async function ticketDetailView(params) {
                         </div>
                     </div>
                 </div>
+
+                ${auth.isAdmin() ? `
+                <!-- Danger Zone Card -->
+                <div class="card">
+                    <h2 class="card-header">Danger Zone</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                        These actions are irreversible and will permanently delete data from the system.
+                    </p>
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Delete Ticket</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+                            Permanently delete this ticket. This action cannot be undone.
+                        </p>
+                        <button type="button" class="btn btn-danger" id="delete-btn">
+                            Delete Ticket
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
 
         const deleteBtn = container.querySelector('#delete-btn');
-        deleteBtn.addEventListener('click', async () => {
-            if (deleteBtn.disabled) return;
-            if (confirm('Are you sure you want to delete this ticket?')) {
-                try {
-                    await api.deleteTicket(id);
-                    router.navigate('/tickets');
-                } catch (error) {
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this ticket?')) {
+                    try {
+                        await api.deleteTicket(id);
+                        router.navigate('/tickets');
+                    } catch (error) {
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Handle acceptance criteria checkbox toggling
         const criteriaCheckboxes = container.querySelectorAll('.criteria-checkbox');

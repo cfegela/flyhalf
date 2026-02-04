@@ -129,7 +129,7 @@ export async function userDetailView(params) {
                     <h1 class="page-title">${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</h1>
                     <div class="actions">
                         <a href="/admin/users/${id}/edit" class="btn btn-primary">Edit</a>
-                        <button class="btn btn-danger" id="delete-btn">Delete</button>
+                        <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>
 
@@ -180,6 +180,25 @@ export async function userDetailView(params) {
                         </div>
                     </div>
                 </div>
+
+                ${auth.isAdmin() ? `
+                <!-- Danger Zone Card -->
+                <div class="card">
+                    <h2 class="card-header">Danger Zone</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                        These actions are irreversible and will permanently delete data from the system.
+                    </p>
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Delete User</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+                            Permanently delete this user. This action cannot be undone.
+                        </p>
+                        <button type="button" class="btn btn-danger" id="delete-btn">
+                            Delete User
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
 
