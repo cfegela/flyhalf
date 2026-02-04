@@ -32,9 +32,18 @@ FROM alpine:latest AS production
 
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
+# Create non-root user
+RUN adduser -D -u 1000 appuser
+
+WORKDIR /home/appuser
 
 COPY --from=builder /app/server .
+
+# Change ownership to appuser
+RUN chown -R appuser:appuser /home/appuser
+
+# Switch to non-root user
+USER appuser
 
 EXPOSE 8080
 

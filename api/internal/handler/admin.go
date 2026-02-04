@@ -2,11 +2,13 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/model"
+	"github.com/cfegela/flyhalf/internal/util"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -119,8 +121,25 @@ func (h *AdminHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Sanitize input
+	req.Email = util.SanitizeString(req.Email)
+	req.FirstName = util.SanitizeString(req.FirstName)
+	req.LastName = util.SanitizeString(req.LastName)
+
 	if req.Email == "" || req.Password == "" || req.FirstName == "" || req.LastName == "" {
 		http.Error(w, `{"error":"missing required fields"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Validate email
+	if err := util.ValidateEmail(req.Email); err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	// Validate password strength
+	if err := auth.ValidatePassword(req.Password); err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -152,6 +171,11 @@ func (h *AdminHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	user.PasswordHash = ""
 
+	// Log user creation
+	adminID, _ := auth.GetUserID(r.Context())
+	util.LogSecurityEvent(util.EventUserCreated, &adminID, user.Email, util.GetIPFromRequest(r),
+		fmt.Sprintf("created user %s with role %s", user.Email, user.Role))
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(user)
@@ -177,7 +201,17 @@ func (h *AdminHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Sanitize input
+	req.Email = util.SanitizeString(req.Email)
+	req.FirstName = util.SanitizeString(req.FirstName)
+	req.LastName = util.SanitizeString(req.LastName)
+
 	if req.Email != "" {
+		// Validate email
+		if err := util.ValidateEmail(req.Email); err != nil {
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
+			return
+		}
 		user.Email = req.Email
 	}
 	if req.Role == model.RoleAdmin || req.Role == model.RoleUser {
@@ -194,6 +228,12 @@ func (h *AdminHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Handle password reset
 	if req.Password != "" {
+		// Validate password strength
+		if err := auth.ValidatePassword(req.Password); err != nil {
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
+			return
+		}
+
 		passwordHash, err := auth.HashPassword(req.Password)
 		if err != nil {
 			http.Error(w, `{"error":"failed to hash password"}`, http.StatusInternalServerError)
@@ -210,6 +250,11 @@ func (h *AdminHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	user.PasswordHash = ""
 
+	// Log user update
+	adminID, _ := auth.GetUserID(r.Context())
+	util.LogSecurityEvent(util.EventUserUpdated, &adminID, user.Email, util.GetIPFromRequest(r),
+		fmt.Sprintf("updated user %s", user.Email))
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
@@ -222,10 +267,22 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user info before deletion for logging
+	userToDelete, _ := h.userRepo.GetByID(r.Context(), id)
+
 	if err := h.userRepo.Delete(r.Context(), id); err != nil {
 		http.Error(w, `{"error":"failed to delete user"}`, http.StatusInternalServerError)
 		return
 	}
+
+	// Log user deletion
+	adminID, _ := auth.GetUserID(r.Context())
+	email := "unknown"
+	if userToDelete != nil {
+		email = userToDelete.Email
+	}
+	util.LogSecurityEvent(util.EventUserDeleted, &adminID, email, util.GetIPFromRequest(r),
+		fmt.Sprintf("deleted user %s", email))
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -251,6 +308,11 @@ func (h *AdminHandler) ResetDemo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"failed to delete projects"}`, http.StatusInternalServerError)
 		return
 	}
+
+	// Log demo reset
+	adminID, _ := auth.GetUserID(r.Context())
+	util.LogSecurityEvent(util.EventDemoReset, &adminID, "", util.GetIPFromRequest(r),
+		fmt.Sprintf("reset demo: %d tickets, %d sprints, %d projects deleted", ticketsDeleted, sprintsDeleted, projectsDeleted))
 
 	response := map[string]interface{}{
 		"message":          "Demo environment reset successfully",
@@ -329,6 +391,10 @@ func (h *AdminHandler) ReseedDemo(w http.ResponseWriter, r *http.Request) {
 		}
 		ticketsCreated++
 	}
+
+	// Log demo reseed
+	util.LogSecurityEvent(util.EventDemoReseed, &userID, "", util.GetIPFromRequest(r),
+		fmt.Sprintf("reseeded demo: %d tickets, 1 sprint, 1 project created", ticketsCreated))
 
 	response := map[string]interface{}{
 		"message":          "Demo environment reseeded successfully",

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cfegela/flyhalf/internal/model"
+	"github.com/cfegela/flyhalf/internal/util"
 	"github.com/google/uuid"
 )
 
@@ -71,6 +72,10 @@ func (m *AuthMiddleware) RequireRole(roles ...model.UserRole) func(http.Handler)
 			}
 
 			if !allowed {
+				// Log permission denied
+				userID, _ := GetUserID(r.Context())
+				util.LogSecurityEvent(util.EventPermissionDenied, &userID, "", util.GetIPFromRequest(r),
+					string(userRole)+" attempted to access restricted resource")
 				http.Error(w, `{"error":"insufficient permissions"}`, http.StatusForbidden)
 				return
 			}

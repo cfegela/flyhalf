@@ -10,6 +10,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
+	Security SecurityConfig
 }
 
 type ServerConfig struct {
@@ -34,6 +35,10 @@ type JWTConfig struct {
 	RefreshExpiryDay int
 }
 
+type SecurityConfig struct {
+	BcryptCost int
+}
+
 func Load() (*Config, error) {
 	dbPort, err := strconv.Atoi(getEnv("DB_PORT", "5432"))
 	if err != nil {
@@ -48,6 +53,15 @@ func Load() (*Config, error) {
 	refreshExpiry, err := strconv.Atoi(getEnv("JWT_REFRESH_EXPIRY_DAY", "7"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT_REFRESH_EXPIRY_DAY: %w", err)
+	}
+
+	bcryptCost, err := strconv.Atoi(getEnv("BCRYPT_COST", "12"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid BCRYPT_COST: %w", err)
+	}
+	// Validate bcrypt cost is in valid range (4-31)
+	if bcryptCost < 4 || bcryptCost > 31 {
+		return nil, fmt.Errorf("BCRYPT_COST must be between 4 and 31, got %d", bcryptCost)
 	}
 
 	return &Config{
@@ -69,6 +83,9 @@ func Load() (*Config, error) {
 			RefreshSecret:    getEnv("JWT_REFRESH_SECRET", ""),
 			AccessExpiryMin:  accessExpiry,
 			RefreshExpiryDay: refreshExpiry,
+		},
+		Security: SecurityConfig{
+			BcryptCost: bcryptCost,
 		},
 	}, nil
 }

@@ -221,6 +221,11 @@ ON CONFLICT (email) DO NOTHING`,
 
 		// Add completed field to acceptance criteria
 		`ALTER TABLE acceptance_criteria ADD COLUMN IF NOT EXISTS completed BOOLEAN NOT NULL DEFAULT false`,
+
+		// Add version column for optimistic locking
+		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`,
+		`ALTER TABLE projects ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`,
+		`ALTER TABLE sprints ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`,
 	}
 
 	for _, migration := range migrations {

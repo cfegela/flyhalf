@@ -63,6 +63,8 @@ class AuthManager {
             clearTimeout(this.refreshTimer);
         }
 
+        // Refresh token at 11 minutes (well before 15 minute expiry)
+        // This provides 4 minute buffer for network delays and processing
         this.refreshTimer = setTimeout(async () => {
             try {
                 await this.refreshToken();
@@ -71,7 +73,7 @@ class AuthManager {
                 this.currentUser = null;
                 this.notify();
             }
-        }, 13 * 60 * 1000);
+        }, 11 * 60 * 1000);
     }
 
     isAuthenticated() {

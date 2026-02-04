@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/config"
@@ -10,9 +11,12 @@ import (
 	"github.com/cfegela/flyhalf/internal/model"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"golang.org/x/time/rate"
 )
 
 type Router struct {
+	healthHandler    *handler.HealthHandler
+	metricsHandler   *handler.MetricsHandler
 	authHandler      *handler.AuthHandler
 	adminHandler     *handler.AdminHandler
 	teamHandler      *handler.TeamHandler
@@ -25,6 +29,8 @@ type Router struct {
 }
 
 func New(
+	healthHandler *handler.HealthHandler,
+	metricsHandler *handler.MetricsHandler,
 	authHandler *handler.AuthHandler,
 	adminHandler *handler.AdminHandler,
 	teamHandler *handler.TeamHandler,
@@ -36,6 +42,8 @@ func New(
 	cfg *config.Config,
 ) *Router {
 	return &Router{
+		healthHandler:    healthHandler,
+		metricsHandler:   metricsHandler,
 		authHandler:      authHandler,
 		adminHandler:     adminHandler,
 		teamHandler:      teamHandler,
@@ -51,24 +59,35 @@ func New(
 func (rt *Router) Setup() http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(chiMiddleware.Logger)
-	r.Use(chiMiddleware.Recoverer)
-	r.Use(chiMiddleware.RequestID)
-	r.Use(chiMiddleware.RealIP)
-	r.Use(middleware.SecurityHeaders)
+	// Global middleware applied to all routes
+	r.Use(chiMiddleware.Logger)      // Log all requests
+	r.Use(chiMiddleware.Recoverer)   // Recover from panics
+	r.Use(chiMiddleware.RequestID)   // Add unique request ID for tracing
+	r.Use(chiMiddleware.RealIP)      // Get real client IP (handles proxy headers)
+	r.Use(middleware.RequestSizeLimit(1 * 1024 * 1024)) // Limit request body to 1MB
+	r.Use(middleware.SecurityHeaders) // Add security headers (X-Frame-Options, etc.)
+
+	// CORS configuration - allows the frontend to make cross-origin requests
+	// Configured via ALLOWED_ORIGIN environment variable (default: http://localhost:3000)
+	// Production should be set to https://demo.flyhalf.app
 	r.Use(middleware.CORS(&middleware.CORSConfig{
 		AllowedOrigins: rt.cfg.Server.AllowedOrigins,
 	}))
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
-	})
+	// Rate limiter for authentication endpoints (5 requests per second, burst of 10)
+	authRateLimiter := middleware.NewRateLimiter(rate.Limit(5), 10)
+
+	r.Get("/health", rt.healthHandler.Check)
+	r.Get("/metrics", rt.metricsHandler.GetMetrics)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		// Add 10 second timeout for all API requests
+		r.Use(middleware.Timeout(10 * time.Second))
+
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/login", rt.authHandler.Login)
-			r.Post("/refresh", rt.authHandler.Refresh)
+			// Apply rate limiting to login and refresh endpoints
+			r.With(authRateLimiter.Limit).Post("/login", rt.authHandler.Login)
+			r.With(authRateLimiter.Limit).Post("/refresh", rt.authHandler.Refresh)
 
 			r.Group(func(r chi.Router) {
 				r.Use(rt.authMiddleware.Authenticate)

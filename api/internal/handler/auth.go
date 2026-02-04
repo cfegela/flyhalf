@@ -2,22 +2,26 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/model"
+	"github.com/cfegela/flyhalf/internal/util"
 )
 
 type AuthHandler struct {
 	userRepo   *model.UserRepository
 	jwtService *auth.JWTService
+	isProduction bool
 }
 
-func NewAuthHandler(userRepo *model.UserRepository, jwtService *auth.JWTService) *AuthHandler {
+func NewAuthHandler(userRepo *model.UserRepository, jwtService *auth.JWTService, isProduction bool) *AuthHandler {
 	return &AuthHandler{
 		userRepo:   userRepo,
 		jwtService: jwtService,
+		isProduction: isProduction,
 	}
 }
 
@@ -43,21 +47,36 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate email format
+	if err := util.ValidateEmail(req.Email); err != nil {
+		http.Error(w, `{"error":"invalid credentials"}`, http.StatusUnauthorized)
+		return
+	}
+
 	user, err := h.userRepo.GetByEmail(r.Context(), req.Email)
-	if err != nil {
+
+	// Always check password even if user not found to prevent timing attacks
+	// Use a dummy hash with the same cost as real passwords
+	dummyHash := "$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi"
+	passwordHash := dummyHash
+
+	if err == nil && user != nil {
+		passwordHash = user.PasswordHash
+	}
+
+	// Check password (always runs, preventing timing attacks)
+	passwordValid := auth.CheckPassword(req.Password, passwordHash)
+
+	// Now verify all conditions
+	if err != nil || user == nil || !user.IsActive || !passwordValid {
+		// Log failed login attempt
+		util.LogSecurityEvent(util.EventLoginFailure, nil, req.Email, util.GetIPFromRequest(r), "invalid credentials")
 		http.Error(w, `{"error":"invalid credentials"}`, http.StatusUnauthorized)
 		return
 	}
 
-	if !user.IsActive {
-		http.Error(w, `{"error":"account is inactive"}`, http.StatusUnauthorized)
-		return
-	}
-
-	if !auth.CheckPassword(req.Password, user.PasswordHash) {
-		http.Error(w, `{"error":"invalid credentials"}`, http.StatusUnauthorized)
-		return
-	}
+	// Log successful login
+	util.LogSecurityEvent(util.EventLoginSuccess, &user.ID, user.Email, util.GetIPFromRequest(r), "login successful")
 
 	tokenPair, refreshTokenHash, err := h.jwtService.GenerateTokenPair(user)
 	if err != nil {
@@ -82,7 +101,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  refreshToken.ExpiresAt,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   h.isProduction, // Only use Secure flag in production
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -149,11 +168,14 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  newRefreshToken.ExpiresAt,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   h.isProduction, // Only use Secure flag in production
 		SameSite: http.SameSiteStrictMode,
 	})
 
 	user.PasswordHash = ""
+
+	// Log token refresh
+	util.LogSecurityEvent(util.EventTokenRefresh, &user.ID, user.Email, util.GetIPFromRequest(r), "token refreshed")
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(LoginResponse{
@@ -174,13 +196,16 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log logout
+	util.LogSecurityEvent(util.EventLogout, &userID, "", util.GetIPFromRequest(r), "user logged out")
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   h.isProduction, // Only use Secure flag in production
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -229,8 +254,9 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.NewPassword) < 8 {
-		http.Error(w, `{"error":"new password must be at least 8 characters"}`, http.StatusBadRequest)
+	// Validate password strength
+	if err := auth.ValidatePassword(req.NewPassword); err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -255,6 +281,9 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"failed to update password"}`, http.StatusInternalServerError)
 		return
 	}
+
+	// Log password change
+	util.LogSecurityEvent(util.EventPasswordChange, &userID, user.Email, util.GetIPFromRequest(r), "password changed successfully")
 
 	w.WriteHeader(http.StatusNoContent)
 }

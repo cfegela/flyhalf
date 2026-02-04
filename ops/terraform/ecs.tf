@@ -15,7 +15,7 @@ resource "aws_ecs_cluster" "main" {
 # CloudWatch Log Group for ECS
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}-api"
-  retention_in_days = 7
+  retention_in_days = var.cloudwatch_log_retention_days
 
   tags = {
     Name = "${var.project_name}-ecs-logs"
@@ -67,6 +67,17 @@ resource "aws_iam_role_policy" "ecs_task_execution_additional" {
           "ecr:BatchGetImage"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.db_password.arn,
+          aws_secretsmanager_secret.jwt_access_secret.arn,
+          aws_secretsmanager_secret.jwt_refresh_secret.arn
+        ]
       }
     ]
   })
@@ -134,24 +145,12 @@ resource "aws_ecs_task_definition" "api" {
           value = var.db_username
         },
         {
-          name  = "DB_PASSWORD"
-          value = var.db_password
-        },
-        {
           name  = "DB_NAME"
           value = var.db_name
         },
         {
           name  = "DB_SSLMODE"
           value = "require"
-        },
-        {
-          name  = "JWT_ACCESS_SECRET"
-          value = var.jwt_access_secret
-        },
-        {
-          name  = "JWT_REFRESH_SECRET"
-          value = var.jwt_refresh_secret
         },
         {
           name  = "JWT_ACCESS_EXPIRY_MIN"
@@ -168,6 +167,25 @@ resource "aws_ecs_task_definition" "api" {
         {
           name  = "ENVIRONMENT"
           value = var.environment
+        },
+        {
+          name  = "BCRYPT_COST"
+          value = "12"
+        }
+      ]
+
+      secrets = [
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = aws_secretsmanager_secret.db_password.arn
+        },
+        {
+          name      = "JWT_ACCESS_SECRET"
+          valueFrom = aws_secretsmanager_secret.jwt_access_secret.arn
+        },
+        {
+          name      = "JWT_REFRESH_SECRET"
+          valueFrom = aws_secretsmanager_secret.jwt_refresh_secret.arn
         }
       ]
 

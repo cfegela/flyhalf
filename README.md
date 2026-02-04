@@ -735,14 +735,30 @@ erDiagram
 - **Password Reset**: Forced password change on first login for new users
 
 ### API Security
-- **CORS**: Configured with explicit origin allowlist via `ALLOWED_ORIGIN` environment variable
+- **CORS (Cross-Origin Resource Sharing)**:
+  - **Purpose**: Controls which domains can make API requests from browsers
+  - **Configuration**: Set via `ALLOWED_ORIGIN` environment variable
+  - **Development**: `http://localhost:3000` (default)
+  - **Production**: `https://demo.flyhalf.app` (set in Terraform `ops/terraform/ecs.tf`)
+  - **Security**: Uses origin allowlist (never wildcard `*`) with credentials enabled
+  - **Implementation**: See `api/internal/middleware/cors.go` for detailed configuration
+  - **Headers Set**:
+    - `Access-Control-Allow-Origin`: Echoes back the validated origin
+    - `Access-Control-Allow-Credentials: true` (enables cookies/auth headers)
+    - `Access-Control-Allow-Methods`: GET, POST, PUT, PATCH, DELETE, OPTIONS
+    - `Access-Control-Allow-Headers`: Content-Type, Authorization
+    - `Access-Control-Max-Age: 3600` (1 hour preflight cache)
+- **Rate Limiting**: 5 requests/second with burst of 10 on authentication endpoints
+- **Request Size Limit**: 1MB maximum request body size
+- **Request Timeout**: 10 seconds for all API requests
 - **SQL Injection Protection**: Parameterized queries with pgx
+- **XSS Protection**: All user inputs are HTML-escaped
+- **Input Validation**: Strong password requirements, email validation
 - **Security Headers**:
   - `X-Content-Type-Options: nosniff`
   - `X-Frame-Options: DENY`
   - `X-XSS-Protection: 1; mode=block`
   - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `Content-Security-Policy: default-src 'self'`
 
 ### Infrastructure Security
 - **Database**: Private subnet, encrypted storage, no public access

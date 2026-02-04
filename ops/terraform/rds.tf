@@ -30,9 +30,10 @@ resource "aws_db_instance" "postgres" {
   apply_immediately           = true
 
   # Single AZ for basic setup (cost-effective)
-  multi_az                = false
+  multi_az                = var.db_multi_az
   publicly_accessible     = false
-  skip_final_snapshot     = true
+  skip_final_snapshot     = var.environment == "production" ? false : true
+  final_snapshot_identifier = var.environment == "production" ? "${var.project_name}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
   backup_retention_period = 7
   backup_window           = "03:00-04:00"
   maintenance_window      = "sun:04:00-sun:05:00"

@@ -123,6 +123,72 @@ func (r *SprintRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Spri
 	return sprints, rows.Err()
 }
 
+func (r *SprintRepository) ListPaginated(ctx context.Context, userID *uuid.UUID, limit, offset int) ([]*Sprint, int, error) {
+	// Get total count
+	var countQuery string
+	var countArgs []interface{}
+
+	if userID != nil {
+		countQuery = `SELECT COUNT(*) FROM sprints WHERE user_id = $1`
+		countArgs = append(countArgs, *userID)
+	} else {
+		countQuery = `SELECT COUNT(*) FROM sprints`
+	}
+
+	var total int
+	if err := r.db.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	var query string
+	var args []interface{}
+
+	if userID != nil {
+		query = `
+			SELECT id, user_id, name, start_date, end_date, created_at, updated_at
+			FROM sprints WHERE user_id = $1
+			ORDER BY start_date DESC
+			LIMIT $2 OFFSET $3
+		`
+		args = append(args, *userID, limit, offset)
+	} else {
+		query = `
+			SELECT id, user_id, name, start_date, end_date, created_at, updated_at
+			FROM sprints
+			ORDER BY start_date DESC
+			LIMIT $1 OFFSET $2
+		`
+		args = append(args, limit, offset)
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var sprints []*Sprint
+	for rows.Next() {
+		sprint := &Sprint{}
+		if err := rows.Scan(
+			&sprint.ID, &sprint.UserID, &sprint.Name, &sprint.StartDate, &sprint.EndDate,
+			&sprint.CreatedAt, &sprint.UpdatedAt,
+		); err != nil {
+			return nil, 0, err
+		}
+
+		sprint.CalculateStatus()
+		sprints = append(sprints, sprint)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return sprints, total, nil
+}
+
 func (r *SprintRepository) Update(ctx context.Context, sprint *Sprint) error {
 	query := `
 		UPDATE sprints

@@ -34,6 +34,9 @@ func run() error {
 		return fmt.Errorf("JWT secrets must be set")
 	}
 
+	// Set bcrypt cost from configuration
+	auth.SetBcryptCost(cfg.Security.BcryptCost)
+
 	ctx := context.Background()
 
 	pool, err := database.Connect(&cfg.Database)
@@ -59,15 +62,18 @@ func run() error {
 	jwtService := auth.NewJWTService(&cfg.JWT)
 	authMiddleware := auth.NewAuthMiddleware(jwtService)
 
-	authHandler := handler.NewAuthHandler(userRepo, jwtService)
+	isProduction := cfg.Server.Environment == "production"
+	healthHandler := handler.NewHealthHandler(pool)
+	metricsHandler := handler.NewMetricsHandler(pool)
+	authHandler := handler.NewAuthHandler(userRepo, jwtService, isProduction)
 	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo)
 	teamHandler := handler.NewTeamHandler(teamRepo)
-	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo)
+	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo, pool)
 	projectHandler := handler.NewProjectHandler(projectRepo)
 	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo)
 	retroItemHandler := handler.NewRetroItemHandler(retroItemRepo, userRepo)
 
-	rt := router.New(authHandler, adminHandler, teamHandler, ticketHandler, projectHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)
+	rt := router.New(healthHandler, metricsHandler, authHandler, adminHandler, teamHandler, ticketHandler, projectHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)
 	httpHandler := rt.Setup()
 
 	srv := &http.Server{

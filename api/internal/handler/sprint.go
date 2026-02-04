@@ -7,6 +7,7 @@ import (
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/model"
+	"github.com/cfegela/flyhalf/internal/util"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -40,9 +41,27 @@ func (h *SprintHandler) ListSprints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// All users can see all sprints
-	sprints, err := h.sprintRepo.List(r.Context(), nil)
+	// Check if pagination is requested
+	if r.URL.Query().Get("page") != "" || r.URL.Query().Get("limit") != "" {
+		params := util.GetPaginationParams(r)
+		sprints, total, err := h.sprintRepo.ListPaginated(r.Context(), nil, params.Limit, params.CalculateOffset())
+		if err != nil {
+			http.Error(w, `{"error":"failed to list sprints"}`, http.StatusInternalServerError)
+			return
+		}
 
+		if sprints == nil {
+			sprints = []*model.Sprint{}
+		}
+
+		response := util.CreatePaginatedResponse(sprints, params.Page, params.Limit, total)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// All users can see all sprints (non-paginated for backward compatibility)
+	sprints, err := h.sprintRepo.List(r.Context(), nil)
 	if err != nil {
 		http.Error(w, `{"error":"failed to list sprints"}`, http.StatusInternalServerError)
 		return

@@ -57,6 +57,12 @@ variable "db_instance_class" {
   default     = "db.t4g.micro"
 }
 
+variable "db_multi_az" {
+  description = "Enable multi-AZ for RDS (recommended for production)"
+  type        = bool
+  default     = false
+}
+
 # ECS Configuration
 variable "api_cpu" {
   description = "CPU units for API container (256 = 0.25 vCPU)"
@@ -125,3 +131,22 @@ variable "db_subdomain" {
   type        = string
   default     = "db"
 }
+
+# Monitoring Configuration
+variable "cloudwatch_log_retention_days" {
+  description = "CloudWatch logs retention in days"
+  type        = number
+  default     = 30
+}
+
+variable "enable_cloudwatch_alarms" {
+  description = "Enable CloudWatch alarms for monitoring"
+  type        = bool
+  default     = false
+}
+
+# variable "alarm_email" {
+#   description = "Email address for alarm notifications"
+#   type        = string
+#   default     = ""
+# }

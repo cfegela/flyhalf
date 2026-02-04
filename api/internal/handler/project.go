@@ -6,6 +6,7 @@ import (
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/model"
+	"github.com/cfegela/flyhalf/internal/util"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -35,9 +36,27 @@ func (h *ProjectHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// All users can see all projects
-	projects, err := h.projectRepo.List(r.Context(), nil)
+	// Check if pagination is requested
+	if r.URL.Query().Get("page") != "" || r.URL.Query().Get("limit") != "" {
+		params := util.GetPaginationParams(r)
+		projects, total, err := h.projectRepo.ListPaginated(r.Context(), nil, params.Limit, params.CalculateOffset())
+		if err != nil {
+			http.Error(w, `{"error":"failed to list projects"}`, http.StatusInternalServerError)
+			return
+		}
 
+		if projects == nil {
+			projects = []*model.Project{}
+		}
+
+		response := util.CreatePaginatedResponse(projects, params.Page, params.Limit, total)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// All users can see all projects (non-paginated for backward compatibility)
+	projects, err := h.projectRepo.List(r.Context(), nil)
 	if err != nil {
 		http.Error(w, `{"error":"failed to list projects"}`, http.StatusInternalServerError)
 		return
@@ -82,6 +101,10 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
 		return
 	}
+
+	// Sanitize input
+	req.Name = util.SanitizeString(req.Name)
+	req.Description = util.SanitizeString(req.Description)
 
 	if req.Name == "" {
 		http.Error(w, `{"error":"name is required"}`, http.StatusBadRequest)
@@ -129,6 +152,10 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
 		return
 	}
+
+	// Sanitize input
+	req.Name = util.SanitizeString(req.Name)
+	req.Description = util.SanitizeString(req.Description)
 
 	if req.Name == "" {
 		http.Error(w, `{"error":"name is required"}`, http.StatusBadRequest)
