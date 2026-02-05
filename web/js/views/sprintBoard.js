@@ -138,7 +138,6 @@ function renderTickets(tickets, userMap) {
           <span class="${badgeClass}" ${isUnderway ? 'data-ticket-id="' + ticket.id + '"' : ''}>${ticket.status}</span>
         </div>
         <div class="board-ticket-title">${ticket.title}</div>
-        ${ticket.description ? `<div class="board-ticket-description">${ticket.description.substring(0, 100)}${ticket.description.length > 100 ? '...' : ''}</div>` : ''}
         <div class="board-ticket-meta">
           <span class="board-ticket-assignee">${assigneeDisplay}</span>
           <span class="board-ticket-size">${sizeDisplay}</span>
