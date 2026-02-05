@@ -16,13 +16,15 @@ import (
 type TicketHandler struct {
 	ticketRepo   *model.TicketRepository
 	criteriaRepo *model.AcceptanceCriteriaRepository
+	updateRepo   *model.TicketUpdateRepository
 	pool         *pgxpool.Pool
 }
 
-func NewTicketHandler(ticketRepo *model.TicketRepository, criteriaRepo *model.AcceptanceCriteriaRepository, pool *pgxpool.Pool) *TicketHandler {
+func NewTicketHandler(ticketRepo *model.TicketRepository, criteriaRepo *model.AcceptanceCriteriaRepository, updateRepo *model.TicketUpdateRepository, pool *pgxpool.Pool) *TicketHandler {
 	return &TicketHandler{
 		ticketRepo:   ticketRepo,
 		criteriaRepo: criteriaRepo,
+		updateRepo:   updateRepo,
 		pool:         pool,
 	}
 }
@@ -31,6 +33,11 @@ type AcceptanceCriteriaInput struct {
 	ID        string `json:"id,omitempty"`
 	Content   string `json:"content"`
 	Completed bool   `json:"completed"`
+}
+
+type TicketUpdateInput struct {
+	ID      string `json:"id,omitempty"`
+	Content string `json:"content"`
 }
 
 type CreateTicketRequest struct {
@@ -53,6 +60,7 @@ type UpdateTicketRequest struct {
 	SprintID           *uuid.UUID                 `json:"sprint_id,omitempty"`
 	Size               *int                       `json:"size,omitempty"`
 	AcceptanceCriteria []AcceptanceCriteriaInput  `json:"acceptance_criteria"`
+	Updates            []TicketUpdateInput        `json:"updates,omitempty"`
 }
 
 func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +107,7 @@ func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request) {
 type TicketWithCriteria struct {
 	*model.Ticket
 	AcceptanceCriteria []*model.AcceptanceCriteria `json:"acceptance_criteria"`
+	Updates            []*model.TicketUpdate       `json:"updates"`
 }
 
 func (h *TicketHandler) GetTicket(w http.ResponseWriter, r *http.Request) {
@@ -122,9 +131,17 @@ func (h *TicketHandler) GetTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get updates
+	updatesList, err := h.updateRepo.ListByTicketID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"failed to get ticket updates"}`, http.StatusInternalServerError)
+		return
+	}
+
 	response := TicketWithCriteria{
 		Ticket:             ticket,
 		AcceptanceCriteria: criteriaList,
+		Updates:            updatesList,
 	}
 
 	// All authenticated users can view any ticket
@@ -317,6 +334,23 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Validate and sanitize updates
+	if len(req.Updates) > 10 {
+		http.Error(w, `{"error":"maximum 10 updates allowed"}`, http.StatusBadRequest)
+		return
+	}
+	for i := range req.Updates {
+		req.Updates[i].Content = util.SanitizeString(req.Updates[i].Content)
+		if len(req.Updates[i].Content) < 1 {
+			http.Error(w, `{"error":"update content cannot be empty"}`, http.StatusBadRequest)
+			return
+		}
+		if len(req.Updates[i].Content) > 500 {
+			http.Error(w, `{"error":"update content must be 500 characters or less"}`, http.StatusBadRequest)
+			return
+		}
+	}
+
 	if req.Status != "" {
 		ticket.Status = req.Status
 	}
@@ -382,6 +416,83 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		_, err := tx.Exec(r.Context(), criteriaQuery, ticket.ID, criterionInput.Content, i, criterionInput.Completed)
 		if err != nil {
 			http.Error(w, `{"error":"failed to update acceptance criteria"}`, http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Handle ticket updates with smart update strategy
+	if len(req.Updates) > 0 {
+		// Get existing updates
+		existingUpdates, err := h.updateRepo.ListByTicketID(r.Context(), ticket.ID)
+		if err != nil {
+			http.Error(w, `{"error":"failed to get existing updates"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// Create map of existing update IDs
+		existingIDsMap := make(map[uuid.UUID]bool)
+		for _, update := range existingUpdates {
+			existingIDsMap[update.ID] = true
+		}
+
+		// Create map of incoming update IDs
+		incomingIDsMap := make(map[string]bool)
+		for _, updateInput := range req.Updates {
+			if updateInput.ID != "" {
+				incomingIDsMap[updateInput.ID] = true
+			}
+		}
+
+		// Delete updates that are not in the incoming list
+		for _, existingUpdate := range existingUpdates {
+			if !incomingIDsMap[existingUpdate.ID.String()] {
+				deleteUpdateQuery := `DELETE FROM ticket_updates WHERE id = $1`
+				_, err := tx.Exec(r.Context(), deleteUpdateQuery, existingUpdate.ID)
+				if err != nil {
+					http.Error(w, `{"error":"failed to delete update"}`, http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+
+		// Update existing or insert new updates
+		for i, updateInput := range req.Updates {
+			if updateInput.ID != "" {
+				// Update existing (preserves created_at)
+				updateID, err := uuid.Parse(updateInput.ID)
+				if err != nil {
+					http.Error(w, `{"error":"invalid update ID"}`, http.StatusBadRequest)
+					return
+				}
+				updateQuery := `
+					UPDATE ticket_updates
+					SET content = $1, sort_order = $2, updated_at = NOW()
+					WHERE id = $3
+				`
+				_, err = tx.Exec(r.Context(), updateQuery, updateInput.Content, i, updateID)
+				if err != nil {
+					http.Error(w, `{"error":"failed to update ticket update"}`, http.StatusInternalServerError)
+					return
+				}
+			} else {
+				// Insert new
+				insertUpdateQuery := `
+					INSERT INTO ticket_updates (ticket_id, content, sort_order)
+					VALUES ($1, $2, $3)
+				`
+				_, err := tx.Exec(r.Context(), insertUpdateQuery, ticket.ID, updateInput.Content, i)
+				if err != nil {
+					http.Error(w, `{"error":"failed to create ticket update"}`, http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+	} else {
+		// If no updates provided, delete all existing updates
+		deleteAllUpdatesQuery := `DELETE FROM ticket_updates WHERE ticket_id = $1`
+		_, err := tx.Exec(r.Context(), deleteAllUpdatesQuery, ticket.ID)
+		if err != nil {
+			http.Error(w, `{"error":"failed to delete updates"}`, http.StatusInternalServerError)
 			return
 		}
 	}

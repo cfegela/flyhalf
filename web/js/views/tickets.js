@@ -267,6 +267,21 @@ export async function ticketDetailView(params) {
                     ` : '<p style="color: var(--text-secondary); font-style: italic;">No acceptance criteria provided</p>'}
                 </div>
 
+                <!-- Updates Card -->
+                <div class="card">
+                    <h2 class="card-header">Updates</h2>
+                    ${ticket.updates && ticket.updates.length > 0 ? `
+                        <ul style="margin: 0; padding: 0; list-style: none; line-height: 1.8;">
+                            ${ticket.updates.map(update => `
+                                <li style="margin-bottom: 0.75rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+                                    <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; min-width: 100px;">${formatRelativeTime(update.created_at)}</small>
+                                    <span style="flex: 1; color: var(--text-primary);">${escapeHtml(update.content)}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '<p style="color: var(--text-secondary); font-style: italic;">No updates yet</p>'}
+                </div>
+
                 <!-- Project Details Card -->
                 <div class="card">
                     <h2 class="card-header">Project Details</h2>
@@ -444,6 +459,19 @@ export async function ticketFormView(params) {
                     </button>
                 </div>
 
+                ${isEdit ? `
+                <!-- Updates Card -->
+                <div class="card">
+                    <h2 class="card-header">Updates</h2>
+                    <div id="updates-container">
+                        <!-- Update fields will be added here dynamically -->
+                    </div>
+                    <button type="button" id="add-update-btn" class="btn btn-secondary" style="margin-top: 1rem;">
+                        Add Update
+                    </button>
+                </div>
+                ` : ''}
+
                 <!-- Assignment & Sizing Card -->
                 <div class="card">
                     <h2 class="card-header">Assignment & Sizing</h2>
@@ -618,6 +646,68 @@ export async function ticketFormView(params) {
         }
     });
 
+    // Setup updates (edit mode only)
+    let updatesCount = 0;
+    if (isEdit) {
+        const updatesContainer = form.querySelector('#updates-container');
+        const addUpdateBtn = form.querySelector('#add-update-btn');
+
+        function createUpdateField(updateData = {}) {
+            const content = updateData.content || '';
+            const id = updateData.id || '';
+            const createdAt = updateData.created_at || new Date().toISOString();
+
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'form-group';
+            fieldDiv.style.marginBottom = '0.5rem';
+            fieldDiv.dataset.updateId = id;
+            fieldDiv.innerHTML = `
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    ${id ? `<small style="color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; min-width: 100px;">${formatRelativeTime(createdAt)}</small>` : ''}
+                    <textarea
+                        class="form-textarea update-content-input"
+                        placeholder="Enter update..."
+                        maxlength="500"
+                        style="flex: 1; min-height: 40px; resize: vertical;"
+                    >${escapeHtml(content)}</textarea>
+                    <button type="button" class="btn btn-danger remove-update-btn" style="flex-shrink: 0; padding: 0.375rem 0.75rem; font-size: 0.875rem;">
+                        Remove
+                    </button>
+                </div>
+            `;
+
+            const removeBtn = fieldDiv.querySelector('.remove-update-btn');
+            removeBtn.addEventListener('click', () => {
+                fieldDiv.remove();
+                updatesCount--;
+                updateAddUpdateButtonVisibility();
+            });
+
+            updatesCount++;
+            return fieldDiv;
+        }
+
+        function updateAddUpdateButtonVisibility() {
+            addUpdateBtn.style.display = updatesCount >= 10 ? 'none' : 'block';
+        }
+
+        // Initialize with existing updates
+        if (ticket && ticket.updates && ticket.updates.length > 0) {
+            ticket.updates.forEach(update => {
+                updatesContainer.appendChild(createUpdateField(update));
+            });
+        }
+        updateAddUpdateButtonVisibility();
+
+        // Add update button handler
+        addUpdateBtn.addEventListener('click', () => {
+            if (updatesCount < 10) {
+                updatesContainer.appendChild(createUpdateField({}));
+                updateAddUpdateButtonVisibility();
+            }
+        });
+    }
+
     // Enable/disable sprint dropdown based on size selection
     if (isEdit) {
         const sizeSelect = form.querySelector('#size');
@@ -690,7 +780,7 @@ export async function ticketFormView(params) {
             data.size = null;
         }
 
-        // Only include status, project, and sprint when editing
+        // Only include status, project, sprint, and updates when editing
         if (isEdit) {
             data.status = form.status.value;
             const projectValue = form.project.value;
@@ -704,6 +794,21 @@ export async function ticketFormView(params) {
                 data.sprint_id = sprintValue;
             } else {
                 data.sprint_id = null;
+            }
+
+            // Collect updates
+            const updatesContainer = form.querySelector('#updates-container');
+            if (updatesContainer) {
+                const updateFields = updatesContainer.querySelectorAll('.form-group');
+                const updates = Array.from(updateFields)
+                    .map(field => {
+                        const textarea = field.querySelector('.update-content-input');
+                        const content = textarea ? textarea.value.trim() : '';
+                        const id = field.dataset.updateId || '';
+                        return { id, content };
+                    })
+                    .filter(update => update.content.length > 0);
+                data.updates = updates;
             }
         }
 
@@ -735,6 +840,22 @@ function escapeHtml(text) {
 function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+function formatRelativeTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffSecs < 60) return 'just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    return formatDate(dateString);
 }
 
 function getStatusBadgeClass(status) {

@@ -226,6 +226,18 @@ ON CONFLICT (email) DO NOTHING`,
 		`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`,
 		`ALTER TABLE projects ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`,
 		`ALTER TABLE sprints ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`,
+
+		// Ticket updates table for tracking updates with timestamps
+		`CREATE TABLE IF NOT EXISTS ticket_updates (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			ticket_id UUID NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+			content VARCHAR(500) NOT NULL,
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_ticket_updates_ticket_id ON ticket_updates(ticket_id)`,
 	}
 
 	for _, migration := range migrations {

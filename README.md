@@ -85,6 +85,13 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
   - Completion status preserved when editing tickets
   - Completed items shown with strikethrough styling
   - Real-time updates on ticket detail page
+- **Updates**: Track ticket progress with timestamped updates (edit mode only)
+  - Add up to 10 updates per ticket (max 500 chars each)
+  - Each update displays relative timestamp (e.g., "2 hours ago")
+  - Edit and delete updates as needed
+  - Timestamps preserved when editing update content
+  - No minimum update requirement
+  - Available only when editing tickets (not during creation)
 
 ### Project Management
 - CRUD operations with required name and description
@@ -348,9 +355,10 @@ go mod tidy
   - Sorted by priority (promoted first), then by creation date
   - Sprint column shows sprint name with direct link to sprint board
   - Icon-based actions column: Promote to top, Promote up, Demote down, View, Edit
-- **Ticket Detail** - Card-based layout with Key Information, Description, Acceptance Criteria, Project Details, Metadata
+- **Ticket Detail** - Card-based layout with Key Information, Description, Acceptance Criteria, Updates, Project Details, Metadata
   - Interactive acceptance criteria checklist with real-time completion toggling
   - Completed criteria shown with strikethrough styling
+  - Updates section displays timestamped updates with relative time (e.g., "2 hours ago")
   - Edit/delete buttons enabled for creator or admin
 - **Create/Edit Ticket** - Structured form with organized sections
   - Basic Information: Title and description
@@ -360,6 +368,10 @@ go mod tidy
     - Create mode has no completion status (all default to incomplete)
   - Assignment & Sizing: Assignee and size in 2-column grid
   - Project Organization (edit only): Status, project, sprint assignment
+  - Updates (edit only): Add/edit/remove timestamped updates
+    - Up to 10 updates per ticket (max 500 chars each)
+    - Existing updates show relative timestamps
+    - "Add Update" button (hidden when 10 updates reached)
 
 #### Projects
 - **Projects List** - View all projects with name

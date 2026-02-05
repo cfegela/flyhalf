@@ -58,6 +58,7 @@ func run() error {
 	sprintRepo := model.NewSprintRepository(pool)
 	retroItemRepo := model.NewRetroItemRepository(pool)
 	criteriaRepo := model.NewAcceptanceCriteriaRepository(pool)
+	updateRepo := model.NewTicketUpdateRepository(pool)
 
 	jwtService := auth.NewJWTService(&cfg.JWT)
 	authMiddleware := auth.NewAuthMiddleware(jwtService)
@@ -68,7 +69,7 @@ func run() error {
 	authHandler := handler.NewAuthHandler(userRepo, jwtService, isProduction)
 	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo)
 	teamHandler := handler.NewTeamHandler(teamRepo)
-	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo, pool)
+	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo, updateRepo, pool)
 	projectHandler := handler.NewProjectHandler(projectRepo)
 	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo)
 	retroItemHandler := handler.NewRetroItemHandler(retroItemRepo, userRepo)
