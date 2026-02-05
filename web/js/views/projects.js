@@ -19,6 +19,8 @@ export async function projectsListView() {
 
     try {
         const projects = await api.getProjects();
+        // Sort projects alphabetically by name
+        projects.sort((a, b) => a.name.localeCompare(b.name));
         const projectsContainer = container.querySelector('#projects-container');
 
         if (projects.length === 0) {
