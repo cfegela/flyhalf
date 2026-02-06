@@ -1,5 +1,6 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
+import { auth } from '../auth.js';
 
 export async function teamsListView() {
     const container = document.getElementById('view-container');
