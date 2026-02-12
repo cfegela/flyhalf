@@ -57,7 +57,7 @@ async function loadSprintBoard(container, sprintId) {
     container.innerHTML = `
       <div class="page-header">
         <div>
-          <h1>${sprint.name} - Board</h1>
+          <h1 class="page-title">${sprint.name} - Board</h1>
           <div class="sprint-dates">
             ${parseDate(sprint.start_date).toLocaleDateString()} -
             ${parseDate(sprint.end_date).toLocaleDateString()}
