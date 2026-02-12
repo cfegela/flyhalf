@@ -202,7 +202,10 @@ export async function ticketsListView() {
                         const userId = this.dataset.userId;
 
                         try {
-                            await api.updateTicket(ticketId, { assigned_to: userId });
+                            // Fetch the full ticket first, then update with new assignee
+                            const ticket = await api.getTicket(ticketId);
+                            ticket.assigned_to = userId;
+                            await api.updateTicket(ticketId, ticket);
                             ticketsListView();
                         } catch (error) {
                             console.error('Failed to assign ticket:', error);
@@ -267,7 +270,10 @@ export async function ticketsListView() {
                         const projectId = this.dataset.projectId;
 
                         try {
-                            await api.updateTicket(ticketId, { project_id: projectId });
+                            // Fetch the full ticket first, then update with new project
+                            const ticket = await api.getTicket(ticketId);
+                            ticket.project_id = projectId;
+                            await api.updateTicket(ticketId, ticket);
                             ticketsListView();
                         } catch (error) {
                             console.error('Failed to set project:', error);
@@ -340,7 +346,10 @@ export async function ticketsListView() {
                         const sprintId = this.dataset.sprintId;
 
                         try {
-                            await api.updateTicket(ticketId, { sprint_id: sprintId });
+                            // Fetch the full ticket first, then update with new sprint
+                            const ticket = await api.getTicket(ticketId);
+                            ticket.sprint_id = sprintId;
+                            await api.updateTicket(ticketId, ticket);
                             ticketsListView();
                         } catch (error) {
                             console.error('Failed to set sprint:', error);
