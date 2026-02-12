@@ -249,7 +249,9 @@ export async function ticketsListView() {
                 // Create dropdown menu
                 const dropdown = document.createElement('div');
                 dropdown.className = 'project-dropdown-menu';
-                dropdown.innerHTML = projects.map(project => `
+                // Sort projects alphabetically by name
+                const sortedProjects = [...projects].sort((a, b) => a.name.localeCompare(b.name));
+                dropdown.innerHTML = sortedProjects.map(project => `
                     <div class="project-dropdown-item" data-project-id="${project.id}">
                         ${escapeHtml(project.name)}
                     </div>
