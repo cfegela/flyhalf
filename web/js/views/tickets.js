@@ -327,7 +327,17 @@ export async function ticketsListView() {
                 // Create dropdown menu
                 const dropdown = document.createElement('div');
                 dropdown.className = 'sprint-dropdown-menu';
-                dropdown.innerHTML = sprints.map(sprint => `
+
+                // Filter out completed sprints and sort by start date (oldest first)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const activeSprints = sprints.filter(sprint => {
+                    const endDate = new Date(sprint.end_date);
+                    endDate.setHours(0, 0, 0, 0);
+                    return endDate >= today;
+                }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+                dropdown.innerHTML = activeSprints.map(sprint => `
                     <div class="sprint-dropdown-item" data-sprint-id="${sprint.id}">
                         ${escapeHtml(sprint.name)}
                     </div>
