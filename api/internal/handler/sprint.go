@@ -334,35 +334,58 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(response)
 }
 
+// isWeekend returns true if the date falls on Saturday or Sunday
+func isWeekend(date time.Time) bool {
+	weekday := date.Weekday()
+	return weekday == time.Saturday || weekday == time.Sunday
+}
+
+// countWorkingDays returns the number of working days (excluding weekends) between start and end dates (inclusive)
+func countWorkingDays(startDate, endDate time.Time) int {
+	workingDays := 0
+	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
+		if !isWeekend(date) {
+			workingDays++
+		}
+	}
+	return workingDays
+}
+
 func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []BurndownPoint {
 	var points []BurndownPoint
 
-	// Start one day before the sprint to show initial capacity
+	// Start one day before the sprint to show initial capacity (if it's not a weekend)
 	dayBeforeSprint := startDate.AddDate(0, 0, -1)
-	points = append(points, BurndownPoint{
-		Date:   dayBeforeSprint.Format("2006-01-02"),
-		Points: totalPoints,
-	})
-
-	// Calculate number of days in the sprint
-	duration := endDate.Sub(startDate).Hours() / 24
-	days := int(duration) + 1 // Include both start and end day
-
-	// Calculate points to burn per day
-	pointsPerDay := float64(totalPoints) / float64(days-1)
-
-	// Generate ideal burndown for each day
-	for i := 0; i < days; i++ {
-		date := startDate.AddDate(0, 0, i)
-		remainingPoints := totalPoints - int(float64(i)*pointsPerDay)
-		if remainingPoints < 0 {
-			remainingPoints = 0
-		}
-
+	if !isWeekend(dayBeforeSprint) {
 		points = append(points, BurndownPoint{
-			Date:   date.Format("2006-01-02"),
-			Points: remainingPoints,
+			Date:   dayBeforeSprint.Format("2006-01-02"),
+			Points: totalPoints,
 		})
+	}
+
+	// Count working days in the sprint (excluding weekends)
+	workingDays := countWorkingDays(startDate, endDate)
+
+	// Calculate points to burn per working day
+	pointsPerDay := float64(totalPoints) / float64(workingDays)
+
+	// Generate ideal burndown for each working day
+	workingDayCount := 0
+	currentDate := startDate
+	for !currentDate.After(endDate) {
+		if !isWeekend(currentDate) {
+			remainingPoints := totalPoints - int(float64(workingDayCount)*pointsPerDay)
+			if remainingPoints < 0 {
+				remainingPoints = 0
+			}
+
+			points = append(points, BurndownPoint{
+				Date:   currentDate.Format("2006-01-02"),
+				Points: remainingPoints,
+			})
+			workingDayCount++
+		}
+		currentDate = currentDate.AddDate(0, 0, 1)
 	}
 
 	return points
@@ -371,49 +394,50 @@ func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []Burn
 func generateActualBurndown(startDate, endDate time.Time, totalPoints int, tickets []*model.Ticket) []BurndownPoint {
 	var points []BurndownPoint
 
-	// Start one day before the sprint to show initial capacity
+	// Start one day before the sprint to show initial capacity (if it's not a weekend)
 	dayBeforeSprint := startDate.AddDate(0, 0, -1)
-	points = append(points, BurndownPoint{
-		Date:   dayBeforeSprint.Format("2006-01-02"),
-		Points: totalPoints,
-	})
+	if !isWeekend(dayBeforeSprint) {
+		points = append(points, BurndownPoint{
+			Date:   dayBeforeSprint.Format("2006-01-02"),
+			Points: totalPoints,
+		})
+	}
 
-	// Calculate number of days in the sprint
-	duration := endDate.Sub(startDate).Hours() / 24
-	days := int(duration) + 1 // Include both start and end day
+	// Generate actual burndown for each working day (excluding weekends)
+	currentDate := startDate
+	for !currentDate.After(endDate) {
+		if !isWeekend(currentDate) {
+			// Calculate end of day (23:59:59)
+			endOfDay := time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 23, 59, 59, 0, currentDate.Location())
 
-	// Generate actual burndown for each day
-	for i := 0; i < days; i++ {
-		date := startDate.AddDate(0, 0, i)
-		// Calculate end of day (23:59:59)
-		endOfDay := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, date.Location())
-
-		// Calculate points completed by end of this day
-		completedPoints := 0
-		for _, ticket := range tickets {
-			// If ticket is closed and was closed by end of this day, count its points as completed
-			if ticket.Status == "closed" {
-				// Use updated_at as proxy for when ticket was closed
-				closedDate := ticket.UpdatedAt.UTC()
-				if closedDate.Before(endOfDay) || closedDate.Equal(endOfDay) {
-					points := 0
-					if ticket.Size != nil {
-						points = *ticket.Size
+			// Calculate points completed by end of this day
+			completedPoints := 0
+			for _, ticket := range tickets {
+				// If ticket is closed and was closed by end of this day, count its points as completed
+				if ticket.Status == "closed" {
+					// Use updated_at as proxy for when ticket was closed
+					closedDate := ticket.UpdatedAt.UTC()
+					if closedDate.Before(endOfDay) || closedDate.Equal(endOfDay) {
+						ticketPoints := 0
+						if ticket.Size != nil {
+							ticketPoints = *ticket.Size
+						}
+						completedPoints += ticketPoints
 					}
-					completedPoints += points
 				}
 			}
-		}
 
-		remainingPoints := totalPoints - completedPoints
-		if remainingPoints < 0 {
-			remainingPoints = 0
-		}
+			remainingPoints := totalPoints - completedPoints
+			if remainingPoints < 0 {
+				remainingPoints = 0
+			}
 
-		points = append(points, BurndownPoint{
-			Date:   date.Format("2006-01-02"),
-			Points: remainingPoints,
-		})
+			points = append(points, BurndownPoint{
+				Date:   currentDate.Format("2006-01-02"),
+				Points: remainingPoints,
+			})
+		}
+		currentDate = currentDate.AddDate(0, 0, 1)
 	}
 
 	return points
