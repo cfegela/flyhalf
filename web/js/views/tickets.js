@@ -94,13 +94,22 @@ export async function ticketsListView() {
                                         ${getSizeLabel(ticket.size)}
                                     </td>
                                     <td data-label="Assignee">
-                                        ${assignee ? `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` : '-'}
+                                        ${assignee ?
+                                            `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` :
+                                            `<span class="assign-link" data-ticket-id="${ticket.id}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Assign...</span>`
+                                        }
                                     </td>
                                     <td data-label="Project">
-                                        ${project ? `<span title="${escapeHtml(project.name)}">${getProjectAcronym(project.name, projects, project.id)}</span>` : '-'}
+                                        ${project ?
+                                            `<span title="${escapeHtml(project.name)}">${getProjectAcronym(project.name, projects, project.id)}</span>` :
+                                            `<span class="project-link" data-ticket-id="${ticket.id}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
+                                        }
                                     </td>
                                     <td data-label="Sprint">
-                                        ${sprint ? `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` : '-'}
+                                        ${sprint ?
+                                            `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` :
+                                            `<span class="sprint-link" data-ticket-id="${ticket.id}" data-ticket-size="${ticket.size || ''}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
+                                        }
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
@@ -141,6 +150,215 @@ export async function ticketsListView() {
                 } catch (error) {
                     console.error('Failed to promote ticket:', error);
                 }
+            });
+        });
+
+        // Helper function to close all dropdowns
+        function closeAllDropdowns() {
+            const dropdowns = document.querySelectorAll('.assign-dropdown-menu, .project-dropdown-menu, .sprint-dropdown-menu');
+            dropdowns.forEach(dropdown => dropdown.remove());
+        }
+
+        // Handle assign link clicks
+        const assignLinks = ticketsContainer.querySelectorAll('.assign-link');
+        assignLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.stopPropagation();
+
+                // Check if this link's dropdown is already open
+                const existingDropdown = document.querySelector('.assign-dropdown-menu');
+                if (existingDropdown) {
+                    closeAllDropdowns();
+                    return;
+                }
+
+                // Close any existing dropdowns
+                closeAllDropdowns();
+
+                const ticketId = this.dataset.ticketId;
+                const rect = this.getBoundingClientRect();
+
+                // Create dropdown menu
+                const dropdown = document.createElement('div');
+                dropdown.className = 'assign-dropdown-menu';
+                dropdown.innerHTML = users.map(user => `
+                    <div class="assign-dropdown-item" data-user-id="${user.id}">
+                        ${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}
+                    </div>
+                `).join('');
+
+                // Position dropdown
+                dropdown.style.position = 'fixed';
+                dropdown.style.top = `${rect.bottom + 5}px`;
+                dropdown.style.left = `${rect.left}px`;
+
+                document.body.appendChild(dropdown);
+
+                // Handle dropdown item clicks
+                const items = dropdown.querySelectorAll('.assign-dropdown-item');
+                items.forEach(item => {
+                    item.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const userId = this.dataset.userId;
+
+                        try {
+                            await api.updateTicket(ticketId, { assigned_to: userId });
+                            ticketsListView();
+                        } catch (error) {
+                            console.error('Failed to assign ticket:', error);
+                            alert('Failed to assign ticket. Please try again.');
+                        }
+
+                        dropdown.remove();
+                    });
+                });
+
+                // Close dropdown when clicking outside
+                const closeDropdown = (e) => {
+                    if (!dropdown.contains(e.target) && e.target !== link) {
+                        dropdown.remove();
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                };
+                setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+            });
+        });
+
+        // Handle project link clicks
+        const projectLinks = ticketsContainer.querySelectorAll('.project-link');
+        projectLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.stopPropagation();
+
+                // Check if this link's dropdown is already open
+                const existingDropdown = document.querySelector('.project-dropdown-menu');
+                if (existingDropdown) {
+                    closeAllDropdowns();
+                    return;
+                }
+
+                // Close any existing dropdowns
+                closeAllDropdowns();
+
+                const ticketId = this.dataset.ticketId;
+                const rect = this.getBoundingClientRect();
+
+                // Create dropdown menu
+                const dropdown = document.createElement('div');
+                dropdown.className = 'project-dropdown-menu';
+                dropdown.innerHTML = projects.map(project => `
+                    <div class="project-dropdown-item" data-project-id="${project.id}">
+                        ${escapeHtml(project.name)}
+                    </div>
+                `).join('');
+
+                // Position dropdown
+                dropdown.style.position = 'fixed';
+                dropdown.style.top = `${rect.bottom + 5}px`;
+                dropdown.style.left = `${rect.left}px`;
+
+                document.body.appendChild(dropdown);
+
+                // Handle dropdown item clicks
+                const items = dropdown.querySelectorAll('.project-dropdown-item');
+                items.forEach(item => {
+                    item.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const projectId = this.dataset.projectId;
+
+                        try {
+                            await api.updateTicket(ticketId, { project_id: projectId });
+                            ticketsListView();
+                        } catch (error) {
+                            console.error('Failed to set project:', error);
+                            alert('Failed to set project. Please try again.');
+                        }
+
+                        dropdown.remove();
+                    });
+                });
+
+                // Close dropdown when clicking outside
+                const closeDropdown = (e) => {
+                    if (!dropdown.contains(e.target) && e.target !== link) {
+                        dropdown.remove();
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                };
+                setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+            });
+        });
+
+        // Handle sprint link clicks
+        const sprintLinks = ticketsContainer.querySelectorAll('.sprint-link');
+        sprintLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.stopPropagation();
+
+                const ticketSize = this.dataset.ticketSize;
+
+                // Check if ticket has a size
+                if (!ticketSize) {
+                    alert('Tickets must be sized before adding to a sprint. Please edit the ticket to add a size first.');
+                    return;
+                }
+
+                // Check if this link's dropdown is already open
+                const existingDropdown = document.querySelector('.sprint-dropdown-menu');
+                if (existingDropdown) {
+                    closeAllDropdowns();
+                    return;
+                }
+
+                // Close any existing dropdowns
+                closeAllDropdowns();
+
+                const ticketId = this.dataset.ticketId;
+                const rect = this.getBoundingClientRect();
+
+                // Create dropdown menu
+                const dropdown = document.createElement('div');
+                dropdown.className = 'sprint-dropdown-menu';
+                dropdown.innerHTML = sprints.map(sprint => `
+                    <div class="sprint-dropdown-item" data-sprint-id="${sprint.id}">
+                        ${escapeHtml(sprint.name)}
+                    </div>
+                `).join('');
+
+                // Position dropdown
+                dropdown.style.position = 'fixed';
+                dropdown.style.top = `${rect.bottom + 5}px`;
+                dropdown.style.left = `${rect.left}px`;
+
+                document.body.appendChild(dropdown);
+
+                // Handle dropdown item clicks
+                const items = dropdown.querySelectorAll('.sprint-dropdown-item');
+                items.forEach(item => {
+                    item.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const sprintId = this.dataset.sprintId;
+
+                        try {
+                            await api.updateTicket(ticketId, { sprint_id: sprintId });
+                            ticketsListView();
+                        } catch (error) {
+                            console.error('Failed to set sprint:', error);
+                            alert('Failed to set sprint. Please try again.');
+                        }
+
+                        dropdown.remove();
+                    });
+                });
+
+                // Close dropdown when clicking outside
+                const closeDropdown = (e) => {
+                    if (!dropdown.contains(e.target) && e.target !== link) {
+                        dropdown.remove();
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                };
+                setTimeout(() => document.addEventListener('click', closeDropdown), 0);
             });
         });
     } catch (error) {

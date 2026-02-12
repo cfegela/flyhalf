@@ -619,6 +619,53 @@ tr:hover {
     background-color: var(--bg-gray);
 }
 
+.assign-dropdown-menu {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    min-width: 180px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.assign-dropdown-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.assign-dropdown-item:hover {
+    background-color: var(--bg-gray);
+}
+
+.project-dropdown-menu,
+.sprint-dropdown-menu {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    min-width: 180px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.project-dropdown-item,
+.sprint-dropdown-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.project-dropdown-item:hover,
+.sprint-dropdown-item:hover {
+    background-color: var(--bg-gray);
+}
+
 .error-state {
     text-align: center;
     padding: 3rem 1rem;

@@ -204,15 +204,17 @@ export async function userDetailView(params) {
         `;
 
         const deleteBtn = container.querySelector('#delete-btn');
-        deleteBtn.addEventListener('click', async () => {
-            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-                try {
-                    await api.deleteUser(id);
-                    router.navigate('/admin/users');
-                } catch (error) {
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+                    try {
+                        await api.deleteUser(id);
+                        router.navigate('/admin/users');
+                    } catch (error) {
+                    }
                 }
-            }
-        });
+            });
+        }
     } catch (error) {
         container.innerHTML = `
             <div class="card">
@@ -394,8 +396,12 @@ export async function userFormView(params) {
             last_name: lastName,
             email,
             role,
-            team_id: teamId || null,
         };
+
+        // Only include team_id if a team is selected
+        if (teamId) {
+            data.team_id = teamId;
+        }
 
         if (isEdit) {
             data.is_active = form.is_active.checked;
@@ -431,6 +437,7 @@ export async function userFormView(params) {
         } catch (error) {
             submitBtn.disabled = false;
             submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} User`;
+            alert(`Failed to ${isEdit ? 'update' : 'create'} user: ${error.message}`);
         }
     });
 }

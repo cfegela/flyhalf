@@ -182,16 +182,18 @@ export async function teamDetailView(params) {
         `;
 
         const deleteBtn = container.querySelector('#delete-btn');
-        deleteBtn.addEventListener('click', async () => {
-            if (confirm('Are you sure you want to delete this team? Team members will not be deleted but will be unassigned from this team.')) {
-                try {
-                    await api.deleteTeam(id);
-                    router.navigate('/admin/teams');
-                } catch (error) {
-                    alert('Failed to delete team: ' + error.message);
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this team? Team members will not be deleted but will be unassigned from this team.')) {
+                    try {
+                        await api.deleteTeam(id);
+                        router.navigate('/admin/teams');
+                    } catch (error) {
+                        alert('Failed to delete team: ' + error.message);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Make user rows clickable to navigate to user details
         const clickableRows = container.querySelectorAll('.clickable-row');
