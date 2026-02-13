@@ -31,6 +31,7 @@ export async function sprintRetroView(params) {
                 <div class="page-header">
                     <h1 class="page-title">Sprint Retrospective: ${escapeHtml(sprint.name)}</h1>
                     <div class="actions">
+                        <a href="/sprints/${sprintId}" class="btn btn-primary">Details</a>
                         <a href="/sprints/${sprintId}/board" class="btn btn-primary">Board</a>
                         <a href="/sprints/${sprintId}/report" class="btn btn-primary">Report</a>
                         <button class="btn btn-secondary" onclick="history.back()">Back</button>

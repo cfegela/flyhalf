@@ -64,6 +64,7 @@ async function loadSprintBoard(container, sprintId) {
           </div>
         </div>
         <div class="actions">
+          <a href="/sprints/${sprintId}" class="btn btn-primary">Details</a>
           <a href="/sprints/${sprintId}/report" class="btn btn-primary">Report</a>
           <a href="/sprints/${sprintId}/retro" class="btn btn-primary">Retro</a>
           <button class="btn btn-secondary" onclick="history.back()">Back</button>
