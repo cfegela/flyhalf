@@ -514,7 +514,7 @@ export async function ticketDetailView(params) {
                             <ul style="margin: 0 0 1.5rem 0; padding: 0; list-style: none; line-height: 1.8;">
                                 ${ticket.updates.map(update => `
                                     <li style="margin-bottom: 0.75rem; display: flex; gap: 0.75rem; align-items: baseline;">
-                                        <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; width: 140px; text-align: right;">${formatRelativeTime(update.created_at)}</small>
+                                        <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; width: 140px; text-align: left;">${formatRelativeTime(update.created_at)}</small>
                                         <span style="flex: 1; color: var(--text-primary);">${escapeHtml(update.content)}</span>
                                     </li>
                                 `).join('')}
@@ -670,7 +670,7 @@ export async function ticketDetailView(params) {
                         newUpdateLi.style.gap = '0.75rem';
                         newUpdateLi.style.alignItems = 'baseline';
                         newUpdateLi.innerHTML = `
-                            <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; width: 140px; text-align: right;">${formatRelativeTime(newUpdate.created_at)}</small>
+                            <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; width: 140px; text-align: left;">${formatRelativeTime(newUpdate.created_at)}</small>
                             <span style="flex: 1; color: var(--text-primary);">${escapeHtml(newUpdate.content)}</span>
                         `;
                         updatesList.appendChild(newUpdateLi);
@@ -982,7 +982,7 @@ export async function ticketFormView(params) {
                 fieldDiv.dataset.updateId = id;
                 fieldDiv.innerHTML = `
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        ${id ? `<small style="color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; width: 140px; text-align: right; flex-shrink: 0;">${formatRelativeTime(createdAt)}</small>` : ''}
+                        ${id ? `<small style="color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; width: 140px; text-align: left; flex-shrink: 0;">${formatRelativeTime(createdAt)}</small>` : ''}
                         <textarea
                             class="form-textarea update-content-input"
                             placeholder="Enter update..."
