@@ -513,7 +513,7 @@ export async function ticketDetailView(params) {
                         ${ticket.updates && ticket.updates.length > 0 ? `
                             <ul style="margin: 0 0 1.5rem 0; padding: 0; list-style: none; line-height: 1.8;">
                                 ${ticket.updates.map(update => `
-                                    <li style="margin-bottom: 0.75rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+                                    <li style="margin-bottom: 0.75rem; display: flex; gap: 0.75rem; align-items: baseline;">
                                         <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; min-width: 100px;">${formatRelativeTime(update.created_at)}</small>
                                         <span style="flex: 1; color: var(--text-primary);">${escapeHtml(update.content)}</span>
                                     </li>
