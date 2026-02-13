@@ -1,6 +1,9 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
 import { auth } from '../auth.js';
+import { TICKET_STATUSES, STATUS_BADGE_CLASSES, TICKET_SIZES, SIZE_LABELS, CONSTRAINTS, UI_CONSTANTS } from '../constants/tickets.js';
+import { escapeHtml, formatDate, formatRelativeTime } from '../utils/formatting.js';
+import { createIdMap, getStatusBadgeClass, getSizeLabel, getProjectAcronym } from '../utils/helpers.js';
 
 export async function ticketsListView() {
     const container = document.getElementById('view-container');
@@ -24,23 +27,10 @@ export async function ticketsListView() {
         const users = await api.getUsersForAssignment();
         const ticketsContainer = container.querySelector('#tickets-container');
 
-        // Create a map of project_id to project for quick lookup
-        const projectMap = {};
-        projects.forEach(project => {
-            projectMap[project.id] = project;
-        });
-
-        // Create a map of sprint_id to sprint for quick lookup
-        const sprintMap = {};
-        sprints.forEach(sprint => {
-            sprintMap[sprint.id] = sprint;
-        });
-
-        // Create a map of user_id to user for quick lookup
-        const userMap = {};
-        users.forEach(user => {
-            userMap[user.id] = user;
-        });
+        // Create maps for quick lookup
+        const projectMap = createIdMap(projects);
+        const sprintMap = createIdMap(sprints);
+        const userMap = createIdMap(users);
 
         if (tickets.length === 0) {
             ticketsContainer.innerHTML = `
@@ -189,7 +179,7 @@ export async function ticketsListView() {
 
                 // Position dropdown
                 dropdown.style.position = 'fixed';
-                dropdown.style.top = `${rect.bottom + 5}px`;
+                dropdown.style.top = `${rect.bottom + UI_CONSTANTS.DROPDOWN_OFFSET_PX}px`;
                 dropdown.style.left = `${rect.left}px`;
 
                 document.body.appendChild(dropdown);
@@ -259,7 +249,7 @@ export async function ticketsListView() {
 
                 // Position dropdown
                 dropdown.style.position = 'fixed';
-                dropdown.style.top = `${rect.bottom + 5}px`;
+                dropdown.style.top = `${rect.bottom + UI_CONSTANTS.DROPDOWN_OFFSET_PX}px`;
                 dropdown.style.left = `${rect.left}px`;
 
                 document.body.appendChild(dropdown);
@@ -345,7 +335,7 @@ export async function ticketsListView() {
 
                 // Position dropdown
                 dropdown.style.position = 'fixed';
-                dropdown.style.top = `${rect.bottom + 5}px`;
+                dropdown.style.top = `${rect.bottom + UI_CONSTANTS.DROPDOWN_OFFSET_PX}px`;
                 dropdown.style.left = `${rect.left}px`;
 
                 document.body.appendChild(dropdown);
@@ -526,7 +516,7 @@ export async function ticketDetailView(params) {
                             id="update-content"
                             class="form-textarea"
                             placeholder="Add an update..."
-                            maxlength="500"
+                            maxlength="${CONSTRAINTS.UPDATE_MAX_LENGTH}"
                             rows="3"
                             style="margin-bottom: 1rem; min-height: auto; height: 70px;"
                         ></textarea>
@@ -647,8 +637,8 @@ export async function ticketDetailView(params) {
                     return;
                 }
 
-                if (content.length > 500) {
-                    alert('Update must be 500 characters or less');
+                if (content.length > CONSTRAINTS.UPDATE_MAX_LENGTH) {
+                    alert(`Update must be ${CONSTRAINTS.UPDATE_MAX_LENGTH} characters or less`);
                     return;
                 }
 
@@ -888,7 +878,7 @@ export async function ticketFormView(params) {
                     type="text"
                     class="form-input acceptance-criteria-input"
                     placeholder="Enter acceptance criterion..."
-                    maxlength="256"
+                    maxlength="${CONSTRAINTS.CRITERIA_MAX_LENGTH}"
                     value="${escapeHtml(content)}"
                     style="flex: 1; ${completed ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}"
                 >
@@ -944,7 +934,7 @@ export async function ticketFormView(params) {
     }
 
     function updateAddButtonVisibility() {
-        addCriteriaBtn.style.display = criteriaCount >= 6 ? 'none' : 'block';
+        addCriteriaBtn.style.display = criteriaCount >= CONSTRAINTS.MAX_CRITERIA_COUNT ? 'none' : 'block';
     }
 
     // Initialize with existing criteria or one empty field
@@ -959,7 +949,7 @@ export async function ticketFormView(params) {
 
     // Add criteria button handler
     addCriteriaBtn.addEventListener('click', () => {
-        if (criteriaCount < 6) {
+        if (criteriaCount < CONSTRAINTS.MAX_CRITERIA_COUNT) {
             criteriaContainer.appendChild(createCriteriaField({}, isEdit));
             updateAddButtonVisibility();
         }
@@ -986,7 +976,7 @@ export async function ticketFormView(params) {
                         <textarea
                             class="form-textarea update-content-input"
                             placeholder="Enter update..."
-                            maxlength="500"
+                            maxlength="${CONSTRAINTS.UPDATE_MAX_LENGTH}"
                             style="flex: 1; min-height: 40px; resize: vertical;"
                         >${escapeHtml(content)}</textarea>
                         <button type="button" class="btn btn-danger remove-update-btn" style="flex-shrink: 0; padding: 0.375rem 0.75rem; font-size: 0.875rem;">
@@ -1064,8 +1054,8 @@ export async function ticketFormView(params) {
             alert('At least one acceptance criterion is required');
             return;
         }
-        if (acceptanceCriteria.length > 6) {
-            alert('Maximum 6 acceptance criteria allowed');
+        if (acceptanceCriteria.length > CONSTRAINTS.MAX_CRITERIA_COUNT) {
+            alert(`Maximum ${CONSTRAINTS.MAX_CRITERIA_COUNT} acceptance criteria allowed`);
             return;
         }
 
@@ -1146,85 +1136,6 @@ export async function ticketFormView(params) {
             submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} Ticket`;
         }
     });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatRelativeTime(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffSecs < 60) return 'just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-    return formatDate(dateString);
-}
-
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'open': return 'badge-open';
-        case 'in-progress': return 'badge-in-progress';
-        case 'blocked': return 'badge-blocked';
-        case 'needs-review': return 'badge-needs-review';
-        case 'closed': return 'badge-closed';
-        default: return 'badge-open';
-    }
-}
-
-function getSizeLabel(size) {
-    if (!size) return '-';
-    switch (size) {
-        case 1: return 'Small';
-        case 2: return 'Medium';
-        case 3: return 'Large';
-        case 5: return 'X-Large';
-        case 8: return 'Danger';
-        default: return '-';
-    }
-}
-
-function getProjectAcronym(projectName, allProjects, currentProjectId) {
-    // Remove all whitespace for acronym generation
-    const baseName = projectName.replace(/\s+/g, '');
-    let length = 6;
-    let acronym;
-
-    // Start with 6 characters and extend if there's a collision
-    while (length <= baseName.length) {
-        acronym = baseName.substring(0, length).toUpperCase();
-
-        // Check if any other project has this same acronym
-        const hasCollision = allProjects.some(p => {
-            if (p.id === currentProjectId) return false; // Don't compare with self
-            const otherBaseName = p.name.replace(/\s+/g, '');
-            const otherAcronym = otherBaseName.substring(0, length).toUpperCase();
-            return acronym === otherAcronym;
-        });
-
-        if (!hasCollision) {
-            return acronym;
-        }
-
-        length++;
-    }
-
-    // If we've used all characters and still have collision, return full name uppercase
-    return baseName.toUpperCase();
 }
 
 function setupDragAndDrop(container, tickets) {
