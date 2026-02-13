@@ -481,19 +481,31 @@ export async function ticketDetailView(params) {
                     updateContentTextarea.value = '';
 
                     // Add the new update to the list
-                    const updatesList = document.querySelector('#updates-list ul');
-                    if (updatesList) {
-                        const newUpdateLi = document.createElement('li');
-                        newUpdateLi.style.marginBottom = '0.75rem';
-                        newUpdateLi.style.display = 'flex';
-                        newUpdateLi.style.gap = '0.75rem';
-                        newUpdateLi.style.alignItems = 'baseline';
-                        newUpdateLi.innerHTML = `
-                            <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; width: 140px; text-align: left;">${formatRelativeTime(newUpdate.created_at)}</small>
-                            <span style="flex: 1; color: var(--text-primary);">${escapeHtml(newUpdate.content)}</span>
-                        `;
-                        updatesList.appendChild(newUpdateLi);
+                    const updatesListContainer = document.querySelector('#updates-list');
+                    let updatesList = updatesListContainer.querySelector('ul');
+
+                    // If no <ul> exists (no previous updates), create one and replace the "No updates yet" message
+                    if (!updatesList) {
+                        updatesList = document.createElement('ul');
+                        updatesList.style.margin = '0 0 1.5rem 0';
+                        updatesList.style.padding = '0';
+                        updatesList.style.listStyle = 'none';
+                        updatesList.style.lineHeight = '1.8';
+                        updatesListContainer.innerHTML = '';
+                        updatesListContainer.appendChild(updatesList);
                     }
+
+                    // Create and add the new update
+                    const newUpdateLi = document.createElement('li');
+                    newUpdateLi.style.marginBottom = '0.75rem';
+                    newUpdateLi.style.display = 'flex';
+                    newUpdateLi.style.gap = '0.75rem';
+                    newUpdateLi.style.alignItems = 'baseline';
+                    newUpdateLi.innerHTML = `
+                        <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; width: 140px; text-align: left;">${formatRelativeTime(newUpdate.created_at)}</small>
+                        <span style="flex: 1; color: var(--text-primary);">${escapeHtml(newUpdate.content)}</span>
+                    `;
+                    updatesList.appendChild(newUpdateLi);
 
                     // Reset button state
                     postUpdateBtn.disabled = false;
