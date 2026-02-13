@@ -852,10 +852,12 @@ export async function ticketFormView(params) {
     function createCriteriaField(criterionData = {}, showCompleted = false) {
         const content = criterionData.content || '';
         const completed = criterionData.completed || false;
+        const criteriaId = criterionData.id || '';
 
         const fieldDiv = document.createElement('div');
         fieldDiv.className = 'form-group';
         fieldDiv.style.marginBottom = '0.5rem';
+        fieldDiv.dataset.criteriaId = criteriaId;
         fieldDiv.innerHTML = `
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 ${showCompleted ? `
