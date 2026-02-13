@@ -752,3 +752,47 @@ func (h *TicketHandler) CreateTicketUpdate(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(update)
 }
+
+func (h *TicketHandler) DeleteAcceptanceCriteria(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	criteriaIDParam := chi.URLParam(r, "criteriaId")
+	criteriaID, err := uuid.Parse(criteriaIDParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid acceptance criteria ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.criteriaRepo.DeleteByID(r.Context(), criteriaID); err != nil {
+		http.Error(w, `{"error":"failed to delete acceptance criteria"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *TicketHandler) DeleteTicketUpdate(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	updateIDParam := chi.URLParam(r, "updateId")
+	updateID, err := uuid.Parse(updateIDParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid update ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	if err := h.updateRepo.DeleteByID(r.Context(), updateID); err != nil {
+		http.Error(w, `{"error":"failed to delete update"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

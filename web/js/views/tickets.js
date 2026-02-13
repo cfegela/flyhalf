@@ -898,11 +898,26 @@ export async function ticketFormView(params) {
         }
 
         // Remove button handler
-        removeBtn.addEventListener('click', () => {
+        removeBtn.addEventListener('click', async () => {
             if (criteriaContainer.querySelectorAll('.form-group').length > 1) {
-                fieldDiv.remove();
-                criteriaCount--;
-                updateAddButtonVisibility();
+                const criteriaId = fieldDiv.dataset.criteriaId;
+
+                // If this is an existing criterion with an ID, delete it from the backend
+                if (criteriaId && isEdit && id) {
+                    try {
+                        await api.deleteAcceptanceCriteria(id, criteriaId);
+                        fieldDiv.remove();
+                        criteriaCount--;
+                        updateAddButtonVisibility();
+                    } catch (error) {
+                        alert('Failed to delete acceptance criterion: ' + error.message);
+                    }
+                } else {
+                    // New criterion not yet saved, just remove from DOM
+                    fieldDiv.remove();
+                    criteriaCount--;
+                    updateAddButtonVisibility();
+                }
             }
         });
 
@@ -963,8 +978,21 @@ export async function ticketFormView(params) {
                 `;
 
                 const removeBtn = fieldDiv.querySelector('.remove-update-btn');
-                removeBtn.addEventListener('click', () => {
-                    fieldDiv.remove();
+                removeBtn.addEventListener('click', async () => {
+                    const updateId = fieldDiv.dataset.updateId;
+
+                    // If this is an existing update with an ID, delete it from the backend
+                    if (updateId && id) {
+                        try {
+                            await api.deleteTicketUpdate(id, updateId);
+                            fieldDiv.remove();
+                        } catch (error) {
+                            alert('Failed to delete update: ' + error.message);
+                        }
+                    } else {
+                        // New update not yet saved, just remove from DOM
+                        fieldDiv.remove();
+                    }
                 });
 
                 return fieldDiv;

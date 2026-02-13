@@ -159,6 +159,18 @@ class APIClient {
         });
     }
 
+    async deleteAcceptanceCriteria(ticketId, criteriaId) {
+        return this.request(`/tickets/${ticketId}/acceptance-criteria/${criteriaId}`, {
+            method: 'DELETE',
+        });
+    }
+
+    async deleteTicketUpdate(ticketId, updateId) {
+        return this.request(`/tickets/${ticketId}/updates/${updateId}`, {
+            method: 'DELETE',
+        });
+    }
+
     async getProjects() {
         return this.request('/projects');
     }
