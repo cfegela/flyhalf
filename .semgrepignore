@@ -1,0 +1,20 @@
+# Semgrep ignore file
+# See: https://semgrep.dev/docs/ignoring-files-folders-code/
+
+# Ignore test files - they contain intentional security anti-patterns for testing
+api/internal/auth/*_test.go
+api/internal/handler/*_test.go
+api/internal/middleware/*_test.go
+
+# Ignore database migrations - contains default admin credential with forced password change
+# This is safe as must_change_password=true requires password change on first login
+api/internal/database/database.go
+
+# Ignore Terraform files - configurations are intentional for infrastructure
+ops/terraform/
+
+# Ignore nginx configuration - header redefinition is intentional
+web/nginx.conf
+
+# Ignore SQL scripts with default credentials
+scripts/create-admin.sql

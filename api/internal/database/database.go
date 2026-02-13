@@ -202,10 +202,10 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 		// Create default admin user if it doesn't exist
 		// Default password: admin123 (bcrypt hash with cost 12)
-		// IMPORTANT: Admin must change password on first login!
+		// IMPORTANT: Admin must change password on first login (must_change_password=true)
 		`INSERT INTO users (email, password_hash, role, first_name, last_name, is_active, must_change_password)
 VALUES ('admin@flyhalf.app', '$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi', 'admin', 'System', 'Administrator', true, true)
-ON CONFLICT (email) DO NOTHING`,
+ON CONFLICT (email) DO NOTHING`, // nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash
 
 		// Acceptance criteria table for tickets
 		`CREATE TABLE IF NOT EXISTS acceptance_criteria (

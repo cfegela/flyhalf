@@ -13,6 +13,11 @@ RUN go mod download
 
 COPY . .
 
+# Create non-root user for development
+RUN adduser -D -u 1000 devuser
+
+USER devuser
+
 CMD ["air", "-c", ".air.toml"]
 
 FROM golang:1.23-alpine AS builder
@@ -28,7 +33,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o server ./cmd/server
 
-FROM alpine:latest AS production
+FROM alpine:3.21 AS production
 
 RUN apk --no-cache add ca-certificates
 
