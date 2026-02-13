@@ -54,11 +54,6 @@ class Navbar {
             </div>
         `;
 
-        const logoutBtn = this.container.querySelector('#logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => this.handleLogout(e));
-        }
-
         const navbarToggle = this.container.querySelector('#navbar-toggle');
         const navbarMenu = this.container.querySelector('#navbar-menu');
 
@@ -76,6 +71,16 @@ class Navbar {
                     navbarToggle.classList.remove('active');
                 });
             });
+
+            // Close menu when clicking logout button
+            const logoutBtn = this.container.querySelector('#logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', (e) => {
+                    navbarMenu.classList.remove('active');
+                    navbarToggle.classList.remove('active');
+                    this.handleLogout(e);
+                });
+            }
         }
 
         this.updateActiveLink();
