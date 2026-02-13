@@ -509,16 +509,29 @@ export async function ticketDetailView(params) {
                 <!-- Updates Card -->
                 <div class="card">
                     <h2 class="card-header">Updates</h2>
-                    ${ticket.updates && ticket.updates.length > 0 ? `
-                        <ul style="margin: 0; padding: 0; list-style: none; line-height: 1.8;">
-                            ${ticket.updates.map(update => `
-                                <li style="margin-bottom: 0.75rem; display: flex; gap: 0.75rem; align-items: flex-start;">
-                                    <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; min-width: 100px;">${formatRelativeTime(update.created_at)}</small>
-                                    <span style="flex: 1; color: var(--text-primary);">${escapeHtml(update.content)}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    ` : '<p style="color: var(--text-secondary); font-style: italic;">No updates yet</p>'}
+                    <div id="updates-list">
+                        ${ticket.updates && ticket.updates.length > 0 ? `
+                            <ul style="margin: 0 0 1.5rem 0; padding: 0; list-style: none; line-height: 1.8;">
+                                ${ticket.updates.map(update => `
+                                    <li style="margin-bottom: 0.75rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+                                        <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; min-width: 100px;">${formatRelativeTime(update.created_at)}</small>
+                                        <span style="flex: 1; color: var(--text-primary);">${escapeHtml(update.content)}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        ` : '<p style="color: var(--text-secondary); font-style: italic; margin-bottom: 1.5rem;">No updates yet</p>'}
+                    </div>
+                    <div style="border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                        <textarea
+                            id="update-content"
+                            class="form-textarea"
+                            placeholder="Add an update..."
+                            maxlength="500"
+                            rows="3"
+                            style="margin-bottom: 1rem;"
+                        ></textarea>
+                        <button type="button" id="post-update-btn" class="btn btn-primary">Post Update</button>
+                    </div>
                 </div>
 
                 <!-- Project Details Card -->
@@ -620,6 +633,43 @@ export async function ticketDetailView(params) {
                 }
             });
         });
+
+        // Handle post update button
+        const postUpdateBtn = container.querySelector('#post-update-btn');
+        const updateContentTextarea = container.querySelector('#update-content');
+
+        if (postUpdateBtn && updateContentTextarea) {
+            postUpdateBtn.addEventListener('click', async () => {
+                const content = updateContentTextarea.value.trim();
+
+                if (!content) {
+                    alert('Please enter an update');
+                    return;
+                }
+
+                if (content.length > 500) {
+                    alert('Update must be 500 characters or less');
+                    return;
+                }
+
+                postUpdateBtn.disabled = true;
+                postUpdateBtn.textContent = 'Posting...';
+
+                try {
+                    const newUpdate = await api.createTicketUpdate(id, content);
+
+                    // Clear the textarea
+                    updateContentTextarea.value = '';
+
+                    // Reload the ticket to show the new update
+                    ticketDetailView([null, id]);
+                } catch (error) {
+                    alert('Failed to post update: ' + error.message);
+                    postUpdateBtn.disabled = false;
+                    postUpdateBtn.textContent = 'Post Update';
+                }
+            });
+        }
     } catch (error) {
         container.innerHTML = `
             <div class="card">

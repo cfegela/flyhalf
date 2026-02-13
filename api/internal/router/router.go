@@ -112,6 +112,7 @@ func (rt *Router) Setup() http.Handler {
 			r.Patch("/{id}/priority", rt.ticketHandler.UpdateTicketPriority)
 			r.Patch("/{id}/sprint-order", rt.ticketHandler.UpdateTicketSprintOrder)
 			r.Patch("/{id}/acceptance-criteria/{criteriaId}", rt.ticketHandler.UpdateAcceptanceCriteriaCompleted)
+			r.Post("/{id}/updates", rt.ticketHandler.CreateTicketUpdate)
 		})
 
 		r.Route("/projects", func(r chi.Router) {

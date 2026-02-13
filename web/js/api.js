@@ -152,6 +152,13 @@ class APIClient {
         });
     }
 
+    async createTicketUpdate(ticketId, content) {
+        return this.request(`/tickets/${ticketId}/updates`, {
+            method: 'POST',
+            body: JSON.stringify({ content }),
+        });
+    }
+
     async getProjects() {
         return this.request('/projects');
     }

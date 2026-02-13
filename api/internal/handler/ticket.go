@@ -698,3 +698,57 @@ func (h *TicketHandler) UpdateAcceptanceCriteriaCompleted(w http.ResponseWriter,
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(criteria)
 }
+
+type CreateTicketUpdateRequest struct {
+	Content string `json:"content"`
+}
+
+func (h *TicketHandler) CreateTicketUpdate(w http.ResponseWriter, r *http.Request) {
+	_, ok := auth.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	ticketIDParam := chi.URLParam(r, "id")
+	ticketID, err := uuid.Parse(ticketIDParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid ticket ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	var req CreateTicketUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.Content == "" {
+		http.Error(w, `{"error":"content is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Get existing updates to determine sort order
+	existingUpdates, err := h.updateRepo.ListByTicketID(r.Context(), ticketID)
+	if err != nil {
+		http.Error(w, `{"error":"failed to get existing updates"}`, http.StatusInternalServerError)
+		return
+	}
+
+	sortOrder := len(existingUpdates)
+
+	update := &model.TicketUpdate{
+		TicketID:  ticketID,
+		Content:   req.Content,
+		SortOrder: sortOrder,
+	}
+
+	if err := h.updateRepo.Create(r.Context(), update); err != nil {
+		http.Error(w, `{"error":"failed to create update"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(update)
+}
