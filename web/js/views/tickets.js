@@ -98,7 +98,9 @@ export async function ticketsListView() {
                                     </td>
                                     <td data-label="Sprint">
                                         ${sprint ?
-                                            `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` :
+                                            sprint.status === 'closed' ?
+                                                `<span style="color: var(--text-secondary);">${escapeHtml(sprint.name)}</span>` :
+                                                `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` :
                                             `<span class="sprint-link" data-ticket-id="${ticket.id}" data-ticket-size="${ticket.size || ''}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
                                         }
                                     </td>
