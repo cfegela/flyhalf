@@ -661,8 +661,24 @@ export async function ticketDetailView(params) {
                     // Clear the textarea
                     updateContentTextarea.value = '';
 
-                    // Reload the ticket to show the new update
-                    ticketDetailView([null, id]);
+                    // Add the new update to the list
+                    const updatesList = document.querySelector('#updates-list ul');
+                    if (updatesList) {
+                        const newUpdateLi = document.createElement('li');
+                        newUpdateLi.style.marginBottom = '0.75rem';
+                        newUpdateLi.style.display = 'flex';
+                        newUpdateLi.style.gap = '0.75rem';
+                        newUpdateLi.style.alignItems = 'baseline';
+                        newUpdateLi.innerHTML = `
+                            <small style="color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; flex-shrink: 0; min-width: 100px;">${formatRelativeTime(newUpdate.created_at)}</small>
+                            <span style="flex: 1; color: var(--text-primary);">${escapeHtml(newUpdate.content)}</span>
+                        `;
+                        updatesList.appendChild(newUpdateLi);
+                    }
+
+                    // Reset button state
+                    postUpdateBtn.disabled = false;
+                    postUpdateBtn.textContent = 'Post Update';
                 } catch (error) {
                     alert('Failed to post update: ' + error.message);
                     postUpdateBtn.disabled = false;
