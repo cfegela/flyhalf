@@ -85,22 +85,6 @@ jobs:
         working-directory: ./api
         run: go mod download
 
-      - name: Run migrations
-        working-directory: ./api
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: flyhalf_test
-          DB_PASSWORD: test_password
-          DB_NAME: flyhalf_test
-          DB_SSLMODE: disable
-        run: |
-          # Install migrate tool
-          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
-          chmod +x migrate
-          # Run migrations
-          ./migrate -path migrations -database "postgres://flyhalf_test:test_password@localhost:5432/flyhalf_test?sslmode=disable" up
-
       - name: Run integration tests
         working-directory: ./api
         env:

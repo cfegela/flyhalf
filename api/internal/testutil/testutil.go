@@ -12,6 +12,7 @@ import (
 
 	"github.com/cfegela/flyhalf/internal/auth"
 	"github.com/cfegela/flyhalf/internal/config"
+	"github.com/cfegela/flyhalf/internal/database"
 	"github.com/cfegela/flyhalf/internal/handler"
 	"github.com/cfegela/flyhalf/internal/model"
 	"github.com/cfegela/flyhalf/internal/router"
@@ -51,6 +52,12 @@ func SetupTestDB(t *testing.T) (*pgxpool.Pool, func()) {
 	if err := pool.Ping(context.Background()); err != nil {
 		pool.Close()
 		t.Fatalf("failed to ping test database: %v", err)
+	}
+
+	// Run migrations to set up schema
+	if err := database.RunMigrations(context.Background(), pool); err != nil {
+		pool.Close()
+		t.Fatalf("failed to run migrations: %v", err)
 	}
 
 	// Clean database before tests
