@@ -748,6 +748,16 @@ export async function ticketFormView(params) {
                     </button>
                 </div>
 
+                ${isEdit ? `
+                <!-- Updates Card -->
+                <div class="card">
+                    <h2 class="card-header">Updates</h2>
+                    <div id="updates-container">
+                        <!-- Update fields will be added here dynamically -->
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- Assignment & Sizing Card -->
                 <div class="card">
                     <h2 class="card-header">Assignment & Sizing</h2>
@@ -922,6 +932,52 @@ export async function ticketFormView(params) {
         }
     });
 
+    // Setup updates (edit mode only - can edit/delete but not add new)
+    if (isEdit) {
+        const updatesContainer = form.querySelector('#updates-container');
+
+        function createUpdateField(updateData = {}) {
+            const content = updateData.content || '';
+            const id = updateData.id || '';
+            const createdAt = updateData.created_at || new Date().toISOString();
+
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'form-group';
+            fieldDiv.style.marginBottom = '0.5rem';
+            fieldDiv.dataset.updateId = id;
+            fieldDiv.innerHTML = `
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    ${id ? `<small style="color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; min-width: 100px;">${formatRelativeTime(createdAt)}</small>` : ''}
+                    <textarea
+                        class="form-textarea update-content-input"
+                        placeholder="Enter update..."
+                        maxlength="500"
+                        style="flex: 1; min-height: 40px; resize: vertical;"
+                    >${escapeHtml(content)}</textarea>
+                    <button type="button" class="btn btn-danger remove-update-btn" style="flex-shrink: 0; padding: 0.375rem 0.75rem; font-size: 0.875rem;">
+                        Remove
+                    </button>
+                </div>
+            `;
+
+            const removeBtn = fieldDiv.querySelector('.remove-update-btn');
+            removeBtn.addEventListener('click', () => {
+                fieldDiv.remove();
+            });
+
+            return fieldDiv;
+        }
+
+        // Initialize with existing updates
+        if (ticket && ticket.updates && ticket.updates.length > 0) {
+            ticket.updates.forEach(update => {
+                updatesContainer.appendChild(createUpdateField(update));
+            });
+        } else if (updatesContainer) {
+            updatesContainer.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No updates yet. Add updates from the ticket detail view.</p>';
+        }
+    }
+
     // Enable/disable sprint dropdown based on size selection
     if (isEdit) {
         const sizeSelect = form.querySelector('#size');
@@ -1008,6 +1064,21 @@ export async function ticketFormView(params) {
                 data.sprint_id = sprintValue;
             } else {
                 data.sprint_id = null;
+            }
+
+            // Collect updates (edit mode only)
+            const updatesContainer = form.querySelector('#updates-container');
+            if (updatesContainer) {
+                const updateFields = updatesContainer.querySelectorAll('.form-group');
+                const updates = Array.from(updateFields)
+                    .map(field => {
+                        const textarea = field.querySelector('.update-content-input');
+                        const content = textarea ? textarea.value.trim() : '';
+                        const id = field.dataset.updateId || '';
+                        return { id, content };
+                    })
+                    .filter(update => update.content.length > 0);
+                data.updates = updates;
             }
         }
 
