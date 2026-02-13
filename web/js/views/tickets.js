@@ -51,18 +51,27 @@ export async function ticketsListView() {
         const openTickets = tickets.filter(t => t.status !== 'closed');
         const closedTickets = tickets.filter(t => t.status === 'closed');
 
-        const renderTicketRow = (ticket) => {
+        // Check if there are any open sprints available
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const hasOpenSprints = sprints.some(sprint => {
+            if (sprint.status === 'closed') return false;
+            const endDate = new Date(sprint.end_date);
+            endDate.setHours(0, 0, 0, 0);
+            return endDate >= today;
+        });
+
+        const renderOpenTicketRow = (ticket) => {
             const assignee = ticket.assigned_to ? userMap[ticket.assigned_to] : null;
             const project = ticket.project_id ? projectMap[ticket.project_id] : null;
             const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
-            const isClosed = ticket.status === 'closed';
 
             return `
-                <tr class="${!isClosed ? 'draggable-row' : ''}"
+                <tr class="draggable-row"
                     data-ticket-id="${ticket.id}"
                     data-priority="${ticket.priority}"
-                    ${!isClosed ? 'draggable="true"' : ''}
-                    ${!isClosed ? 'style="cursor: move;"' : ''}>
+                    draggable="true"
+                    style="cursor: move;">
                     <td data-label="Title">
                         <strong>${escapeHtml(ticket.title)}</strong>
                     </td>
@@ -91,18 +100,18 @@ export async function ticketsListView() {
                             sprint.status === 'closed' ?
                                 `<span style="color: var(--text-secondary);">${escapeHtml(sprint.name)}</span>` :
                                 `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` :
-                            `<span class="sprint-link" data-ticket-id="${ticket.id}" data-ticket-size="${ticket.size || ''}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
+                            hasOpenSprints ?
+                                `<span class="sprint-link" data-ticket-id="${ticket.id}" data-ticket-size="${ticket.size || ''}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>` :
+                                `<span style="color: var(--text-secondary);">-</span>`
                         }
                     </td>
                     <td data-label="Actions">
                         <div class="actions">
-                            ${!isClosed ? `
                             <button class="btn btn-secondary action-btn promote-top-btn"
                                     data-id="${ticket.id}"
                                     title="Promote to top">
                                 <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Arrows/arrow-up-circle-fill.svg" alt="Promote to top" style="width: 20px; height: 20px; display: block;">
                             </button>
-                            ` : ''}
                             <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn" title="View details">
                                 <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
                             </a>
@@ -115,9 +124,42 @@ export async function ticketsListView() {
             `;
         };
 
+        const renderClosedTicketRow = (ticket) => {
+            const project = ticket.project_id ? projectMap[ticket.project_id] : null;
+            const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
+
+            return `
+                <tr data-ticket-id="${ticket.id}">
+                    <td data-label="Title">
+                        <strong>${escapeHtml(ticket.title)}</strong>
+                    </td>
+                    <td data-label="Project">
+                        ${project ?
+                            `<span title="${escapeHtml(project.name)}">${getProjectAcronym(project.name, projects, project.id)}</span>` :
+                            '<span style="color: var(--text-secondary);">None</span>'
+                        }
+                    </td>
+                    <td data-label="Sprint">
+                        ${sprint ?
+                            `<span style="color: var(--text-secondary);">${escapeHtml(sprint.name)}</span>` :
+                            '<span style="color: var(--text-secondary);">None</span>'
+                        }
+                    </td>
+                    <td data-label="Actions">
+                        <div class="actions">
+                            <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn" title="View details">
+                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        };
+
         ticketsContainer.innerHTML = `
             ${openTickets.length > 0 ? `
             <div class="card">
+                <h2 class="card-header">Open Tickets (${openTickets.length})</h2>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -132,7 +174,7 @@ export async function ticketsListView() {
                             </tr>
                         </thead>
                         <tbody id="tickets-tbody">
-                            ${openTickets.map(ticket => renderTicketRow(ticket)).join('')}
+                            ${openTickets.map(ticket => renderOpenTicketRow(ticket)).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -147,16 +189,13 @@ export async function ticketsListView() {
                         <thead>
                             <tr>
                                 <th>Title</th>
-                                <th>Status</th>
-                                <th>Size</th>
-                                <th>Assignee</th>
                                 <th>Project</th>
                                 <th>Sprint</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="closed-tickets-tbody">
-                            ${closedTickets.map(ticket => renderTicketRow(ticket)).join('')}
+                            ${closedTickets.map(ticket => renderClosedTicketRow(ticket)).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -226,10 +265,15 @@ export async function ticketsListView() {
                 const ticketSize = this.dataset.ticketSize;
                 const ticket = tickets.find(t => t.id === ticketId);
 
-                // Filter out completed sprints and sort by start date
+                // Filter out closed sprints and past sprints, then sort by start date
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const activeSprints = sprints.filter(sprint => {
+                    // Exclude closed sprints
+                    if (sprint.status === 'closed') {
+                        return false;
+                    }
+                    // Exclude sprints that have ended
                     const endDate = new Date(sprint.end_date);
                     endDate.setHours(0, 0, 0, 0);
                     return endDate >= today;
