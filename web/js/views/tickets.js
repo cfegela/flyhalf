@@ -901,25 +901,24 @@ export async function ticketFormView(params) {
 
         // Remove button handler
         removeBtn.addEventListener('click', async () => {
-            if (criteriaContainer.querySelectorAll('.form-group').length > 1) {
-                const criteriaId = fieldDiv.dataset.criteriaId;
+            const criteriaId = fieldDiv.dataset.criteriaId;
+            const hasMultiple = criteriaContainer.querySelectorAll('.form-group').length > 1;
 
-                // If this is an existing criterion with an ID, delete it from the backend
-                if (criteriaId && isEdit && id) {
-                    try {
-                        await api.deleteAcceptanceCriteria(id, criteriaId);
-                        fieldDiv.remove();
-                        criteriaCount--;
-                        updateAddButtonVisibility();
-                    } catch (error) {
-                        alert('Failed to delete acceptance criterion: ' + error.message);
-                    }
-                } else {
-                    // New criterion not yet saved, just remove from DOM
+            // If this is an existing criterion with an ID, delete it from the backend
+            if (criteriaId && isEdit && id) {
+                try {
+                    await api.deleteAcceptanceCriteria(id, criteriaId);
                     fieldDiv.remove();
                     criteriaCount--;
                     updateAddButtonVisibility();
+                } catch (error) {
+                    alert('Failed to delete acceptance criterion: ' + error.message);
                 }
+            } else if (hasMultiple) {
+                // New criterion not yet saved, only remove if there are multiple fields
+                fieldDiv.remove();
+                criteriaCount--;
+                updateAddButtonVisibility();
             }
         });
 
