@@ -227,6 +227,12 @@ class APIClient {
         });
     }
 
+    async closeSprint(id) {
+        return this.request(`/sprints/${id}/close`, {
+            method: 'POST',
+        });
+    }
+
     async getSprintReport(id) {
         return this.request(`/sprints/${id}/report`);
     }

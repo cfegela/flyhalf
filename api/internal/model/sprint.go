@@ -16,11 +16,18 @@ type Sprint struct {
 	StartDate   time.Time `json:"start_date"`
 	EndDate     time.Time `json:"end_date"`
 	Status      string    `json:"status"`
+	IsClosed    bool      `json:"is_closed"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (s *Sprint) CalculateStatus() {
+	// If sprint is closed, set status to "closed" and return early
+	if s.IsClosed {
+		s.Status = "closed"
+		return
+	}
+
 	now := time.Now().UTC()
 	startDate := s.StartDate.UTC()
 	endDate := s.EndDate.UTC()
@@ -51,11 +58,11 @@ func (r *SprintRepository) Create(ctx context.Context, sprint *Sprint) error {
 	query := `
 		INSERT INTO sprints (user_id, name, start_date, end_date)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at, updated_at
+		RETURNING id, is_closed, created_at, updated_at
 	`
 	err := r.db.QueryRow(ctx, query,
 		sprint.UserID, sprint.Name, sprint.StartDate, sprint.EndDate,
-	).Scan(&sprint.ID, &sprint.CreatedAt, &sprint.UpdatedAt)
+	).Scan(&sprint.ID, &sprint.IsClosed, &sprint.CreatedAt, &sprint.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -66,13 +73,13 @@ func (r *SprintRepository) Create(ctx context.Context, sprint *Sprint) error {
 
 func (r *SprintRepository) GetByID(ctx context.Context, id uuid.UUID) (*Sprint, error) {
 	query := `
-		SELECT id, user_id, name, start_date, end_date, created_at, updated_at
+		SELECT id, user_id, name, start_date, end_date, is_closed, created_at, updated_at
 		FROM sprints WHERE id = $1
 	`
 	sprint := &Sprint{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&sprint.ID, &sprint.UserID, &sprint.Name, &sprint.StartDate, &sprint.EndDate,
-		&sprint.CreatedAt, &sprint.UpdatedAt,
+		&sprint.IsClosed, &sprint.CreatedAt, &sprint.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -88,14 +95,14 @@ func (r *SprintRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Spri
 
 	if userID != nil {
 		query = `
-			SELECT id, user_id, name, start_date, end_date, created_at, updated_at
+			SELECT id, user_id, name, start_date, end_date, is_closed, created_at, updated_at
 			FROM sprints WHERE user_id = $1
 			ORDER BY start_date DESC
 		`
 		args = append(args, *userID)
 	} else {
 		query = `
-			SELECT id, user_id, name, start_date, end_date, created_at, updated_at
+			SELECT id, user_id, name, start_date, end_date, is_closed, created_at, updated_at
 			FROM sprints
 			ORDER BY start_date DESC
 		`
@@ -112,7 +119,7 @@ func (r *SprintRepository) List(ctx context.Context, userID *uuid.UUID) ([]*Spri
 		sprint := &Sprint{}
 		if err := rows.Scan(
 			&sprint.ID, &sprint.UserID, &sprint.Name, &sprint.StartDate, &sprint.EndDate,
-			&sprint.CreatedAt, &sprint.UpdatedAt,
+			&sprint.IsClosed, &sprint.CreatedAt, &sprint.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -146,7 +153,7 @@ func (r *SprintRepository) ListPaginated(ctx context.Context, userID *uuid.UUID,
 
 	if userID != nil {
 		query = `
-			SELECT id, user_id, name, start_date, end_date, created_at, updated_at
+			SELECT id, user_id, name, start_date, end_date, is_closed, created_at, updated_at
 			FROM sprints WHERE user_id = $1
 			ORDER BY start_date DESC
 			LIMIT $2 OFFSET $3
@@ -154,7 +161,7 @@ func (r *SprintRepository) ListPaginated(ctx context.Context, userID *uuid.UUID,
 		args = append(args, *userID, limit, offset)
 	} else {
 		query = `
-			SELECT id, user_id, name, start_date, end_date, created_at, updated_at
+			SELECT id, user_id, name, start_date, end_date, is_closed, created_at, updated_at
 			FROM sprints
 			ORDER BY start_date DESC
 			LIMIT $1 OFFSET $2
@@ -173,7 +180,7 @@ func (r *SprintRepository) ListPaginated(ctx context.Context, userID *uuid.UUID,
 		sprint := &Sprint{}
 		if err := rows.Scan(
 			&sprint.ID, &sprint.UserID, &sprint.Name, &sprint.StartDate, &sprint.EndDate,
-			&sprint.CreatedAt, &sprint.UpdatedAt,
+			&sprint.IsClosed, &sprint.CreatedAt, &sprint.UpdatedAt,
 		); err != nil {
 			return nil, 0, err
 		}

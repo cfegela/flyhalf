@@ -231,22 +231,28 @@ function renderBurndownChart(report, today, startDate, endDate) {
     // Use actual burndown data from backend
     const actualData = report.actual_burndown.map(point => point.points);
 
-    // Determine where to cut off the actual data (only show up to today)
-    const todayIndex = report.ideal_burndown.findIndex(point => {
-        const pointDate = parseLocalDate(point.date);
-        pointDate.setHours(0, 0, 0, 0);
-        const compareDate = new Date(today);
-        compareDate.setHours(0, 0, 0, 0);
-        return pointDate >= compareDate;
-    });
+    // For closed sprints, show all burndown data (don't cut off at today)
+    let displayActualData;
+    if (report.sprint.status === 'closed') {
+        displayActualData = actualData;
+    } else {
+        // Determine where to cut off the actual data (only show up to today)
+        const todayIndex = report.ideal_burndown.findIndex(point => {
+            const pointDate = parseLocalDate(point.date);
+            pointDate.setHours(0, 0, 0, 0);
+            const compareDate = new Date(today);
+            compareDate.setHours(0, 0, 0, 0);
+            return pointDate >= compareDate;
+        });
 
-    // Set future days to null so they don't display
-    const displayActualData = actualData.map((points, index) => {
-        if (todayIndex !== -1 && index > todayIndex) {
-            return null;
-        }
-        return points;
-    });
+        // Set future days to null so they don't display
+        displayActualData = actualData.map((points, index) => {
+            if (todayIndex !== -1 && index > todayIndex) {
+                return null;
+            }
+            return points;
+        });
+    }
 
     new Chart(ctx, {
         type: 'line',

@@ -136,6 +136,7 @@ func (rt *Router) Setup() http.Handler {
 			r.Get("/{id}/report", rt.sprintHandler.GetSprintReport)
 			r.Put("/{id}", rt.sprintHandler.UpdateSprint)
 			r.Delete("/{id}", rt.sprintHandler.DeleteSprint)
+			r.Post("/{id}/close", rt.sprintHandler.CloseSprint)
 			r.Get("/{sprintId}/retro", rt.retroItemHandler.ListRetroItems)
 			r.Post("/{sprintId}/retro", rt.retroItemHandler.CreateRetroItem)
 		})

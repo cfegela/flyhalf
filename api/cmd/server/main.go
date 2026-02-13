@@ -73,7 +73,7 @@ func run() error {
 	leagueHandler := handler.NewLeagueHandler(leagueRepo)
 	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo, updateRepo, pool)
 	projectHandler := handler.NewProjectHandler(projectRepo)
-	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo)
+	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo, pool)
 	retroItemHandler := handler.NewRetroItemHandler(retroItemRepo, userRepo)
 
 	rt := router.New(healthHandler, metricsHandler, authHandler, adminHandler, teamHandler, leagueHandler, ticketHandler, projectHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)

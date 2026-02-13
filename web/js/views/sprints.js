@@ -59,12 +59,14 @@ export async function sprintsListView() {
                                 const statusBadgeMap = {
                                     'active': 'badge-in-progress',
                                     'completed': 'badge-closed',
-                                    'upcoming': 'badge-open'
+                                    'upcoming': 'badge-open',
+                                    'closed': 'badge-closed'
                                 };
                                 const statusLabelMap = {
                                     'active': 'Active',
                                     'completed': 'Completed',
-                                    'upcoming': 'Upcoming'
+                                    'upcoming': 'Upcoming',
+                                    'closed': 'Closed'
                                 };
 
                                 return `
@@ -184,6 +186,7 @@ export async function sprintDetailView(params) {
         const isActive = sprint.status === 'active';
         const isCompleted = sprint.status === 'completed';
         const isUpcoming = sprint.status === 'upcoming';
+        const isClosed = sprint.status === 'closed';
 
         container.innerHTML = `
             <div>
@@ -193,7 +196,7 @@ export async function sprintDetailView(params) {
                         <a href="/sprints/${id}/board" class="btn btn-primary">Board</a>
                         <a href="/sprints/${id}/report" class="btn btn-primary">Report</a>
                         <a href="/sprints/${id}/retro" class="btn btn-primary">Retro</a>
-                        <a href="/sprints/${id}/edit" class="btn btn-secondary">Edit</a>
+                        ${!isClosed ? `<a href="/sprints/${id}/edit" class="btn btn-secondary">Edit</a>` : ''}
                         <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>
@@ -205,8 +208,8 @@ export async function sprintDetailView(params) {
                         <div>
                             <label class="form-label">Status</label>
                             <div style="margin-top: 0.25rem;">
-                                <span class="badge ${isActive ? 'badge-in-progress' : isCompleted ? 'badge-closed' : 'badge-open'}" style="font-size: 0.875rem; padding: 0.375rem 0.875rem;">
-                                    ${isActive ? 'Active' : isCompleted ? 'Completed' : 'Upcoming'}
+                                <span class="badge ${isClosed ? 'badge-closed' : isActive ? 'badge-in-progress' : isCompleted ? 'badge-closed' : 'badge-open'}" style="font-size: 0.875rem; padding: 0.375rem 0.875rem;">
+                                    ${isClosed ? 'Closed' : isActive ? 'Active' : isCompleted ? 'Completed' : 'Upcoming'}
                                 </span>
                             </div>
                         </div>
@@ -280,6 +283,19 @@ export async function sprintDetailView(params) {
                     `}
                 </div>
 
+                ${!isClosed && (isActive || isCompleted) ? `
+                <!-- Close Sprint Card -->
+                <div class="card">
+                    <h2 class="card-header">Close Sprint</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+                        Closing a sprint will preserve the current report as a snapshot and remove all open tickets from the sprint. Only closed tickets will remain associated with this sprint. This action cannot be undone.
+                    </p>
+                    <button class="btn btn-danger" id="close-sprint-btn">
+                        Close Sprint
+                    </button>
+                </div>
+                ` : ''}
+
                 ${auth.isAdmin() ? `
                 <!-- Danger Zone Card -->
                 <div class="card">
@@ -300,6 +316,20 @@ export async function sprintDetailView(params) {
                 ` : ''}
             </div>
         `;
+
+        const closeSprintBtn = container.querySelector('#close-sprint-btn');
+        if (closeSprintBtn) {
+            closeSprintBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to close this sprint? Open tickets will be removed from the sprint, and the report will be preserved as a snapshot.')) {
+                    try {
+                        await api.closeSprint(id);
+                        window.location.reload();
+                    } catch (error) {
+                        alert('Failed to close sprint: ' + error.message);
+                    }
+                }
+            });
+        }
 
         const deleteBtn = container.querySelector('#delete-btn');
         if (deleteBtn) {

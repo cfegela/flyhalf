@@ -10,17 +10,20 @@ import (
 	"github.com/cfegela/flyhalf/internal/util"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type SprintHandler struct {
 	sprintRepo *model.SprintRepository
 	ticketRepo *model.TicketRepository
+	pool       *pgxpool.Pool
 }
 
-func NewSprintHandler(sprintRepo *model.SprintRepository, ticketRepo *model.TicketRepository) *SprintHandler {
+func NewSprintHandler(sprintRepo *model.SprintRepository, ticketRepo *model.TicketRepository, pool *pgxpool.Pool) *SprintHandler {
 	return &SprintHandler{
 		sprintRepo: sprintRepo,
 		ticketRepo: ticketRepo,
+		pool:       pool,
 	}
 }
 
@@ -219,6 +222,158 @@ func (h *SprintHandler) DeleteSprint(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *SprintHandler) CloseSprint(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid sprint ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	sprint, err := h.sprintRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Validate sprint can be closed
+	if sprint.IsClosed {
+		http.Error(w, `{"error":"sprint is already closed"}`, http.StatusBadRequest)
+		return
+	}
+
+	if sprint.Status == "upcoming" {
+		http.Error(w, `{"error":"cannot close an upcoming sprint"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Begin transaction
+	tx, err := h.pool.Begin(r.Context())
+	if err != nil {
+		http.Error(w, `{"error":"failed to start transaction"}`, http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	// Query sprint tickets within transaction
+	allTickets, err := h.ticketRepo.List(r.Context(), nil)
+	if err != nil {
+		http.Error(w, `{"error":"failed to fetch tickets"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Filter tickets for this sprint
+	var sprintTickets []*model.Ticket
+	for _, ticket := range allTickets {
+		if ticket.SprintID != nil && *ticket.SprintID == id {
+			sprintTickets = append(sprintTickets, ticket)
+		}
+	}
+
+	// Compute report metrics (reuse existing logic)
+	totalPoints := 0
+	committedPoints := 0
+	committedTickets := 0
+	completedPoints := 0
+	ticketsByStatus := make(map[string]int)
+	pointsByStatus := make(map[string]int)
+
+	for _, ticket := range sprintTickets {
+		points := 0
+		if ticket.Size != nil {
+			points = *ticket.Size
+		}
+
+		totalPoints += points
+		ticketsByStatus[ticket.Status]++
+		pointsByStatus[ticket.Status] += points
+
+		// Calculate committed points and tickets: added at or before sprint start
+		if ticket.AddedToSprintAt != nil {
+			addedDate := ticket.AddedToSprintAt.Truncate(24 * time.Hour)
+			startDate := sprint.StartDate.Truncate(24 * time.Hour)
+			if !addedDate.After(startDate) {
+				committedPoints += points
+				committedTickets++
+			}
+		}
+
+		if ticket.Status == "closed" {
+			completedPoints += points
+		}
+	}
+
+	remainingPoints := totalPoints - completedPoints
+	adoptedPoints := totalPoints - committedPoints
+	adoptedTickets := len(sprintTickets) - committedTickets
+
+	// Generate ideal and actual burndown
+	idealBurndown := generateIdealBurndown(sprint.StartDate, sprint.EndDate, totalPoints)
+	actualBurndown := generateActualBurndown(sprint.StartDate, sprint.EndDate, totalPoints, sprintTickets)
+
+	// Marshal to JSON
+	idealBurndownJSON, _ := json.Marshal(idealBurndown)
+	actualBurndownJSON, _ := json.Marshal(actualBurndown)
+	ticketsByStatusJSON, _ := json.Marshal(ticketsByStatus)
+	pointsByStatusJSON, _ := json.Marshal(pointsByStatus)
+
+	// Insert snapshot into sprint_snapshots
+	_, err = tx.Exec(r.Context(), `
+		INSERT INTO sprint_snapshots (
+			sprint_id, total_points, committed_points, adopted_points, completed_points,
+			remaining_points, total_tickets, committed_tickets, adopted_tickets,
+			completed_tickets, ideal_burndown, actual_burndown, tickets_by_status, points_by_status
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+	`, id, totalPoints, committedPoints, adoptedPoints, completedPoints, remainingPoints,
+		len(sprintTickets), committedTickets, adoptedTickets, ticketsByStatus["closed"],
+		idealBurndownJSON, actualBurndownJSON, ticketsByStatusJSON, pointsByStatusJSON)
+
+	if err != nil {
+		http.Error(w, `{"error":"failed to create sprint snapshot"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Remove non-closed tickets from sprint
+	_, err = tx.Exec(r.Context(), `
+		UPDATE tickets
+		SET sprint_id = NULL, added_to_sprint_at = NULL, sprint_order = 0
+		WHERE sprint_id = $1 AND status != 'closed'
+	`, id)
+
+	if err != nil {
+		http.Error(w, `{"error":"failed to remove open tickets from sprint"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Mark sprint as closed
+	_, err = tx.Exec(r.Context(), `
+		UPDATE sprints
+		SET is_closed = true, updated_at = NOW()
+		WHERE id = $1
+	`, id)
+
+	if err != nil {
+		http.Error(w, `{"error":"failed to close sprint"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Commit transaction
+	if err := tx.Commit(r.Context()); err != nil {
+		http.Error(w, `{"error":"failed to commit transaction"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Return updated sprint
+	sprint, err = h.sprintRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"failed to fetch updated sprint"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sprint)
+}
+
 type SprintReportResponse struct {
 	Sprint              *model.Sprint       `json:"sprint"`
 	TotalPoints         int                 `json:"total_points"`
@@ -252,6 +407,75 @@ func (h *SprintHandler) GetSprintReport(w http.ResponseWriter, r *http.Request) 
 	sprint, err := h.sprintRepo.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// If sprint is closed, return snapshot data
+	if sprint.IsClosed {
+		var snapshot struct {
+			TotalPoints      int             `json:"total_points"`
+			CommittedPoints  int             `json:"committed_points"`
+			AdoptedPoints    int             `json:"adopted_points"`
+			CompletedPoints  int             `json:"completed_points"`
+			RemainingPoints  int             `json:"remaining_points"`
+			TotalTickets     int             `json:"total_tickets"`
+			CommittedTickets int             `json:"committed_tickets"`
+			AdoptedTickets   int             `json:"adopted_tickets"`
+			CompletedTickets int             `json:"completed_tickets"`
+			IdealBurndown    json.RawMessage `json:"ideal_burndown"`
+			ActualBurndown   json.RawMessage `json:"actual_burndown"`
+			TicketsByStatus  json.RawMessage `json:"tickets_by_status"`
+			PointsByStatus   json.RawMessage `json:"points_by_status"`
+		}
+
+		query := `
+			SELECT total_points, committed_points, adopted_points, completed_points, remaining_points,
+			       total_tickets, committed_tickets, adopted_tickets, completed_tickets,
+			       ideal_burndown, actual_burndown, tickets_by_status, points_by_status
+			FROM sprint_snapshots WHERE sprint_id = $1
+		`
+		err = h.pool.QueryRow(r.Context(), query, id).Scan(
+			&snapshot.TotalPoints, &snapshot.CommittedPoints, &snapshot.AdoptedPoints,
+			&snapshot.CompletedPoints, &snapshot.RemainingPoints, &snapshot.TotalTickets,
+			&snapshot.CommittedTickets, &snapshot.AdoptedTickets, &snapshot.CompletedTickets,
+			&snapshot.IdealBurndown, &snapshot.ActualBurndown, &snapshot.TicketsByStatus,
+			&snapshot.PointsByStatus,
+		)
+		if err != nil {
+			http.Error(w, `{"error":"failed to fetch sprint snapshot"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// Unmarshal JSON fields
+		var idealBurndown []BurndownPoint
+		var actualBurndown []BurndownPoint
+		var ticketsByStatus map[string]int
+		var pointsByStatus map[string]int
+
+		json.Unmarshal(snapshot.IdealBurndown, &idealBurndown)
+		json.Unmarshal(snapshot.ActualBurndown, &actualBurndown)
+		json.Unmarshal(snapshot.TicketsByStatus, &ticketsByStatus)
+		json.Unmarshal(snapshot.PointsByStatus, &pointsByStatus)
+
+		response := SprintReportResponse{
+			Sprint:           sprint,
+			TotalPoints:      snapshot.TotalPoints,
+			CommittedPoints:  snapshot.CommittedPoints,
+			AdoptedPoints:    snapshot.AdoptedPoints,
+			CompletedPoints:  snapshot.CompletedPoints,
+			RemainingPoints:  snapshot.RemainingPoints,
+			TotalTickets:     snapshot.TotalTickets,
+			CommittedTickets: snapshot.CommittedTickets,
+			AdoptedTickets:   snapshot.AdoptedTickets,
+			CompletedTickets: snapshot.CompletedTickets,
+			IdealBurndown:    idealBurndown,
+			ActualBurndown:   actualBurndown,
+			TicketsByStatus:  ticketsByStatus,
+			PointsByStatus:   pointsByStatus,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 

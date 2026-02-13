@@ -253,6 +253,32 @@ ON CONFLICT (email) DO NOTHING`,
 		// Add league_id to teams
 		`ALTER TABLE teams ADD COLUMN IF NOT EXISTS league_id UUID REFERENCES leagues(id) ON DELETE SET NULL`,
 		`CREATE INDEX IF NOT EXISTS idx_teams_league_id ON teams(league_id)`,
+
+		// Add is_closed column to sprints
+		`ALTER TABLE sprints ADD COLUMN IF NOT EXISTS is_closed BOOLEAN NOT NULL DEFAULT false`,
+
+		// Create sprint_snapshots table for closed sprint reports
+		`CREATE TABLE IF NOT EXISTS sprint_snapshots (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			sprint_id UUID UNIQUE NOT NULL REFERENCES sprints(id) ON DELETE CASCADE,
+			total_points INTEGER NOT NULL DEFAULT 0,
+			committed_points INTEGER NOT NULL DEFAULT 0,
+			adopted_points INTEGER NOT NULL DEFAULT 0,
+			completed_points INTEGER NOT NULL DEFAULT 0,
+			remaining_points INTEGER NOT NULL DEFAULT 0,
+			total_tickets INTEGER NOT NULL DEFAULT 0,
+			committed_tickets INTEGER NOT NULL DEFAULT 0,
+			adopted_tickets INTEGER NOT NULL DEFAULT 0,
+			completed_tickets INTEGER NOT NULL DEFAULT 0,
+			ideal_burndown JSONB NOT NULL DEFAULT '[]',
+			actual_burndown JSONB NOT NULL DEFAULT '[]',
+			tickets_by_status JSONB NOT NULL DEFAULT '{}',
+			points_by_status JSONB NOT NULL DEFAULT '{}',
+			closed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			created_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_sprint_snapshots_sprint_id ON sprint_snapshots(sprint_id)`,
 	}
 
 	for _, migration := range migrations {
