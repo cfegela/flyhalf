@@ -47,7 +47,76 @@ export async function ticketsListView() {
             return;
         }
 
+        // Separate open and closed tickets
+        const openTickets = tickets.filter(t => t.status !== 'closed');
+        const closedTickets = tickets.filter(t => t.status === 'closed');
+
+        const renderTicketRow = (ticket) => {
+            const assignee = ticket.assigned_to ? userMap[ticket.assigned_to] : null;
+            const project = ticket.project_id ? projectMap[ticket.project_id] : null;
+            const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
+            const isClosed = ticket.status === 'closed';
+
+            return `
+                <tr class="${!isClosed ? 'draggable-row' : ''}"
+                    data-ticket-id="${ticket.id}"
+                    data-priority="${ticket.priority}"
+                    ${!isClosed ? 'draggable="true"' : ''}
+                    ${!isClosed ? 'style="cursor: move;"' : ''}>
+                    <td data-label="Title">
+                        <strong>${escapeHtml(ticket.title)}</strong>
+                    </td>
+                    <td data-label="Status">
+                        <span class="badge ${getStatusBadgeClass(ticket.status)}">
+                            ${escapeHtml(ticket.status)}
+                        </span>
+                    </td>
+                    <td data-label="Size">
+                        ${getSizeLabel(ticket.size)}
+                    </td>
+                    <td data-label="Assignee">
+                        ${assignee ?
+                            `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` :
+                            `<span class="assign-link" data-ticket-id="${ticket.id}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Assign...</span>`
+                        }
+                    </td>
+                    <td data-label="Project">
+                        ${project ?
+                            `<span title="${escapeHtml(project.name)}">${getProjectAcronym(project.name, projects, project.id)}</span>` :
+                            `<span class="project-link" data-ticket-id="${ticket.id}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
+                        }
+                    </td>
+                    <td data-label="Sprint">
+                        ${sprint ?
+                            sprint.status === 'closed' ?
+                                `<span style="color: var(--text-secondary);">${escapeHtml(sprint.name)}</span>` :
+                                `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` :
+                            `<span class="sprint-link" data-ticket-id="${ticket.id}" data-ticket-size="${ticket.size || ''}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
+                        }
+                    </td>
+                    <td data-label="Actions">
+                        <div class="actions">
+                            ${!isClosed ? `
+                            <button class="btn btn-secondary action-btn promote-top-btn"
+                                    data-id="${ticket.id}"
+                                    title="Promote to top">
+                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Arrows/arrow-up-circle-fill.svg" alt="Promote to top" style="width: 20px; height: 20px; display: block;">
+                            </button>
+                            ` : ''}
+                            <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn" title="View details">
+                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
+                            </a>
+                            <a href="/tickets/${ticket.id}/edit" class="btn btn-secondary action-btn" title="Edit ticket">
+                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Design/pencil-ai-fill.svg" alt="Edit" style="width: 20px; height: 20px; display: block;">
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        };
+
         ticketsContainer.innerHTML = `
+            ${openTickets.length > 0 ? `
             <div class="card">
                 <div class="table-container">
                     <table>
@@ -63,73 +132,42 @@ export async function ticketsListView() {
                             </tr>
                         </thead>
                         <tbody id="tickets-tbody">
-                            ${tickets.map(ticket => {
-                                const assignee = ticket.assigned_to ? userMap[ticket.assigned_to] : null;
-                                const project = ticket.project_id ? projectMap[ticket.project_id] : null;
-                                const sprint = ticket.sprint_id ? sprintMap[ticket.sprint_id] : null;
-                                return `
-                                <tr class="draggable-row"
-                                    data-ticket-id="${ticket.id}"
-                                    data-priority="${ticket.priority}"
-                                    draggable="true"
-                                    style="cursor: move;">
-                                    <td data-label="Title">
-                                        <strong>${escapeHtml(ticket.title)}</strong>
-                                    </td>
-                                    <td data-label="Status">
-                                        <span class="badge ${getStatusBadgeClass(ticket.status)}">
-                                            ${escapeHtml(ticket.status)}
-                                        </span>
-                                    </td>
-                                    <td data-label="Size">
-                                        ${getSizeLabel(ticket.size)}
-                                    </td>
-                                    <td data-label="Assignee">
-                                        ${assignee ?
-                                            `${escapeHtml(assignee.first_name)} ${escapeHtml(assignee.last_name)}` :
-                                            `<span class="assign-link" data-ticket-id="${ticket.id}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Assign...</span>`
-                                        }
-                                    </td>
-                                    <td data-label="Project">
-                                        ${project ?
-                                            `<span title="${escapeHtml(project.name)}">${getProjectAcronym(project.name, projects, project.id)}</span>` :
-                                            `<span class="project-link" data-ticket-id="${ticket.id}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
-                                        }
-                                    </td>
-                                    <td data-label="Sprint">
-                                        ${sprint ?
-                                            sprint.status === 'closed' ?
-                                                `<span style="color: var(--text-secondary);">${escapeHtml(sprint.name)}</span>` :
-                                                `<a href="/sprints/${sprint.id}/board" style="color: var(--primary); text-decoration: none;">${escapeHtml(sprint.name)}</a>` :
-                                            `<span class="sprint-link" data-ticket-id="${ticket.id}" data-ticket-size="${ticket.size || ''}" style="color: var(--primary); cursor: pointer; text-decoration: underline;">Select...</span>`
-                                        }
-                                    </td>
-                                    <td data-label="Actions">
-                                        <div class="actions">
-                                            <button class="btn btn-secondary action-btn promote-top-btn"
-                                                    data-id="${ticket.id}"
-                                                    title="Promote to top">
-                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Arrows/arrow-up-circle-fill.svg" alt="Promote to top" style="width: 20px; height: 20px; display: block;">
-                                            </button>
-                                            <a href="/tickets/${ticket.id}" class="btn btn-secondary action-btn" title="View details">
-                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
-                                            </a>
-                                            <a href="/tickets/${ticket.id}/edit" class="btn btn-secondary action-btn" title="Edit ticket">
-                                                <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Design/pencil-ai-fill.svg" alt="Edit" style="width: 20px; height: 20px; display: block;">
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                `;
-                            }).join('')}
+                            ${openTickets.map(ticket => renderTicketRow(ticket)).join('')}
                         </tbody>
                     </table>
                 </div>
             </div>
+            ` : ''}
+
+            ${closedTickets.length > 0 ? `
+            <div class="card" style="margin-top: 1.5rem;">
+                <h2 class="card-header">Closed Tickets (${closedTickets.length})</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Size</th>
+                                <th>Assignee</th>
+                                <th>Project</th>
+                                <th>Sprint</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="closed-tickets-tbody">
+                            ${closedTickets.map(ticket => renderTicketRow(ticket)).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            ` : ''}
         `;
 
-        // Implement drag-and-drop with fractional indexing
-        setupDragAndDrop(ticketsContainer, tickets);
+        // Implement drag-and-drop with fractional indexing (only for open tickets)
+        if (openTickets.length > 0) {
+            setupDragAndDrop(ticketsContainer, openTickets);
+        }
 
         // Handle promote to top button
         const promoteTopButtons = ticketsContainer.querySelectorAll('.promote-top-btn');
