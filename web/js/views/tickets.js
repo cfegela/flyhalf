@@ -528,7 +528,7 @@ export async function ticketDetailView(params) {
                             placeholder="Add an update..."
                             maxlength="500"
                             rows="3"
-                            style="margin-bottom: 1rem;"
+                            style="margin-bottom: 1rem; min-height: auto; height: 70px;"
                         ></textarea>
                         <button type="button" id="post-update-btn" class="btn btn-primary">Post Update</button>
                     </div>
