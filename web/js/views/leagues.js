@@ -8,7 +8,7 @@ export async function leaguesListView() {
     container.innerHTML = `
         <div>
             <div class="page-header">
-                <h1 class="page-title">League Management</h1>
+                <h1 class="page-title">Leagues</h1>
                 <a href="/admin/leagues/new" class="btn btn-primary">Create League</a>
             </div>
             <div id="leagues-container">

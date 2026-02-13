@@ -8,7 +8,7 @@ export async function teamsListView() {
     container.innerHTML = `
         <div>
             <div class="page-header">
-                <h1 class="page-title">Team Management</h1>
+                <h1 class="page-title">Teams</h1>
                 <a href="/admin/teams/new" class="btn btn-primary">Create Team</a>
             </div>
             <div id="teams-container">

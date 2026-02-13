@@ -8,7 +8,7 @@ export async function usersListView() {
     container.innerHTML = `
         <div>
             <div class="page-header">
-                <h1 class="page-title">User Management</h1>
+                <h1 class="page-title">Users</h1>
                 <a href="/admin/users/new" class="btn btn-primary">Create User</a>
             </div>
             <div id="users-container">
