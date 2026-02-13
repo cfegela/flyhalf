@@ -214,25 +214,6 @@ export async function sprintDetailView(params) {
                             </div>
                         </div>
                         <div>
-                            <label class="form-label">Duration</label>
-                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
-                                ${totalDays} days
-                            </p>
-                        </div>
-                        <div>
-                            <label class="form-label">${isCompleted ? 'Completed' : isUpcoming ? 'Starts In' : 'Days Remaining'}</label>
-                            <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
-                                ${isCompleted ? formatDate(sprint.end_date) : isUpcoming ? `${Math.abs(daysElapsed)} days` : `${daysRemaining} days`}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Date Information Card -->
-                <div class="card">
-                    <h2 class="card-header">Timeline</h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-                        <div>
                             <label class="form-label">Start Date</label>
                             <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
                                 ${formatDate(sprint.start_date)}
