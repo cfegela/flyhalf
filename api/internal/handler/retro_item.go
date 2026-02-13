@@ -13,12 +13,14 @@ import (
 type RetroItemHandler struct {
 	retroItemRepo *model.RetroItemRepository
 	userRepo      *model.UserRepository
+	sprintRepo    *model.SprintRepository
 }
 
-func NewRetroItemHandler(retroItemRepo *model.RetroItemRepository, userRepo *model.UserRepository) *RetroItemHandler {
+func NewRetroItemHandler(retroItemRepo *model.RetroItemRepository, userRepo *model.UserRepository, sprintRepo *model.SprintRepository) *RetroItemHandler {
 	return &RetroItemHandler{
 		retroItemRepo: retroItemRepo,
 		userRepo:      userRepo,
+		sprintRepo:    sprintRepo,
 	}
 }
 
@@ -108,6 +110,17 @@ func (h *RetroItemHandler) CreateRetroItem(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Check if sprint is closed
+	sprint, err := h.sprintRepo.GetByID(r.Context(), sprintID)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+	if sprint.IsClosed {
+		http.Error(w, `{"error":"cannot modify retro items for closed sprints"}`, http.StatusBadRequest)
+		return
+	}
+
 	var req CreateRetroItemRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
@@ -182,6 +195,17 @@ func (h *RetroItemHandler) UpdateRetroItem(w http.ResponseWriter, r *http.Reques
 	item, err := h.retroItemRepo.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, `{"error":"retro item not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// Check if sprint is closed
+	sprint, err := h.sprintRepo.GetByID(r.Context(), item.SprintID)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+	if sprint.IsClosed {
+		http.Error(w, `{"error":"cannot modify retro items for closed sprints"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -262,6 +286,17 @@ func (h *RetroItemHandler) DeleteRetroItem(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Check if sprint is closed
+	sprint, err := h.sprintRepo.GetByID(r.Context(), item.SprintID)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+	if sprint.IsClosed {
+		http.Error(w, `{"error":"cannot modify retro items for closed sprints"}`, http.StatusBadRequest)
+		return
+	}
+
 	// Check authorization: only creator or admin can delete
 	userRole, _ := auth.GetUserRole(r.Context())
 	if userRole != model.RoleAdmin && item.UserID != userID {
@@ -291,13 +326,29 @@ func (h *RetroItemHandler) VoteRetroItem(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Check if sprint is closed
+	item, err := h.retroItemRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"retro item not found"}`, http.StatusNotFound)
+		return
+	}
+	sprint, err := h.sprintRepo.GetByID(r.Context(), item.SprintID)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+	if sprint.IsClosed {
+		http.Error(w, `{"error":"cannot modify retro items for closed sprints"}`, http.StatusBadRequest)
+		return
+	}
+
 	if err := h.retroItemRepo.Vote(r.Context(), id); err != nil {
 		http.Error(w, `{"error":"failed to vote on retro item"}`, http.StatusInternalServerError)
 		return
 	}
 
 	// Get updated item to return new vote count
-	item, err := h.retroItemRepo.GetByID(r.Context(), id)
+	item, err = h.retroItemRepo.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, `{"error":"retro item not found"}`, http.StatusNotFound)
 		return
@@ -340,13 +391,29 @@ func (h *RetroItemHandler) UnvoteRetroItem(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Check if sprint is closed
+	item, err := h.retroItemRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"retro item not found"}`, http.StatusNotFound)
+		return
+	}
+	sprint, err := h.sprintRepo.GetByID(r.Context(), item.SprintID)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+	if sprint.IsClosed {
+		http.Error(w, `{"error":"cannot modify retro items for closed sprints"}`, http.StatusBadRequest)
+		return
+	}
+
 	if err := h.retroItemRepo.Unvote(r.Context(), id); err != nil {
 		http.Error(w, `{"error":"failed to unvote retro item"}`, http.StatusInternalServerError)
 		return
 	}
 
 	// Get updated item to return new vote count
-	item, err := h.retroItemRepo.GetByID(r.Context(), id)
+	item, err = h.retroItemRepo.GetByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, `{"error":"retro item not found"}`, http.StatusNotFound)
 		return

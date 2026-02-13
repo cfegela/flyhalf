@@ -87,9 +87,11 @@ export async function sprintsListView() {
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
+                                            ${sprint.status !== 'closed' ? `
                                             <a href="/sprints/${sprint.id}/board" class="btn btn-primary action-btn">
                                                 board
                                             </a>
+                                            ` : ''}
                                             <a href="/sprints/${sprint.id}/report" class="btn btn-primary action-btn">
                                                 report
                                             </a>
@@ -99,9 +101,11 @@ export async function sprintsListView() {
                                             <a href="/sprints/${sprint.id}" class="btn btn-secondary action-btn" title="View details">
                                                 <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/System/eye-fill.svg" alt="View" style="width: 20px; height: 20px; display: block;">
                                             </a>
+                                            ${sprint.status !== 'closed' ? `
                                             <a href="/sprints/${sprint.id}/edit" class="btn btn-secondary action-btn" title="Edit sprint">
                                                 <img src="https://cdn.jsdelivr.net/npm/remixicon@4.8.0/icons/Design/pencil-ai-fill.svg" alt="Edit" style="width: 20px; height: 20px; display: block;">
                                             </a>
+                                            ` : ''}
                                         </div>
                                     </td>
                                 </tr>
@@ -193,7 +197,7 @@ export async function sprintDetailView(params) {
                 <div class="page-header">
                     <h1 class="page-title">${escapeHtml(sprint.name)}</h1>
                     <div class="actions">
-                        <a href="/sprints/${id}/board" class="btn btn-primary">Board</a>
+                        ${!isClosed ? `<a href="/sprints/${id}/board" class="btn btn-primary">Board</a>` : ''}
                         <a href="/sprints/${id}/report" class="btn btn-primary">Report</a>
                         <a href="/sprints/${id}/retro" class="btn btn-primary">Retro</a>
                         ${!isClosed ? `<a href="/sprints/${id}/edit" class="btn btn-secondary">Edit</a>` : ''}

@@ -25,6 +25,7 @@ export async function sprintRetroView(params) {
 
         const goodItems = items.filter(item => item.category === 'good');
         const badItems = items.filter(item => item.category === 'bad');
+        const isClosed = sprint.status === 'closed';
 
         container.innerHTML = `
             <div>
@@ -32,11 +33,19 @@ export async function sprintRetroView(params) {
                     <h1 class="page-title">Sprint Retrospective: ${escapeHtml(sprint.name)}</h1>
                     <div class="actions">
                         <a href="/sprints/${sprintId}" class="btn btn-primary">Details</a>
-                        <a href="/sprints/${sprintId}/board" class="btn btn-primary">Board</a>
+                        ${!isClosed ? `<a href="/sprints/${sprintId}/board" class="btn btn-primary">Board</a>` : ''}
                         <a href="/sprints/${sprintId}/report" class="btn btn-primary">Report</a>
                         <button class="btn btn-secondary" onclick="history.back()">Back</button>
                     </div>
                 </div>
+
+                ${isClosed ? `
+                <div class="card" style="background: var(--warning-light); border-color: var(--warning); margin-bottom: 1.5rem;">
+                    <p style="margin: 0; color: var(--text-primary); font-weight: 500;">
+                        ⚠️ This sprint is closed and the retrospective is read-only.
+                    </p>
+                </div>
+                ` : ''}
 
                 <div class="board retro-board-2col">
                     <div class="board-column">
@@ -45,8 +54,9 @@ export async function sprintRetroView(params) {
                             <span class="ticket-count">${goodItems.length}</span>
                         </div>
                         <div class="board-column-content" id="good-items">
-                            ${renderItems(goodItems, 'good')}
+                            ${renderItems(goodItems, 'good', isClosed)}
                         </div>
+                        ${!isClosed ? `
                         <div class="retro-add-item">
                             <textarea
                                 id="new-good-item"
@@ -57,6 +67,7 @@ export async function sprintRetroView(params) {
                             ></textarea>
                             <button class="btn btn-primary" onclick="window.addRetroItem('good')">Add</button>
                         </div>
+                        ` : ''}
                     </div>
 
                     <div class="board-column">
@@ -65,8 +76,9 @@ export async function sprintRetroView(params) {
                             <span class="ticket-count">${badItems.length}</span>
                         </div>
                         <div class="board-column-content" id="bad-items">
-                            ${renderItems(badItems, 'bad')}
+                            ${renderItems(badItems, 'bad', isClosed)}
                         </div>
+                        ${!isClosed ? `
                         <div class="retro-add-item">
                             <textarea
                                 id="new-bad-item"
@@ -77,6 +89,7 @@ export async function sprintRetroView(params) {
                             ></textarea>
                             <button class="btn btn-primary" onclick="window.addRetroItem('bad')">Add</button>
                         </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -102,7 +115,7 @@ export async function sprintRetroView(params) {
     }
 }
 
-function renderItems(items, category) {
+function renderItems(items, category, isClosed) {
     if (items.length === 0) {
         return '<div class="board-empty-state">No items yet. Add one below!</div>';
     }
@@ -111,13 +124,14 @@ function renderItems(items, category) {
     const isAdmin = auth.isAdmin();
 
     return items.map(item => {
-        const canEdit = isAdmin || item.user_id === currentUser.id;
+        const canEdit = !isClosed && (isAdmin || item.user_id === currentUser.id);
 
         return `
             <div class="board-ticket retro-item" data-item-id="${item.id}">
                 <div class="retro-item-content" id="content-${item.id}">
                     <div class="board-ticket-title">${escapeHtml(item.content)}</div>
                 </div>
+                ${!isClosed ? `
                 <div class="retro-item-edit" id="edit-${item.id}" style="display: none;">
                     <textarea
                         class="form-input"
@@ -130,7 +144,9 @@ function renderItems(items, category) {
                         <button class="btn btn-secondary btn-sm" onclick="window.cancelEditRetroItem('${item.id}')">Cancel</button>
                     </div>
                 </div>
+                ` : ''}
                 <div class="board-ticket-footer retro-item-actions" id="actions-${item.id}">
+                    ${!isClosed ? `
                     <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;">
                         <span style="color: var(--text-secondary);">Votes:</span>
                         <span id="vote-count-${item.id}" style="color: var(--text-secondary);">${item.vote_count}</span>
@@ -140,6 +156,11 @@ function renderItems(items, category) {
                         <a href="#" class="board-ticket-link" onclick="event.preventDefault(); window.unvoteRetroItem('${item.id}')">remove</a>
                         <span style="color: var(--text-secondary);">]</span>
                     </div>
+                    ` : `
+                    <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;">
+                        <span style="color: var(--text-secondary);">Votes: ${item.vote_count}</span>
+                    </div>
+                    `}
                     <div style="display: flex; gap: 1rem;">
                         ${canEdit ? `
                             <a href="#" class="board-ticket-link" onclick="event.preventDefault(); window.editRetroItem('${item.id}')">Edit</a>
