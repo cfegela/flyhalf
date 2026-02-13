@@ -165,15 +165,99 @@ jobs:
         run: go vet ./...
 
   # ============================================================================
+  # SECURITY SCANNING - Run on all pushes and PRs
+  # ============================================================================
+
+  semgrep-scan:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/golang
+            p/javascript
+          # Upload findings to GitHub Security tab
+          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+          generateSarif: true
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # Don't fail on vulnerabilities in filesystem scan
+
+      - name: Upload Trivy filesystem results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+          category: 'trivy-filesystem'
+
+      - name: Build Docker image for scanning
+        run: |
+          docker build \
+            --target production \
+            -t flyhalf-api:${{ github.sha }} \
+            -f api/Dockerfile \
+            api/
+
+      - name: Run Trivy container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'flyhalf-api:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-container-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'  # Fail pipeline if critical/high vulnerabilities found
+
+      - name: Upload Trivy container results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-container-results.sarif'
+          category: 'trivy-container'
+
+  # ============================================================================
   # DEPLOYMENT JOBS - Only run on push to main after tests pass
   # ============================================================================
 
   deploy-api:
     name: Deploy API to ECS
     runs-on: ubuntu-latest
-    # Only deploy on push to main (not PRs), and only if all tests pass
+    # Only deploy on push to main (not PRs), and only if all tests and scans pass
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [go-unit-tests, go-integration-tests, frontend-tests, go-lint]
+    needs: [go-unit-tests, go-integration-tests, frontend-tests, go-lint, semgrep-scan, trivy-scan]
     permissions:
       id-token: write
       contents: read
@@ -237,9 +321,9 @@ jobs:
   deploy-web:
     name: Deploy Web to S3/CloudFront
     runs-on: ubuntu-latest
-    # Only deploy on push to main (not PRs), and only if all tests pass
+    # Only deploy on push to main (not PRs), and only if all tests and scans pass
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [go-unit-tests, go-integration-tests, frontend-tests, go-lint]
+    needs: [go-unit-tests, go-integration-tests, frontend-tests, go-lint, semgrep-scan, trivy-scan]
     permissions:
       id-token: write
       contents: read
