@@ -238,6 +238,21 @@ ON CONFLICT (email) DO NOTHING`,
 		)`,
 
 		`CREATE INDEX IF NOT EXISTS idx_ticket_updates_ticket_id ON ticket_updates(ticket_id)`,
+
+		// Leagues table
+		`CREATE TABLE IF NOT EXISTS leagues (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			name VARCHAR(255) NOT NULL,
+			description TEXT,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_leagues_name ON leagues(name)`,
+
+		// Add league_id to teams
+		`ALTER TABLE teams ADD COLUMN IF NOT EXISTS league_id UUID REFERENCES leagues(id) ON DELETE SET NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_teams_league_id ON teams(league_id)`,
 	}
 
 	for _, migration := range migrations {

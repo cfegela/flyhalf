@@ -19,7 +19,14 @@ export async function teamsListView() {
 
     try {
         const teams = await api.getTeams();
+        const leagues = await api.getLeagues();
         const teamsContainer = container.querySelector('#teams-container');
+
+        // Create a map of league_id to league for quick lookup
+        const leagueMap = {};
+        leagues.forEach(league => {
+            leagueMap[league.id] = league;
+        });
 
         if (teams.length === 0) {
             teamsContainer.innerHTML = `
@@ -42,14 +49,18 @@ export async function teamsListView() {
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>League</th>
                                 <th>Description</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${teams.map(team => `
+                            ${teams.map(team => {
+                                const league = team.league_id ? leagueMap[team.league_id] : null;
+                                return `
                                 <tr data-team-id="${team.id}">
                                     <td data-label="Name"><strong>${escapeHtml(team.name)}</strong></td>
+                                    <td data-label="League">${league ? escapeHtml(league.name) : '-'}</td>
                                     <td data-label="Description">${team.description ? escapeHtml(team.description.substring(0, 100)) + (team.description.length > 100 ? '...' : '') : '-'}</td>
                                     <td data-label="Actions">
                                         <div class="actions">
@@ -62,7 +73,7 @@ export async function teamsListView() {
                                         </div>
                                     </td>
                                 </tr>
-                            `).join('')}
+                            `}).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -97,9 +108,13 @@ export async function teamDetailView(params) {
     try {
         const team = await api.getTeam(id);
         const users = await api.getUsers();
+        const leagues = await api.getLeagues();
 
         // Filter users who belong to this team
         const teamMembers = users.filter(user => user.team_id === id);
+
+        // Find the team's league
+        const league = team.league_id ? leagues.find(l => l.id === team.league_id) : null;
 
         container.innerHTML = `
             <div>
@@ -114,6 +129,16 @@ export async function teamDetailView(params) {
                 <!-- Team Information Card -->
                 <div class="card">
                     <h2 class="card-header">Team Information</h2>
+                    ${league ? `
+                    <div style="margin-bottom: 1.5rem;">
+                        <label class="form-label">League</label>
+                        <p style="line-height: 1.6; color: var(--text-primary); margin-top: 0.25rem;">
+                            <a href="/admin/leagues/${league.id}" style="color: var(--primary); text-decoration: none;">
+                                ${escapeHtml(league.name)}
+                            </a>
+                        </p>
+                    </div>
+                    ` : ''}
                     <div>
                         <label class="form-label">Description</label>
                         <p style="white-space: pre-wrap; line-height: 1.6; color: var(--text-primary); margin-top: 0.25rem;">${team.description ? escapeHtml(team.description) : '<span style="color: var(--text-secondary); font-style: italic;">No description provided</span>'}</p>
@@ -219,11 +244,17 @@ export async function teamFormView(params) {
     const isEdit = action === 'edit';
 
     let team = null;
-    if (isEdit && id) {
-        container.innerHTML = '<div class="loading">Loading team...</div>';
-        try {
+    let leagues = [];
+
+    container.innerHTML = '<div class="loading">Loading...</div>';
+
+    try {
+        leagues = await api.getLeagues();
+        if (isEdit && id) {
             team = await api.getTeam(id);
-        } catch (error) {
+        }
+    } catch (error) {
+        if (isEdit) {
             router.navigate('/admin/teams');
             return;
         }
@@ -249,6 +280,17 @@ export async function teamFormView(params) {
                             placeholder="e.g., Engineering, Sales, Marketing"
                             value="${team ? escapeHtml(team.name) : ''}"
                         >
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="league_id">League</label>
+                        <select id="league_id" class="form-input">
+                            <option value="">No League</option>
+                            ${leagues.map(league => `
+                                <option value="${league.id}" ${team && team.league_id === league.id ? 'selected' : ''}>
+                                    ${escapeHtml(league.name)}
+                                </option>
+                            `).join('')}
+                        </select>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" for="description">Description</label>
@@ -279,8 +321,14 @@ export async function teamFormView(params) {
 
         const name = form.name.value.trim();
         const description = form.description.value.trim();
+        const leagueIdValue = form.league_id.value;
 
         const data = { name, description };
+
+        // Only include league_id if a league is selected
+        if (leagueIdValue) {
+            data.league_id = leagueIdValue;
+        }
 
         const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.disabled = true;

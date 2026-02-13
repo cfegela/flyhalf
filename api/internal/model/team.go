@@ -10,11 +10,12 @@ import (
 )
 
 type Team struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	LeagueID    *uuid.UUID `json:"league_id,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 type TeamRepository struct {
@@ -27,23 +28,23 @@ func NewTeamRepository(db *pgxpool.Pool) *TeamRepository {
 
 func (r *TeamRepository) Create(ctx context.Context, team *Team) error {
 	query := `
-		INSERT INTO teams (name, description)
-		VALUES ($1, $2)
+		INSERT INTO teams (name, description, league_id)
+		VALUES ($1, $2, $3)
 		RETURNING id, created_at, updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		team.Name, team.Description,
+		team.Name, team.Description, team.LeagueID,
 	).Scan(&team.ID, &team.CreatedAt, &team.UpdatedAt)
 }
 
 func (r *TeamRepository) GetByID(ctx context.Context, id uuid.UUID) (*Team, error) {
 	query := `
-		SELECT id, name, description, created_at, updated_at
+		SELECT id, name, description, league_id, created_at, updated_at
 		FROM teams WHERE id = $1
 	`
 	team := &Team{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&team.ID, &team.Name, &team.Description,
+		&team.ID, &team.Name, &team.Description, &team.LeagueID,
 		&team.CreatedAt, &team.UpdatedAt,
 	)
 	if err != nil {
@@ -55,7 +56,7 @@ func (r *TeamRepository) GetByID(ctx context.Context, id uuid.UUID) (*Team, erro
 
 func (r *TeamRepository) List(ctx context.Context) ([]*Team, error) {
 	query := `
-		SELECT id, name, description, created_at, updated_at
+		SELECT id, name, description, league_id, created_at, updated_at
 		FROM teams
 		ORDER BY name ASC
 	`
@@ -70,7 +71,7 @@ func (r *TeamRepository) List(ctx context.Context) ([]*Team, error) {
 	for rows.Next() {
 		team := &Team{}
 		if err := rows.Scan(
-			&team.ID, &team.Name, &team.Description,
+			&team.ID, &team.Name, &team.Description, &team.LeagueID,
 			&team.CreatedAt, &team.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -84,12 +85,12 @@ func (r *TeamRepository) List(ctx context.Context) ([]*Team, error) {
 func (r *TeamRepository) Update(ctx context.Context, team *Team) error {
 	query := `
 		UPDATE teams
-		SET name = $1, description = $2, updated_at = NOW()
-		WHERE id = $3
+		SET name = $1, description = $2, league_id = $3, updated_at = NOW()
+		WHERE id = $4
 		RETURNING updated_at
 	`
 	return r.db.QueryRow(ctx, query,
-		team.Name, team.Description, team.ID,
+		team.Name, team.Description, team.LeagueID, team.ID,
 	).Scan(&team.UpdatedAt)
 }
 

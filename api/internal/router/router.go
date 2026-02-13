@@ -20,6 +20,7 @@ type Router struct {
 	authHandler      *handler.AuthHandler
 	adminHandler     *handler.AdminHandler
 	teamHandler      *handler.TeamHandler
+	leagueHandler    *handler.LeagueHandler
 	ticketHandler    *handler.TicketHandler
 	projectHandler   *handler.ProjectHandler
 	sprintHandler    *handler.SprintHandler
@@ -34,6 +35,7 @@ func New(
 	authHandler *handler.AuthHandler,
 	adminHandler *handler.AdminHandler,
 	teamHandler *handler.TeamHandler,
+	leagueHandler *handler.LeagueHandler,
 	ticketHandler *handler.TicketHandler,
 	projectHandler *handler.ProjectHandler,
 	sprintHandler *handler.SprintHandler,
@@ -47,6 +49,7 @@ func New(
 		authHandler:      authHandler,
 		adminHandler:     adminHandler,
 		teamHandler:      teamHandler,
+		leagueHandler:    leagueHandler,
 		ticketHandler:    ticketHandler,
 		projectHandler:   projectHandler,
 		sprintHandler:    sprintHandler,
@@ -167,6 +170,14 @@ func (rt *Router) Setup() http.Handler {
 				r.Get("/{id}", rt.teamHandler.GetTeam)
 				r.Put("/{id}", rt.teamHandler.UpdateTeam)
 				r.Delete("/{id}", rt.teamHandler.DeleteTeam)
+			})
+
+			r.Route("/leagues", func(r chi.Router) {
+				r.Get("/", rt.leagueHandler.ListLeagues)
+				r.Post("/", rt.leagueHandler.CreateLeague)
+				r.Get("/{id}", rt.leagueHandler.GetLeague)
+				r.Put("/{id}", rt.leagueHandler.UpdateLeague)
+				r.Delete("/{id}", rt.leagueHandler.DeleteLeague)
 			})
 
 			r.Post("/reset-demo", rt.adminHandler.ResetDemo)

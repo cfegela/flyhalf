@@ -53,6 +53,7 @@ func run() error {
 
 	userRepo := model.NewUserRepository(pool)
 	teamRepo := model.NewTeamRepository(pool)
+	leagueRepo := model.NewLeagueRepository(pool)
 	ticketRepo := model.NewTicketRepository(pool)
 	projectRepo := model.NewProjectRepository(pool)
 	sprintRepo := model.NewSprintRepository(pool)
@@ -69,12 +70,13 @@ func run() error {
 	authHandler := handler.NewAuthHandler(userRepo, jwtService, isProduction)
 	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo)
 	teamHandler := handler.NewTeamHandler(teamRepo)
+	leagueHandler := handler.NewLeagueHandler(leagueRepo)
 	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo, updateRepo, pool)
 	projectHandler := handler.NewProjectHandler(projectRepo)
 	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo)
 	retroItemHandler := handler.NewRetroItemHandler(retroItemRepo, userRepo)
 
-	rt := router.New(healthHandler, metricsHandler, authHandler, adminHandler, teamHandler, ticketHandler, projectHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)
+	rt := router.New(healthHandler, metricsHandler, authHandler, adminHandler, teamHandler, leagueHandler, ticketHandler, projectHandler, sprintHandler, retroItemHandler, authMiddleware, cfg)
 	httpHandler := rt.Setup()
 
 	srv := &http.Server{

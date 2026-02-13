@@ -308,6 +308,34 @@ class APIClient {
         });
     }
 
+    async getLeagues() {
+        return this.request('/admin/leagues');
+    }
+
+    async getLeague(id) {
+        return this.request(`/admin/leagues/${id}`);
+    }
+
+    async createLeague(league) {
+        return this.request('/admin/leagues', {
+            method: 'POST',
+            body: JSON.stringify(league),
+        });
+    }
+
+    async updateLeague(id, league) {
+        return this.request(`/admin/leagues/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(league),
+        });
+    }
+
+    async deleteLeague(id) {
+        return this.request(`/admin/leagues/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
     async resetDemo() {
         return this.request('/admin/reset-demo', {
             method: 'POST',

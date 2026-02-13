@@ -125,8 +125,17 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 ### Team Management (Admin Only)
 - CRUD operations for teams with name and description
 - Assign users to teams for organization
-- Team detail view shows all members
+- Assign teams to leagues for hierarchical organization
+- Team detail view shows all members and league affiliation
 - Teams link in navbar for administrators
+
+### League Management (Admin Only)
+- CRUD operations for leagues with name and description
+- Assign teams to leagues for hierarchical organization
+- League detail view shows all member teams
+- Leagues link in navbar for administrators (positioned after Teams)
+- Teams can optionally belong to a league (nullable foreign key)
+- Deleting a league preserves teams (league_id set to NULL)
 
 ### Demo Environment Management (Admin Only)
 - **Reset Demo Environment**: Delete all tickets, sprints, and projects
@@ -180,6 +189,10 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 | **Team Management** | | |
 | Create, edit, delete teams | ❌ | ✅ |
 | Assign users to teams | ❌ | ✅ |
+| Assign teams to leagues | ❌ | ✅ |
+| **League Management** | | |
+| Create, edit, delete leagues | ❌ | ✅ |
+| Assign teams to leagues | ❌ | ✅ |
 | **Demo Environment** | | |
 | Reset demo environment (delete all data) | ❌ | ✅ |
 | Reseed demo environment (create sample data) | ❌ | ✅ |
@@ -419,18 +432,32 @@ go mod tidy
   - Access & Permissions: Role, team, account status
 
 #### Team Management
-- **Team Management** - List all teams
+- **Team Management** - List all teams with league affiliation
+  - League column shows which league the team belongs to
   - Click "View" for details
-- **Team Detail** - Card layout with name, description, team members
+- **Team Detail** - Card layout with name, description, league, and team members
+  - Shows league information with link to league detail page
   - Edit/delete buttons
-- **Create/Edit Team** - Form with name and description
+- **Create/Edit Team** - Form with name, description, and league dropdown
+  - Optional league selection from dropdown
+  - "No League" option available
+
+#### League Management
+- **League Management** - List all leagues
+  - Click "View" for details
+- **League Detail** - Card layout with name, description, member teams
+  - Shows all teams assigned to this league
+  - Click team row to view team details
+  - Edit/delete buttons
+- **Create/Edit League** - Form with name and description
 
 ### Navigation
 - Click **Flyhalf** logo to return to tickets list
 - Click your **username** in navbar for settings
 - **Tickets**, **Projects**, **Sprints** links for main sections
-- **Teams** link (admins only)
 - **Users** link (admins only)
+- **Teams** link (admins only)
+- **Leagues** link (admins only)
 - **Logout** button
 - **Active link highlighting** - Current section auto-highlighted
 - Page state preserved on refresh
@@ -588,6 +615,11 @@ Authorization: Bearer <access_token>
 | GET | `/admin/teams/{id}` | Get team by ID | Admin |
 | PUT | `/admin/teams/{id}` | Update team | Admin |
 | DELETE | `/admin/teams/{id}` | Delete team | Admin |
+| GET | `/admin/leagues` | List all leagues | Admin |
+| POST | `/admin/leagues` | Create league | Admin |
+| GET | `/admin/leagues/{id}` | Get league by ID | Admin |
+| PUT | `/admin/leagues/{id}` | Update league | Admin |
+| DELETE | `/admin/leagues/{id}` | Delete league | Admin |
 | POST | `/admin/reset-demo` | Delete all tickets, sprints, projects | Admin |
 | POST | `/admin/reseed-demo` | Create demo project, sprint, and 5 tickets | Admin |
 
@@ -597,6 +629,7 @@ Authorization: Bearer <access_token>
 
 ```mermaid
 erDiagram
+    LEAGUES ||--o{ TEAMS : "contains"
     TEAMS ||--o{ USERS : "contains"
     USERS ||--o{ REFRESH_TOKENS : "has"
     USERS ||--o{ TICKETS : "creates"
@@ -609,10 +642,19 @@ erDiagram
     SPRINTS ||--o{ RETRO_ITEMS : "contains"
     TICKETS ||--o{ ACCEPTANCE_CRITERIA : "has"
 
+    LEAGUES {
+        uuid id PK
+        varchar name
+        text description
+        timestamp created_at
+        timestamp updated_at
+    }
+
     TEAMS {
         uuid id PK
         varchar name
         text description
+        uuid league_id FK
         timestamp created_at
         timestamp updated_at
     }
@@ -698,10 +740,17 @@ erDiagram
     }
 ```
 
+### Leagues
+- `id` (UUID, PK)
+- `name` (VARCHAR, not null)
+- `description` (TEXT, nullable)
+- `created_at`, `updated_at` (TIMESTAMP)
+
 ### Teams
 - `id` (UUID, PK)
 - `name` (VARCHAR, not null)
 - `description` (TEXT, nullable)
+- `league_id` (UUID, FK to leagues, nullable, ON DELETE SET NULL)
 - `created_at`, `updated_at` (TIMESTAMP)
 
 ### Users
@@ -772,12 +821,13 @@ erDiagram
 - `created_at`, `updated_at` (TIMESTAMP)
 
 **Relationships**:
+- Leagues → teams (1:many, ON DELETE SET NULL)
+- Teams → users (1:many, ON DELETE SET NULL)
 - Users → refresh_tokens (1:many)
 - Users → tickets (1:many as creator, 1:many as assignee)
 - Users → projects (1:many)
 - Users → sprints (1:many)
 - Users → retro_items (1:many)
-- Users → teams (many:1)
 - Tickets → projects (many:1)
 - Tickets → sprints (many:1)
 - Tickets → acceptance_criteria (1:many, CASCADE delete)

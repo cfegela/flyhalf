@@ -18,13 +18,15 @@ func NewTeamHandler(teamRepo *model.TeamRepository) *TeamHandler {
 }
 
 type CreateTeamRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	LeagueID    *uuid.UUID `json:"league_id,omitempty"`
 }
 
 type UpdateTeamRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	LeagueID    *uuid.UUID `json:"league_id,omitempty"`
 }
 
 func (h *TeamHandler) ListTeams(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +77,7 @@ func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 	team := &model.Team{
 		Name:        req.Name,
 		Description: req.Description,
+		LeagueID:    req.LeagueID,
 	}
 
 	if err := h.teamRepo.Create(r.Context(), team); err != nil {
@@ -114,6 +117,7 @@ func (h *TeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 
 	team.Name = req.Name
 	team.Description = req.Description
+	team.LeagueID = req.LeagueID
 
 	if err := h.teamRepo.Update(r.Context(), team); err != nil {
 		http.Error(w, `{"error":"failed to update team"}`, http.StatusInternalServerError)
