@@ -1136,7 +1136,7 @@ export async function ticketFormView(params) {
         try {
             if (isEdit) {
                 await api.updateTicket(id, data);
-                router.navigate('/tickets');
+                router.navigate(`/tickets/${id}`);
             } else {
                 await api.createTicket(data);
                 router.navigate('/tickets');
