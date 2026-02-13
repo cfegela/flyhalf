@@ -4,6 +4,7 @@ import { auth } from '../auth.js';
 import { TICKET_STATUSES, STATUS_BADGE_CLASSES, TICKET_SIZES, SIZE_LABELS, CONSTRAINTS, UI_CONSTANTS } from '../constants/tickets.js';
 import { escapeHtml, formatDate, formatRelativeTime } from '../utils/formatting.js';
 import { createIdMap, getStatusBadgeClass, getSizeLabel, getProjectAcronym } from '../utils/helpers.js';
+import { createAssignDropdown, createProjectDropdown, createSprintDropdown } from '../components/dropdown.js';
 
 export async function ticketsListView() {
     const container = document.getElementById('view-container');
@@ -143,77 +144,21 @@ export async function ticketsListView() {
             });
         });
 
-        // Helper function to close all dropdowns
-        function closeAllDropdowns() {
-            const dropdowns = document.querySelectorAll('.assign-dropdown-menu, .project-dropdown-menu, .sprint-dropdown-menu');
-            dropdowns.forEach(dropdown => dropdown.remove());
-        }
-
         // Handle assign link clicks
         const assignLinks = ticketsContainer.querySelectorAll('.assign-link');
         assignLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.stopPropagation();
-
-                // Check if this link's dropdown is already open
-                const existingDropdown = document.querySelector('.assign-dropdown-menu');
-                if (existingDropdown) {
-                    closeAllDropdowns();
-                    return;
-                }
-
-                // Close any existing dropdowns
-                closeAllDropdowns();
-
                 const ticketId = this.dataset.ticketId;
-                const rect = this.getBoundingClientRect();
+                const ticket = tickets.find(t => t.id === ticketId);
 
-                // Create dropdown menu
-                const dropdown = document.createElement('div');
-                dropdown.className = 'assign-dropdown-menu';
-                dropdown.innerHTML = users.map(user => `
-                    <div class="assign-dropdown-item" data-user-id="${user.id}">
-                        ${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}
-                    </div>
-                `).join('');
+                // Prepare users with full name
+                const usersWithNames = users.map(u => ({
+                    ...u,
+                    name: `${u.first_name} ${u.last_name}`
+                }));
 
-                // Position dropdown
-                dropdown.style.position = 'fixed';
-                dropdown.style.top = `${rect.bottom + UI_CONSTANTS.DROPDOWN_OFFSET_PX}px`;
-                dropdown.style.left = `${rect.left}px`;
-
-                document.body.appendChild(dropdown);
-
-                // Handle dropdown item clicks
-                const items = dropdown.querySelectorAll('.assign-dropdown-item');
-                items.forEach(item => {
-                    item.addEventListener('click', async function(e) {
-                        e.stopPropagation();
-                        const userId = this.dataset.userId;
-
-                        try {
-                            // Fetch the full ticket first, then update with new assignee
-                            const ticket = await api.getTicket(ticketId);
-                            ticket.assigned_to = userId;
-                            await api.updateTicket(ticketId, ticket);
-                            ticketsListView();
-                        } catch (error) {
-                            console.error('Failed to assign ticket:', error);
-                            alert('Failed to assign ticket. Please try again.');
-                        }
-
-                        dropdown.remove();
-                    });
-                });
-
-                // Close dropdown when clicking outside
-                const closeDropdown = (e) => {
-                    if (!dropdown.contains(e.target) && e.target !== link) {
-                        dropdown.remove();
-                        document.removeEventListener('click', closeDropdown);
-                    }
-                };
-                setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+                createAssignDropdown(this, usersWithNames, ticket?.assigned_to, () => ticketsListView());
             });
         });
 
@@ -222,68 +167,13 @@ export async function ticketsListView() {
         projectLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.stopPropagation();
-
-                // Check if this link's dropdown is already open
-                const existingDropdown = document.querySelector('.project-dropdown-menu');
-                if (existingDropdown) {
-                    closeAllDropdowns();
-                    return;
-                }
-
-                // Close any existing dropdowns
-                closeAllDropdowns();
-
                 const ticketId = this.dataset.ticketId;
-                const rect = this.getBoundingClientRect();
+                const ticket = tickets.find(t => t.id === ticketId);
 
-                // Create dropdown menu
-                const dropdown = document.createElement('div');
-                dropdown.className = 'project-dropdown-menu';
-                // Sort projects alphabetically by name
+                // Sort projects alphabetically
                 const sortedProjects = [...projects].sort((a, b) => a.name.localeCompare(b.name));
-                dropdown.innerHTML = sortedProjects.map(project => `
-                    <div class="project-dropdown-item" data-project-id="${project.id}">
-                        ${escapeHtml(project.name)}
-                    </div>
-                `).join('');
 
-                // Position dropdown
-                dropdown.style.position = 'fixed';
-                dropdown.style.top = `${rect.bottom + UI_CONSTANTS.DROPDOWN_OFFSET_PX}px`;
-                dropdown.style.left = `${rect.left}px`;
-
-                document.body.appendChild(dropdown);
-
-                // Handle dropdown item clicks
-                const items = dropdown.querySelectorAll('.project-dropdown-item');
-                items.forEach(item => {
-                    item.addEventListener('click', async function(e) {
-                        e.stopPropagation();
-                        const projectId = this.dataset.projectId;
-
-                        try {
-                            // Fetch the full ticket first, then update with new project
-                            const ticket = await api.getTicket(ticketId);
-                            ticket.project_id = projectId;
-                            await api.updateTicket(ticketId, ticket);
-                            ticketsListView();
-                        } catch (error) {
-                            console.error('Failed to set project:', error);
-                            alert('Failed to set project. Please try again.');
-                        }
-
-                        dropdown.remove();
-                    });
-                });
-
-                // Close dropdown when clicking outside
-                const closeDropdown = (e) => {
-                    if (!dropdown.contains(e.target) && e.target !== link) {
-                        dropdown.remove();
-                        document.removeEventListener('click', closeDropdown);
-                    }
-                };
-                setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+                createProjectDropdown(this, sortedProjects, ticket?.project_id, () => ticketsListView());
             });
         });
 
@@ -292,33 +182,11 @@ export async function ticketsListView() {
         sprintLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.stopPropagation();
-
-                const ticketSize = this.dataset.ticketSize;
-
-                // Check if ticket has a size
-                if (!ticketSize) {
-                    alert('Tickets must be sized before adding to a sprint. Please edit the ticket to add a size first.');
-                    return;
-                }
-
-                // Check if this link's dropdown is already open
-                const existingDropdown = document.querySelector('.sprint-dropdown-menu');
-                if (existingDropdown) {
-                    closeAllDropdowns();
-                    return;
-                }
-
-                // Close any existing dropdowns
-                closeAllDropdowns();
-
                 const ticketId = this.dataset.ticketId;
-                const rect = this.getBoundingClientRect();
+                const ticketSize = this.dataset.ticketSize;
+                const ticket = tickets.find(t => t.id === ticketId);
 
-                // Create dropdown menu
-                const dropdown = document.createElement('div');
-                dropdown.className = 'sprint-dropdown-menu';
-
-                // Filter out completed sprints and sort by start date (oldest first)
+                // Filter out completed sprints and sort by start date
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const activeSprints = sprints.filter(sprint => {
@@ -327,49 +195,10 @@ export async function ticketsListView() {
                     return endDate >= today;
                 }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
-                dropdown.innerHTML = activeSprints.map(sprint => `
-                    <div class="sprint-dropdown-item" data-sprint-id="${sprint.id}">
-                        ${escapeHtml(sprint.name)}
-                    </div>
-                `).join('');
+                // Add status property for dropdown component
+                const sprintsWithStatus = activeSprints.map(s => ({ ...s, status: 'active' }));
 
-                // Position dropdown
-                dropdown.style.position = 'fixed';
-                dropdown.style.top = `${rect.bottom + UI_CONSTANTS.DROPDOWN_OFFSET_PX}px`;
-                dropdown.style.left = `${rect.left}px`;
-
-                document.body.appendChild(dropdown);
-
-                // Handle dropdown item clicks
-                const items = dropdown.querySelectorAll('.sprint-dropdown-item');
-                items.forEach(item => {
-                    item.addEventListener('click', async function(e) {
-                        e.stopPropagation();
-                        const sprintId = this.dataset.sprintId;
-
-                        try {
-                            // Fetch the full ticket first, then update with new sprint
-                            const ticket = await api.getTicket(ticketId);
-                            ticket.sprint_id = sprintId;
-                            await api.updateTicket(ticketId, ticket);
-                            ticketsListView();
-                        } catch (error) {
-                            console.error('Failed to set sprint:', error);
-                            alert('Failed to set sprint. Please try again.');
-                        }
-
-                        dropdown.remove();
-                    });
-                });
-
-                // Close dropdown when clicking outside
-                const closeDropdown = (e) => {
-                    if (!dropdown.contains(e.target) && e.target !== link) {
-                        dropdown.remove();
-                        document.removeEventListener('click', closeDropdown);
-                    }
-                };
-                setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+                createSprintDropdown(this, sprintsWithStatus, ticket?.sprint_id, !!ticketSize, () => ticketsListView());
             });
         });
     } catch (error) {
