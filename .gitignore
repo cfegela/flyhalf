@@ -29,3 +29,10 @@ api/build-errors.log
 
 # Docker
 *.pid
+
+# Node/Frontend
+web/node_modules/
+e2e/node_modules/
+web/coverage/
+e2e/test-results/
+e2e/playwright-report/
