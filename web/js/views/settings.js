@@ -1,6 +1,8 @@
 import { api } from '../api.js';
 import { auth } from '../auth.js';
 import { router } from '../router.js';
+import { escapeHtml, formatDate } from '../utils/formatting.js';
+import { getStatusBadgeClass } from '../utils/helpers.js';
 
 export async function forcePasswordChangeView() {
     const container = document.getElementById('view-container');
@@ -303,10 +305,4 @@ export async function settingsView() {
             }
         });
     }
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }

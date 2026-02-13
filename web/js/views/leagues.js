@@ -1,6 +1,8 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
 import { auth } from '../auth.js';
+import { escapeHtml, formatDate } from '../utils/formatting.js';
+import { getStatusBadgeClass } from '../utils/helpers.js';
 
 export async function leaguesListView() {
     const container = document.getElementById('view-container');
@@ -294,10 +296,4 @@ export async function leagueFormView(params) {
             submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} League`;
         }
     });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }

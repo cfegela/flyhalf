@@ -1,6 +1,8 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
 import { auth } from '../auth.js';
+import { escapeHtml, formatDate } from '../utils/formatting.js';
+import { getStatusBadgeClass } from '../utils/helpers.js';
 
 export async function sprintsListView() {
     const container = document.getElementById('view-container');
@@ -434,28 +436,4 @@ export async function sprintFormView(params) {
             submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} Sprint`;
         }
     });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatDate(dateString) {
-    // Parse date string as local date to avoid timezone conversion issues
-    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString();
-}
-
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'open': return 'badge-open';
-        case 'in-progress': return 'badge-in-progress';
-        case 'blocked': return 'badge-blocked';
-        case 'needs-review': return 'badge-needs-review';
-        case 'closed': return 'badge-closed';
-        default: return 'badge-open';
-    }
 }

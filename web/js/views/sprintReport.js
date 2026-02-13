@@ -1,5 +1,7 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
+import { escapeHtml, formatDate } from '../utils/formatting.js';
+import { getStatusBadgeClass } from '../utils/helpers.js';
 
 // Load Chart.js from CDN
 function loadChartJS() {
@@ -331,28 +333,4 @@ function renderStatusBreakdown(ticketsByStatus, pointsByStatus) {
             </tr>
         `;
     }).join('');
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatDate(dateString) {
-    // Parse date string as local date to avoid timezone conversion issues
-    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString();
-}
-
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'open': return 'badge-open';
-        case 'in-progress': return 'badge-in-progress';
-        case 'blocked': return 'badge-blocked';
-        case 'needs-review': return 'badge-needs-review';
-        case 'closed': return 'badge-closed';
-        default: return 'badge-open';
-    }
 }

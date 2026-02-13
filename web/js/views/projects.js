@@ -1,6 +1,8 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
 import { auth } from '../auth.js';
+import { escapeHtml, formatDate } from '../utils/formatting.js';
+import { getStatusBadgeClass, getProjectAcronym } from '../utils/helpers.js';
 
 export async function projectsListView() {
     const container = document.getElementById('view-container');
@@ -298,55 +300,4 @@ export async function projectFormView(params) {
             submitBtn.textContent = `${isEdit ? 'Update' : 'Create'} Project`;
         }
     });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-}
-
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'open': return 'badge-open';
-        case 'in-progress': return 'badge-in-progress';
-        case 'blocked': return 'badge-blocked';
-        case 'needs-review': return 'badge-needs-review';
-        case 'closed': return 'badge-closed';
-        default: return 'badge-open';
-    }
-}
-
-function getProjectAcronym(projectName, allProjects, currentProjectId) {
-    // Remove all whitespace for acronym generation
-    const baseName = projectName.replace(/\s+/g, '');
-    let length = 6;
-    let acronym;
-
-    // Start with 6 characters and extend if there's a collision
-    while (length <= baseName.length) {
-        acronym = baseName.substring(0, length).toUpperCase();
-
-        // Check if any other project has this same acronym
-        const hasCollision = allProjects.some(p => {
-            if (p.id === currentProjectId) return false; // Don't compare with self
-            const otherBaseName = p.name.replace(/\s+/g, '');
-            const otherAcronym = otherBaseName.substring(0, length).toUpperCase();
-            return acronym === otherAcronym;
-        });
-
-        if (!hasCollision) {
-            return acronym;
-        }
-
-        length++;
-    }
-
-    // If we've used all characters and still have collision, return full name uppercase
-    return baseName.toUpperCase();
 }

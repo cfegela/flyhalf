@@ -1,6 +1,8 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
 import { auth } from '../auth.js';
+import { escapeHtml, formatDate } from '../utils/formatting.js';
+import { getStatusBadgeClass } from '../utils/helpers.js';
 
 export async function usersListView() {
     const container = document.getElementById('view-container');
@@ -440,15 +442,4 @@ export async function userFormView(params) {
             alert(`Failed to ${isEdit ? 'update' : 'create'} user: ${error.message}`);
         }
     });
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 }
