@@ -23,6 +23,13 @@ async function loadSprintBoard(container, sprintId) {
       api.getMe()
     ]);
 
+    // Redirect to all tickets page if sprint is closed
+    if (sprint.status === 'closed') {
+      const { router } = await import('../router.js');
+      router.navigate('/tickets');
+      return;
+    }
+
     // Create a map of user_id to user for quick lookup
     const userMap = {};
     users.forEach(user => {
@@ -71,14 +78,6 @@ async function loadSprintBoard(container, sprintId) {
         </div>
       </div>
 
-      ${sprint.status === 'closed' ? `
-      <div class="card" style="background: var(--warning-light); border-color: var(--warning); margin-bottom: 1.5rem;">
-        <p style="margin: 0; color: var(--text-primary); font-weight: 500;">
-          ⚠️ This sprint is closed and read-only. The board shows a snapshot of tickets at the time of closure.
-        </p>
-      </div>
-      ` : ''}
-
       <div class="board">
         <div class="board-column" data-column="committed" data-status="open">
           <div class="board-column-header">
@@ -112,12 +111,10 @@ async function loadSprintBoard(container, sprintId) {
       </div>
     `;
 
-    // Initialize drag and drop only if sprint is not closed
-    if (sprint.status !== 'closed') {
-      initializeDragAndDrop(container, sprintId, currentUser);
-      // Initialize status badge clicks for underway tickets
-      initializeStatusBadgeClicks(container, sprintId);
-    }
+    // Initialize drag and drop
+    initializeDragAndDrop(container, sprintId, currentUser);
+    // Initialize status badge clicks for underway tickets
+    initializeStatusBadgeClicks(container, sprintId);
 
   } catch (error) {
     container.innerHTML = `
