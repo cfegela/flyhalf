@@ -34,6 +34,7 @@ class Navbar {
         const isAdmin = auth.isAdmin();
 
         this.container.innerHTML = `
+            <div class="navbar-overlay" id="navbar-overlay"></div>
             <div class="navbar">
                 <a href="/" class="navbar-brand">Flyhalf</a>
                 <button class="navbar-toggle" id="navbar-toggle" aria-label="Toggle navigation">
@@ -56,11 +57,21 @@ class Navbar {
 
         const navbarToggle = this.container.querySelector('#navbar-toggle');
         const navbarMenu = this.container.querySelector('#navbar-menu');
+        const navbarOverlay = this.container.querySelector('#navbar-overlay');
 
-        if (navbarToggle && navbarMenu) {
+        if (navbarToggle && navbarMenu && navbarOverlay) {
+            // Toggle menu
             navbarToggle.addEventListener('click', () => {
                 navbarMenu.classList.toggle('active');
                 navbarToggle.classList.toggle('active');
+                navbarOverlay.classList.toggle('active');
+            });
+
+            // Close menu when clicking overlay
+            navbarOverlay.addEventListener('click', () => {
+                navbarMenu.classList.remove('active');
+                navbarToggle.classList.remove('active');
+                navbarOverlay.classList.remove('active');
             });
 
             // Close menu when clicking a link
@@ -69,6 +80,7 @@ class Navbar {
                 link.addEventListener('click', () => {
                     navbarMenu.classList.remove('active');
                     navbarToggle.classList.remove('active');
+                    navbarOverlay.classList.remove('active');
                 });
             });
 
@@ -78,6 +90,7 @@ class Navbar {
                 logoutBtn.addEventListener('click', (e) => {
                     navbarMenu.classList.remove('active');
                     navbarToggle.classList.remove('active');
+                    navbarOverlay.classList.remove('active');
                     this.handleLogout(e);
                 });
             }
