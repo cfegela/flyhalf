@@ -191,6 +191,58 @@ func (h *SprintHandler) UpdateSprint(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sprint)
 }
 
+func (h *SprintHandler) GetSprintTickets(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		http.Error(w, `{"error":"invalid sprint ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	sprint, err := h.sprintRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, `{"error":"sprint not found"}`, http.StatusNotFound)
+		return
+	}
+
+	// If sprint is closed, return tickets from snapshot
+	if sprint.IsClosed {
+		var ticketsJSON json.RawMessage
+		query := `SELECT tickets FROM sprint_snapshots WHERE sprint_id = $1`
+		err = h.pool.QueryRow(r.Context(), query, id).Scan(&ticketsJSON)
+		if err != nil {
+			http.Error(w, `{"error":"failed to fetch sprint snapshot"}`, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(ticketsJSON)
+		return
+	}
+
+	// For open sprints, return live tickets
+	allTickets, err := h.ticketRepo.List(r.Context(), nil)
+	if err != nil {
+		http.Error(w, `{"error":"failed to fetch tickets"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Filter tickets for this sprint
+	var sprintTickets []*model.Ticket
+	for _, ticket := range allTickets {
+		if ticket.SprintID != nil && *ticket.SprintID == id {
+			sprintTickets = append(sprintTickets, ticket)
+		}
+	}
+
+	if sprintTickets == nil {
+		sprintTickets = []*model.Ticket{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sprintTickets)
+}
+
 func (h *SprintHandler) DeleteSprint(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idParam)
@@ -311,32 +363,51 @@ func (h *SprintHandler) CloseSprint(w http.ResponseWriter, r *http.Request) {
 	idealBurndown := generateIdealBurndown(sprint.StartDate, sprint.EndDate, totalPoints)
 	actualBurndown := generateActualBurndown(sprint.StartDate, sprint.EndDate, totalPoints, sprintTickets)
 
+	// Create ticket snapshots with relevant fields
+	type TicketSnapshot struct {
+		ID     uuid.UUID `json:"id"`
+		Title  string    `json:"title"`
+		Status string    `json:"status"`
+		Size   *int      `json:"size"`
+	}
+
+	ticketSnapshots := make([]TicketSnapshot, 0, len(sprintTickets))
+	for _, ticket := range sprintTickets {
+		ticketSnapshots = append(ticketSnapshots, TicketSnapshot{
+			ID:     ticket.ID,
+			Title:  ticket.Title,
+			Status: ticket.Status,
+			Size:   ticket.Size,
+		})
+	}
+
 	// Marshal to JSON
 	idealBurndownJSON, _ := json.Marshal(idealBurndown)
 	actualBurndownJSON, _ := json.Marshal(actualBurndown)
 	ticketsByStatusJSON, _ := json.Marshal(ticketsByStatus)
 	pointsByStatusJSON, _ := json.Marshal(pointsByStatus)
+	ticketsJSON, _ := json.Marshal(ticketSnapshots)
 
 	// Insert snapshot into sprint_snapshots
 	_, err = tx.Exec(r.Context(), `
 		INSERT INTO sprint_snapshots (
 			sprint_id, total_points, committed_points, adopted_points, completed_points,
 			remaining_points, total_tickets, committed_tickets, adopted_tickets,
-			completed_tickets, ideal_burndown, actual_burndown, tickets_by_status, points_by_status
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+			completed_tickets, ideal_burndown, actual_burndown, tickets_by_status, points_by_status, tickets
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	`, id, totalPoints, committedPoints, adoptedPoints, completedPoints, remainingPoints,
 		len(sprintTickets), committedTickets, adoptedTickets, ticketsByStatus["closed"],
-		idealBurndownJSON, actualBurndownJSON, ticketsByStatusJSON, pointsByStatusJSON)
+		idealBurndownJSON, actualBurndownJSON, ticketsByStatusJSON, pointsByStatusJSON, ticketsJSON)
 
 	if err != nil {
 		http.Error(w, `{"error":"failed to create sprint snapshot"}`, http.StatusInternalServerError)
 		return
 	}
 
-	// Remove non-closed tickets from sprint
+	// Remove non-closed tickets from sprint and reset their status to open
 	_, err = tx.Exec(r.Context(), `
 		UPDATE tickets
-		SET sprint_id = NULL, added_to_sprint_at = NULL, sprint_order = 0
+		SET sprint_id = NULL, added_to_sprint_at = NULL, sprint_order = 0, status = 'open'
 		WHERE sprint_id = $1 AND status != 'closed'
 	`, id)
 

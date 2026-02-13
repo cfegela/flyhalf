@@ -207,6 +207,10 @@ class APIClient {
         return this.request(`/sprints/${id}`);
     }
 
+    async getSprintTickets(id) {
+        return this.request(`/sprints/${id}/tickets`);
+    }
+
     async createSprint(sprint) {
         return this.request('/sprints', {
             method: 'POST',

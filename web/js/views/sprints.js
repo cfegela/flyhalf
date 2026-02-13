@@ -170,10 +170,8 @@ export async function sprintDetailView(params) {
 
     try {
         const sprint = await api.getSprint(id);
-        const allTickets = await api.getTickets();
-
-        // Filter tickets for this sprint
-        const sprintTickets = allTickets.filter(ticket => ticket.sprint_id === id);
+        // Use new endpoint that returns snapshot tickets for closed sprints
+        const sprintTickets = await api.getSprintTickets(id);
 
         // Calculate sprint duration and progress
         // Parse dates as local dates to avoid timezone issues

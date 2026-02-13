@@ -274,9 +274,13 @@ ON CONFLICT (email) DO NOTHING`,
 			actual_burndown JSONB NOT NULL DEFAULT '[]',
 			tickets_by_status JSONB NOT NULL DEFAULT '{}',
 			points_by_status JSONB NOT NULL DEFAULT '{}',
+			tickets JSONB NOT NULL DEFAULT '[]',
 			closed_at TIMESTAMP NOT NULL DEFAULT NOW(),
 			created_at TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
+
+		// Add tickets column to existing sprint_snapshots (for existing databases)
+		`ALTER TABLE sprint_snapshots ADD COLUMN IF NOT EXISTS tickets JSONB NOT NULL DEFAULT '[]'`,
 
 		`CREATE INDEX IF NOT EXISTS idx_sprint_snapshots_sprint_id ON sprint_snapshots(sprint_id)`,
 	}
