@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS development
+FROM golang:1.25-alpine AS development
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ USER devuser
 
 CMD ["air", "-c", ".air.toml"]
 
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
