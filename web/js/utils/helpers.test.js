@@ -106,66 +106,80 @@ describe('getSizeLabel', () => {
 });
 
 describe('getProjectAcronym', () => {
-    it('should return full name when only one project exists', () => {
+    it('should return first 6 characters with spaces removed', () => {
         const projects = [{ id: '1', name: 'Project One' }];
-        const result = getProjectAcronym('Project One', projects, null);
-        expect(result).toBe('Project One');
+        const result = getProjectAcronym('Project One', projects, '1');
+        expect(result).toBe('PROJEC');
     });
 
-    it('should return full name when project is the active filter', () => {
+    it('should return first 6 characters when multiple projects exist', () => {
         const projects = [
             { id: '1', name: 'Project One' },
-            { id: '2', name: 'Project Two' }
+            { id: '2', name: 'Another Thing' }
         ];
         const result = getProjectAcronym('Project One', projects, '1');
-        expect(result).toBe('Project One');
+        expect(result).toBe('PROJEC');
     });
 
-    it('should return full name when current project filter is set', () => {
+    it('should return first 6 characters for different project', () => {
         const projects = [
             { id: '1', name: 'Project One' },
-            { id: '2', name: 'Project Two' }
+            { id: '2', name: 'Another Thing' }
         ];
-        // When currentProjectId is set (filter active), show full name
-        const result = getProjectAcronym('Project One', projects, '2');
-        expect(result).toBe('Project One');
+        const result = getProjectAcronym('Another Thing', projects, '2');
+        expect(result).toBe('ANOTHE');
     });
 
-    it('should return acronym for multi-word project when no filter', () => {
+    it('should return first 6 characters for multi-word projects', () => {
         const projects = [
-            { id: '1', name: 'Project One' },
-            { id: '2', name: 'Project Two' }
+            { id: '1', name: 'Hello World' },
+            { id: '2', name: 'Foo Bar' }
         ];
-        // When no filter (currentProjectId is null), show acronym
-        const result = getProjectAcronym('Project One', projects, null);
-        expect(result).toBe('PO');
+        const result = getProjectAcronym('Hello World', projects, '1');
+        expect(result).toBe('HELLOW');
     });
 
-    it('should return first 3 letters for single-word project', () => {
+    it('should return all characters if less than 6 characters', () => {
         const projects = [
             { id: '1', name: 'Alpha' },
             { id: '2', name: 'Beta' }
         ];
-        const result = getProjectAcronym('Alpha', projects, null);
-        expect(result).toBe('ALP');
+        const result = getProjectAcronym('Alpha', projects, '1');
+        expect(result).toBe('ALPHA');
     });
 
-    it('should return first 3 letters for short single-word project', () => {
+    it('should return all characters for very short project names', () => {
         const projects = [
             { id: '1', name: 'Ab' },
             { id: '2', name: 'Beta' }
         ];
-        const result = getProjectAcronym('Ab', projects, null);
+        const result = getProjectAcronym('Ab', projects, '1');
         expect(result).toBe('AB');
     });
 
-    it('should return max 3 letters from multi-word acronym', () => {
+    it('should return first 6 characters for long multi-word names', () => {
         const projects = [
             { id: '1', name: 'One Two Three Four' },
             { id: '2', name: 'Beta' }
         ];
-        const result = getProjectAcronym('One Two Three Four', projects, null);
-        expect(result).toBe('OTT');
+        const result = getProjectAcronym('One Two Three Four', projects, '1');
+        expect(result).toBe('ONETWO');
+    });
+
+    it('should extend beyond 6 characters when collision detected', () => {
+        const projects = [
+            { id: '1', name: 'Demo Project' },
+            { id: '2', name: 'Demo Proposal' }
+        ];
+        // "Demo Project" -> "DemoProject" (11 chars)
+        // "Demo Proposal" -> "DemoProposal" (12 chars)
+        // At length 6: both "DEMOPRO" (collision!)
+        // At length 7: "DEMOPROJ" vs "DEMOPROP" (no collision)
+        // At length 8: "DEMOPROJ" vs "DEMOPROP" (no collision)
+        const result1 = getProjectAcronym('Demo Project', projects, '1');
+        const result2 = getProjectAcronym('Demo Proposal', projects, '2');
+        expect(result1).toBe('DEMOPROJ');
+        expect(result2).toBe('DEMOPROP');
     });
 
     it('should return "-" for null project name', () => {
