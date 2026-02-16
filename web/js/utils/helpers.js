@@ -54,28 +54,30 @@ export function getSizeLabel(size) {
 export function getProjectAcronym(projectName, allProjects, currentProjectId) {
     if (!projectName) return '-';
 
-    // If there's only one project, show full name
-    if (allProjects.length === 1) {
-        return projectName;
+    // Remove all whitespace for acronym generation
+    const baseName = projectName.replace(/\s+/g, '');
+    let length = 6;
+    let acronym;
+
+    // Start with 6 characters and extend if there's a collision
+    while (length <= baseName.length) {
+        acronym = baseName.substring(0, length).toUpperCase();
+
+        // Check if any other project has this same acronym
+        const hasCollision = allProjects.some(p => {
+            if (p.id === currentProjectId) return false; // Don't compare with self
+            const otherBaseName = p.name.replace(/\s+/g, '');
+            const otherAcronym = otherBaseName.substring(0, length).toUpperCase();
+            return acronym === otherAcronym;
+        });
+
+        if (!hasCollision) {
+            return acronym;
+        }
+
+        length++;
     }
 
-    // Check if this is the active project filter
-    const isActiveProject = currentProjectId && allProjects.find(p => p.id === currentProjectId);
-    if (isActiveProject) {
-        return projectName;
-    }
-
-    // Extract acronym from project name
-    const words = projectName.split(' ');
-    if (words.length === 1) {
-        // Single word: take first 3 letters
-        return projectName.substring(0, 3).toUpperCase();
-    } else {
-        // Multiple words: take first letter of each word (max 3)
-        return words
-            .slice(0, 3)
-            .map(word => word[0])
-            .join('')
-            .toUpperCase();
-    }
+    // If we've used all characters and still have collision, return full name uppercase
+    return baseName.toUpperCase();
 }
