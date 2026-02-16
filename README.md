@@ -29,14 +29,19 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
 ## Tech Stack
 
 ### Backend
-- **Language**: Go 1.24
+- **Language**: Go 1.25
 - **Router**: chi v5 (lightweight HTTP router)
 - **Database**: PostgreSQL 18 with pgx v5 driver
 - **Authentication**: JWT access tokens (15min) + refresh tokens (7 days, HttpOnly cookie)
 - **Password Hashing**: bcrypt (cost 12)
-- **Security**: Rate limiting (5 req/s), request size limits (1MB), timeouts (10s)
+- **Security**:
+  - Rate limiting (5 req/s), request size limits (1MB), timeouts (10s)
+  - Semgrep static analysis security scanning
+  - Trivy container and filesystem vulnerability scanning
+  - Automated security scans on every commit via GitHub Actions
 - **Observability**: Health checks, metrics endpoint, structured logging
 - **Development**: Air hot reload for rapid iteration
+- **Testing**: Comprehensive unit and integration tests with 80%+ coverage on core packages
 
 ### Frontend
 - **Type**: Vanilla JavaScript SPA with ES6 modules
@@ -56,7 +61,12 @@ The flyhalf is a rugby team's primary playmaker and tactical leader who directs 
   - **DNS**: Route53
   - **Monitoring**: CloudWatch logs, metrics, and alarms (optional)
   - **Secrets**: AWS Secrets Manager for credentials
-  - **CI/CD**: GitHub Actions for automated deployment
+  - **CI/CD**: GitHub Actions with automated security scanning and deployment
+    - Semgrep (static code analysis for security vulnerabilities)
+    - Trivy (container and filesystem vulnerability scanning)
+    - Go unit and integration tests
+    - Frontend tests with Vitest
+    - Automated deployment on passing all checks
   - **Estimated Cost**: $50-70/month
 
 ---
@@ -337,10 +347,42 @@ Log in with the admin credentials above.
 - **Frontend**: Simply refresh your browser - no build step required!
 
 #### Running Tests
+
+**Go Unit Tests**:
 ```bash
 cd api
-go test ./...
+go test ./... -v -race -count=1 -coverprofile=coverage.out
 ```
+
+**Go Integration Tests** (requires PostgreSQL):
+```bash
+cd api
+go test ./... -v -count=1 -tags=integration
+```
+
+**Frontend Tests**:
+```bash
+cd web
+npm test
+npm run test:coverage
+```
+
+**Current Test Coverage**:
+
+| Package | Coverage | Type |
+|---------|----------|------|
+| Go auth | 93.8% | Unit + Integration |
+| Go config | 100% | Unit |
+| Go middleware | 95.4% | Unit |
+| Go util | 84.6% | Unit |
+| Frontend utilities | 100% | Unit |
+
+**Coverage Guidelines**:
+- Core authentication and security code: **90%+** coverage required
+- Business logic and handlers: **80%+** coverage target
+- Utilities and helpers: **70%+** coverage minimum
+- Integration tests required for all authentication flows
+- All new features must include tests before merge
 
 #### Adding Dependencies
 
@@ -842,6 +884,8 @@ erDiagram
 - **Access Tokens**: Short-lived (15 minutes), JWT with HS256, stored in memory only
 - **Refresh Tokens**: 7-day expiry, HttpOnly + Secure + SameSite=Strict cookies
 - **Password Reset**: Forced password change on first login for new users
+- **Timing Attack Prevention**: Login always checks password even if user not found using constant-time comparison
+- **Session Management**: Automatic token rotation on refresh, immediate revocation on logout
 
 ### API Security
 - **CORS (Cross-Origin Resource Sharing)**:
@@ -874,6 +918,9 @@ erDiagram
 - **API**: Private subnet, only accessible via load balancer
 - **HTTPS/TLS**: SSL/TLS 1.2+ enforced on all endpoints
 - **Container Scanning**: ECR automatically scans images for vulnerabilities
+- **Static Code Analysis**: Semgrep scans for OWASP Top 10 and Go security issues on every commit
+- **Vulnerability Scanning**: Trivy scans containers and filesystems for CVEs (blocks CRITICAL/HIGH)
+- **Dependency Management**: Regular automated scans for vulnerable dependencies
 - **Secrets Management**:
   - AWS Secrets Manager for database passwords and JWT secrets
   - 7-day recovery window for deleted secrets
@@ -1139,9 +1186,26 @@ open https://demo.flyhalf.app
 
 ### GitHub Actions CI/CD
 
-The project uses GitHub Actions for automated deployment. The workflow (`.github/workflows/deploy.yml`) runs two parallel jobs:
+The project uses GitHub Actions for automated deployment with comprehensive security scanning. The workflow (`.github/workflows/deploy.yml`) includes:
 
-#### Deploy API Job
+#### Security Scanning Stage (runs first)
+1. **Semgrep Static Analysis**:
+   - Scans Go code for security vulnerabilities (OWASP Top 10, injection, auth issues)
+   - Uses `semgrep/semgrep-action@v1` with auto ruleset
+   - Blocks deployment on HIGH or CRITICAL findings
+2. **Trivy Container Scanning**:
+   - Scans Docker images for CVE vulnerabilities
+   - Scans filesystem for vulnerable dependencies
+   - Blocks deployment on CRITICAL or HIGH severity CVEs
+   - Reports findings in GitHub Security tab
+
+#### Test Stage (parallel with security)
+- Go unit tests with race detection
+- Go integration tests against PostgreSQL
+- Frontend tests with Vitest
+- Enforces minimum code coverage thresholds
+
+#### Deploy API Job (only after security/tests pass)
 1. Checks out code
 2. Configures AWS credentials
 3. Logs into Amazon ECR
@@ -1152,7 +1216,7 @@ The project uses GitHub Actions for automated deployment. The workflow (`.github
 6. Updates ECS service to force new deployment
 7. Waits for deployment to stabilize
 
-#### Deploy Web Job
+#### Deploy Web Job (only after security/tests pass)
 1. Checks out code
 2. Configures AWS credentials
 3. Prepares production config (`config.production.js` → `config.js`)
