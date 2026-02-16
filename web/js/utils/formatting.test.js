@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { escapeHtml, formatDate, formatRelativeTime } from './formatting.js';
+import { escapeHtml, formatDate, formatDateOnly, formatRelativeTime } from './formatting.js';
 
 describe('escapeHtml', () => {
     it('should escape HTML special characters', () => {
@@ -52,6 +52,31 @@ describe('formatDate', () => {
         const dateString = '2024-12-25T00:00:00Z';
         const result = formatDate(dateString);
         expect(result).toBeTruthy();
+    });
+});
+
+describe('formatDateOnly', () => {
+    it('should format a date without time', () => {
+        const dateString = '2024-01-15T14:30:00Z';
+        const result = formatDateOnly(dateString);
+        // Result will vary by locale, but should contain date without time
+        expect(result).toBeTruthy();
+        expect(result).toContain('2024'); // Year should be present
+        expect(result).not.toContain(':'); // Should not contain time separator
+    });
+
+    it('should handle date-only strings', () => {
+        const dateString = '2024-12-25';
+        const result = formatDateOnly(dateString);
+        expect(result).toBeTruthy();
+        expect(result).not.toContain(':'); // Should not contain time separator
+    });
+
+    it('should handle different date formats', () => {
+        const dateString = '2024-12-25T00:00:00Z';
+        const result = formatDateOnly(dateString);
+        expect(result).toBeTruthy();
+        expect(result).not.toContain(':'); // Should not contain time separator
     });
 });
 

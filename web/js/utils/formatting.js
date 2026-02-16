@@ -20,6 +20,16 @@ export function formatDate(dateString) {
 }
 
 /**
+ * Formats a date string into localized date only (no time)
+ * @param {string} dateString - ISO date string
+ * @returns {string} - Formatted date
+ */
+export function formatDateOnly(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+}
+
+/**
  * Formats a date string as relative time (e.g., "5 minutes ago")
  * Falls back to formatted date for dates older than 7 days
  * @param {string} dateString - ISO date string

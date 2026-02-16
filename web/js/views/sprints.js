@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { router } from '../router.js';
 import { auth } from '../auth.js';
-import { escapeHtml, formatDate } from '../utils/formatting.js';
+import { escapeHtml, formatDate, formatDateOnly } from '../utils/formatting.js';
 import { getStatusBadgeClass } from '../utils/helpers.js';
 
 export async function sprintsListView() {
@@ -80,10 +80,10 @@ export async function sprintsListView() {
                                         </span>
                                     </td>
                                     <td data-label="Start Date">
-                                        ${formatDate(sprint.start_date)}
+                                        ${formatDateOnly(sprint.start_date)}
                                     </td>
                                     <td data-label="End Date">
-                                        ${formatDate(sprint.end_date)}
+                                        ${formatDateOnly(sprint.end_date)}
                                     </td>
                                     <td data-label="Actions">
                                         <div class="actions">
@@ -218,13 +218,13 @@ export async function sprintDetailView(params) {
                         <div>
                             <label class="form-label">Start Date</label>
                             <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
-                                ${formatDate(sprint.start_date)}
+                                ${formatDateOnly(sprint.start_date)}
                             </p>
                         </div>
                         <div>
                             <label class="form-label">End Date</label>
                             <p style="margin-top: 0.25rem; font-size: 1rem; color: var(--text-primary);">
-                                ${formatDate(sprint.end_date)}
+                                ${formatDateOnly(sprint.end_date)}
                             </p>
                         </div>
                     </div>
