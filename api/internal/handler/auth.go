@@ -57,7 +57,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Always check password even if user not found to prevent timing attacks
 	// Use a dummy hash with the same cost as real passwords
-	// nosemgrep: generic.secrets.security.detected-bcrypt-hash.detected-bcrypt-hash
 	dummyHash := "$2a$12$R2iQS4ZXc0z1h7Oq2wAOKeqslDynZTXBkt9chHBIVIRUuUVO.nbPi" // nosemgrep
 	passwordHash := dummyHash
 
@@ -102,7 +101,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  refreshToken.ExpiresAt,
 		HttpOnly: true,
-		Secure:   true, // Always require HTTPS for secure cookies
+		Secure:   h.isProduction,
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -169,7 +168,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  newRefreshToken.ExpiresAt,
 		HttpOnly: true,
-		Secure:   true, // Always require HTTPS for secure cookies
+		Secure:   h.isProduction,
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -206,7 +205,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
-		Secure:   true, // Always require HTTPS for secure cookies
+		Secure:   h.isProduction,
 		SameSite: http.SameSiteStrictMode,
 	})
 

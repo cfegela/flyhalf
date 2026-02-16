@@ -94,3 +94,8 @@ func GetUserRole(ctx context.Context) (model.UserRole, bool) {
 	role, ok := ctx.Value(UserRole).(model.UserRole)
 	return role, ok
 }
+
+// SetUserID sets the user ID in the context (for testing)
+func SetUserID(ctx context.Context, userID uuid.UUID) context.Context {
+	return context.WithValue(ctx, UserIDKey, userID)
+}

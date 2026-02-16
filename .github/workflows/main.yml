@@ -340,29 +340,25 @@ jobs:
 
       - name: Sync files to S3
         run: |
-          # Sync all web files to S3
+          # Sync HTML files with correct content type
           aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
-            --delete \
-            --exclude "js/config.production.js" \
-            --content-type "text/html" \
             --exclude "*" \
-            --include "*.html"
+            --include "*.html" \
+            --content-type "text/html"
 
           # Sync JS files with correct content type
           aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
-            --delete \
             --exclude "*" \
             --include "*.js" \
             --content-type "application/javascript"
 
           # Sync CSS files with correct content type
           aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
-            --delete \
             --exclude "*" \
             --include "*.css" \
             --content-type "text/css"
 
-          # Sync remaining files (images, icons, etc.)
+          # Sync remaining files and delete orphaned files from S3
           aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
             --delete \
             --exclude "*.html" \
