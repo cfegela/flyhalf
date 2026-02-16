@@ -77,17 +77,19 @@ func createTestUser(pool *pgxpool.Pool, role model.UserRole) (*model.User, strin
 		Email:        email,
 		PasswordHash: hashedPassword,
 		Role:         role,
+		FirstName:    "Test",
+		LastName:     "User",
 		IsActive:     true,
 	}
 
 	query := `
-		INSERT INTO users (email, password_hash, role, is_active)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, email, role, is_active, must_change_password, created_at, updated_at
+		INSERT INTO users (email, password_hash, role, first_name, last_name, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, email, role, first_name, last_name, is_active, must_change_password, created_at, updated_at
 	`
 
-	err = pool.QueryRow(ctx, query, user.Email, user.PasswordHash, user.Role, user.IsActive).Scan(
-		&user.ID, &user.Email, &user.Role, &user.IsActive, &user.MustChangePassword,
+	err = pool.QueryRow(ctx, query, user.Email, user.PasswordHash, user.Role, user.FirstName, user.LastName, user.IsActive).Scan(
+		&user.ID, &user.Email, &user.Role, &user.FirstName, &user.LastName, &user.IsActive, &user.MustChangePassword,
 		&user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
