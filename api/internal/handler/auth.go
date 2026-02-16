@@ -95,13 +95,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    tokenPair.RefreshToken,
 		Path:     "/",
 		Expires:  refreshToken.ExpiresAt,
 		HttpOnly: true,
-		Secure:   h.isProduction, // nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure
+		Secure:   h.isProduction,
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -162,13 +163,14 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    tokenPair.RefreshToken,
 		Path:     "/",
 		Expires:  newRefreshToken.ExpiresAt,
 		HttpOnly: true,
-		Secure:   h.isProduction, // nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure
+		Secure:   h.isProduction,
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -199,13 +201,14 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Log logout
 	util.LogSecurityEvent(util.EventLogout, &userID, "", util.GetIPFromRequest(r), "user logged out")
 
+	// nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
-		Secure:   h.isProduction, // nosemgrep: go.lang.security.audit.net.cookie-missing-secure.cookie-missing-secure
+		Secure:   h.isProduction,
 		SameSite: http.SameSiteStrictMode,
 	})
 
