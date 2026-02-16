@@ -649,14 +649,12 @@ func countWorkingDays(startDate, endDate time.Time) int {
 func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []BurndownPoint {
 	var points []BurndownPoint
 
-	// Start one day before the sprint to show initial capacity (if it's not a weekend)
+	// Start one day before the sprint to show initial capacity
 	dayBeforeSprint := startDate.AddDate(0, 0, -1)
-	if !isWeekend(dayBeforeSprint) {
-		points = append(points, BurndownPoint{
-			Date:   dayBeforeSprint.Format("2006-01-02"),
-			Points: totalPoints,
-		})
-	}
+	points = append(points, BurndownPoint{
+		Date:   dayBeforeSprint.Format("2006-01-02"),
+		Points: totalPoints,
+	})
 
 	// Count working days in the sprint (excluding weekends)
 	workingDays := countWorkingDays(startDate, endDate)
@@ -689,14 +687,12 @@ func generateIdealBurndown(startDate, endDate time.Time, totalPoints int) []Burn
 func generateActualBurndown(startDate, endDate time.Time, totalPoints int, tickets []*model.Ticket) []BurndownPoint {
 	var points []BurndownPoint
 
-	// Start one day before the sprint to show initial capacity (if it's not a weekend)
+	// Start one day before the sprint to show initial capacity
 	dayBeforeSprint := startDate.AddDate(0, 0, -1)
-	if !isWeekend(dayBeforeSprint) {
-		points = append(points, BurndownPoint{
-			Date:   dayBeforeSprint.Format("2006-01-02"),
-			Points: totalPoints,
-		})
-	}
+	points = append(points, BurndownPoint{
+		Date:   dayBeforeSprint.Format("2006-01-02"),
+		Points: totalPoints,
+	})
 
 	// Generate actual burndown for each working day (excluding weekends)
 	currentDate := startDate
