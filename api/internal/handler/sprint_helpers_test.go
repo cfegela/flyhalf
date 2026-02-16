@@ -165,14 +165,16 @@ func TestGenerateIdealBurndown(t *testing.T) {
 			endDate:     time.Date(2024, 1, 7, 0, 0, 0, 0, time.UTC),  // Sunday
 			totalPoints: 20,
 			validate: func(t *testing.T, points []BurndownPoint) {
-				// May have a day before point if it's not a weekend
-				// But should not include Saturday or Sunday
-				for _, point := range points {
-					date, _ := time.Parse("2006-01-02", point.Date)
-					weekday := date.Weekday()
-					assert.False(t, weekday == time.Saturday || weekday == time.Sunday,
-						"burndown should not include weekend dates")
-				}
+				// Should have a "start" point (day before, which is Friday Jan 5)
+				// Sprint days (Sat, Sun) should be skipped as they are weekends
+				// So we should only have the start point
+				assert.Equal(t, 1, len(points), "weekend sprint should only have start point")
+
+				// The start point (Friday) should not be a weekend
+				date, _ := time.Parse("2006-01-02", points[0].Date)
+				weekday := date.Weekday()
+				assert.False(t, weekday == time.Saturday || weekday == time.Sunday,
+					"start point should be Friday, not a weekend")
 			},
 		},
 	}
@@ -193,13 +195,18 @@ func TestGenerateIdealBurndownNoWeekends(t *testing.T) {
 
 	points := generateIdealBurndown(startDate, endDate, totalPoints)
 
-	// Verify no weekend dates in burndown
-	for _, point := range points {
+	// Verify no weekend dates in burndown (except the "start" point which can be a weekend)
+	for i, point := range points {
 		date, err := time.Parse("2006-01-02", point.Date)
 		assert.NoError(t, err)
 		weekday := date.Weekday()
-		assert.False(t, weekday == time.Saturday || weekday == time.Sunday,
-			"ideal burndown should skip weekends: found %s", point.Date)
+
+		// First point is the "start" point (day before sprint) - can be a weekend
+		// All other points should be weekdays only
+		if i > 0 {
+			assert.False(t, weekday == time.Saturday || weekday == time.Sunday,
+				"ideal burndown should skip weekends for sprint days: found %s", point.Date)
+		}
 	}
 }
 
@@ -248,13 +255,18 @@ func TestGenerateActualBurndown(t *testing.T) {
 	// First point should be total points (day before or first day)
 	assert.Equal(t, totalPoints, points[0].Points)
 
-	// Verify no weekend dates
-	for _, point := range points {
+	// Verify no weekend dates (except the "start" point which can be a weekend)
+	for i, point := range points {
 		date, err := time.Parse("2006-01-02", point.Date)
 		assert.NoError(t, err)
 		weekday := date.Weekday()
-		assert.False(t, weekday == time.Saturday || weekday == time.Sunday,
-			"actual burndown should skip weekends: found %s", point.Date)
+
+		// First point is the "start" point (day before sprint) - can be a weekend
+		// All other points should be weekdays only
+		if i > 0 {
+			assert.False(t, weekday == time.Saturday || weekday == time.Sunday,
+				"actual burndown should skip weekends for sprint days: found %s", point.Date)
+		}
 	}
 
 	// Points should decrease as tickets are completed
