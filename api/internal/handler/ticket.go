@@ -353,6 +353,16 @@ func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 
 	if req.Status != "" {
 		ticket.Status = req.Status
+
+		// Check if trying to close ticket with incomplete acceptance criteria
+		if req.Status == "closed" {
+			for _, criterion := range req.AcceptanceCriteria {
+				if !criterion.Completed {
+					http.Error(w, `{"error":"cannot close ticket: all acceptance criteria must be completed"}`, http.StatusBadRequest)
+					return
+				}
+			}
+		}
 	}
 	ticket.AssignedTo = req.AssignedTo
 	ticket.ProjectID = req.ProjectID

@@ -1015,6 +1015,16 @@ export async function ticketFormView(params) {
         // Only include status, project, sprint, and updates when editing
         if (isEdit) {
             data.status = form.status.value;
+
+            // Check if trying to close ticket with incomplete acceptance criteria
+            if (data.status === 'closed') {
+                const hasIncompleteCriteria = acceptanceCriteria.some(criterion => !criterion.completed);
+                if (hasIncompleteCriteria) {
+                    alert('Cannot close ticket: all acceptance criteria must be completed');
+                    return;
+                }
+            }
+
             const projectValue = form.project.value;
             if (projectValue) {
                 data.project_id = projectValue;

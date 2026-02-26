@@ -369,6 +369,17 @@ function initializeDragAndDrop(container, sprintId, currentUser) {
     try {
       // Update ticket status via API
       const ticket = await api.getTicket(ticketId);
+
+      // Check if trying to close ticket with incomplete acceptance criteria
+      if (newStatus === 'closed') {
+        const hasIncompleteCriteria = ticket.acceptance_criteria &&
+          ticket.acceptance_criteria.some(criterion => !criterion.completed);
+        if (hasIncompleteCriteria) {
+          alert('Cannot close ticket: all acceptance criteria must be completed');
+          return;
+        }
+      }
+
       ticket.status = newStatus;
 
       // If ticket is unassigned, assign it to the current user
