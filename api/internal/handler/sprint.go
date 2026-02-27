@@ -698,8 +698,8 @@ func generateActualBurndown(startDate, endDate time.Time, totalPoints int, ticke
 	currentDate := startDate
 	for !currentDate.After(endDate) {
 		if !isWeekend(currentDate) {
-			// Calculate end of day (23:59:59)
-			endOfDay := time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 23, 59, 59, 0, currentDate.Location())
+			// Calculate end of day (23:59:59) in UTC to match ticket timestamps
+			endOfDay := time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 23, 59, 59, 999999999, time.UTC)
 
 			// Calculate points completed by end of this day
 			completedPoints := 0
