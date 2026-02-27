@@ -210,6 +210,12 @@ function renderBurndownChart(report, today, startDate, endDate) {
     const ctx = document.getElementById('burndown-chart');
     if (!ctx) return;
 
+    // Destroy existing chart instance if it exists
+    const existingChart = Chart.getChart(ctx);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+
     // Helper function to parse date string as local date (avoiding timezone issues)
     const parseLocalDate = (dateStr) => {
         const [year, month, day] = dateStr.split('-').map(Number);
