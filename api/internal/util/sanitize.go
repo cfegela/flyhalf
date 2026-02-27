@@ -2,17 +2,16 @@ package util
 
 import (
 	"fmt"
-	"html"
 	"regexp"
 	"strings"
 )
 
-// SanitizeString escapes HTML special characters and trims whitespace
+// SanitizeString trims whitespace from input
+// Note: HTML escaping is handled on the frontend when rendering to prevent XSS
+// Escaping on input causes double-escaping issues when editing existing data
 func SanitizeString(s string) string {
 	// Trim whitespace
-	s = strings.TrimSpace(s)
-	// Escape HTML to prevent XSS
-	return html.EscapeString(s)
+	return strings.TrimSpace(s)
 }
 
 // SanitizeStrings sanitizes multiple strings

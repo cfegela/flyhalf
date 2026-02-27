@@ -19,14 +19,14 @@ func TestSanitizeString(t *testing.T) {
 			expected: "hello world",
 		},
 		{
-			name:     "escapes HTML",
+			name:     "preserves HTML (escaping handled on frontend)",
 			input:    "<script>alert('xss')</script>",
-			expected: "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;",
+			expected: "<script>alert('xss')</script>",
 		},
 		{
-			name:     "escapes HTML and trims",
+			name:     "preserves HTML and trims",
 			input:    "  <b>bold</b>  ",
-			expected: "&lt;b&gt;bold&lt;/b&gt;",
+			expected: "<b>bold</b>",
 		},
 		{
 			name:     "empty string",
@@ -44,14 +44,19 @@ func TestSanitizeString(t *testing.T) {
 			expected: "normal text",
 		},
 		{
-			name:     "escapes quotes",
+			name:     "preserves quotes",
 			input:    `"quoted" text`,
-			expected: `&#34;quoted&#34; text`,
+			expected: `"quoted" text`,
 		},
 		{
-			name:     "escapes ampersand",
+			name:     "preserves ampersand",
 			input:    "A & B",
-			expected: "A &amp; B",
+			expected: "A & B",
+		},
+		{
+			name:     "preserves apostrophes",
+			input:    "don't",
+			expected: "don't",
 		},
 	}
 
@@ -72,7 +77,7 @@ func TestSanitizeStrings(t *testing.T) {
 		{
 			name:     "sanitizes multiple strings",
 			input:    []string{"  hello  ", "<script>", "normal"},
-			expected: []string{"hello", "&lt;script&gt;", "normal"},
+			expected: []string{"hello", "<script>", "normal"},
 		},
 		{
 			name:     "empty slice",
