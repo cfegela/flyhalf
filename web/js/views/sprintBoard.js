@@ -376,8 +376,6 @@ function initializeDragAndDrop(container, sprintId, currentUser) {
           ticket.acceptance_criteria.some(criterion => !criterion.completed);
         if (hasIncompleteCriteria) {
           alert('Cannot close ticket: all acceptance criteria must be completed');
-          // Reload board to revert visual change
-          await loadSprintBoard(container, sprintId);
           return;
         }
       }
