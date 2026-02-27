@@ -1732,4 +1732,4 @@ This means you are free to use, modify, and distribute this software, but any de
 
 ---
 
-**Built with ❤️ by developers who believe in simplicity, collaboration, and getting things done.**
+**Built with ❤️ by developers who believe in simplicity, collaboration, and getting things done.**.
