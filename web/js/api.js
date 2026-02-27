@@ -238,7 +238,8 @@ class APIClient {
     }
 
     async getSprintReport(id) {
-        return this.request(`/sprints/${id}/report`);
+        // Add timestamp to prevent caching
+        return this.request(`/sprints/${id}/report?_t=${Date.now()}`);
     }
 
     async getRetroItems(sprintId) {
