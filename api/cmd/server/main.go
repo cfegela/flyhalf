@@ -68,7 +68,7 @@ func run() error {
 	healthHandler := handler.NewHealthHandler(pool)
 	metricsHandler := handler.NewMetricsHandler(pool)
 	authHandler := handler.NewAuthHandler(userRepo, jwtService, isProduction)
-	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo)
+	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo, criteriaRepo)
 	teamHandler := handler.NewTeamHandler(teamRepo)
 	leagueHandler := handler.NewLeagueHandler(leagueRepo)
 	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo, updateRepo, pool)

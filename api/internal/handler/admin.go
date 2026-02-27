@@ -18,14 +18,16 @@ type AdminHandler struct {
 	ticketRepo  *model.TicketRepository
 	sprintRepo  *model.SprintRepository
 	projectRepo *model.ProjectRepository
+	acRepo      *model.AcceptanceCriteriaRepository
 }
 
-func NewAdminHandler(userRepo *model.UserRepository, ticketRepo *model.TicketRepository, sprintRepo *model.SprintRepository, projectRepo *model.ProjectRepository) *AdminHandler {
+func NewAdminHandler(userRepo *model.UserRepository, ticketRepo *model.TicketRepository, sprintRepo *model.SprintRepository, projectRepo *model.ProjectRepository, acRepo *model.AcceptanceCriteriaRepository) *AdminHandler {
 	return &AdminHandler{
 		userRepo:    userRepo,
 		ticketRepo:  ticketRepo,
 		sprintRepo:  sprintRepo,
 		projectRepo: projectRepo,
+		acRepo:      acRepo,
 	}
 }
 
@@ -359,16 +361,68 @@ func (h *AdminHandler) ReseedDemo(w http.ResponseWriter, r *http.Request) {
 
 	// Create 5 demo tickets with different valid statuses
 	demoTickets := []struct {
-		title       string
-		description string
-		status      string
-		size        *int
+		title              string
+		description        string
+		status             string
+		size               *int
+		acceptanceCriteria []string
 	}{
-		{"Implement user authentication", "Add JWT-based authentication to the API", "closed", intPtr(5)},
-		{"Create dashboard UI", "Design and implement the main dashboard interface", "in-progress", intPtr(8)},
-		{"Write API documentation", "Document all API endpoints with examples", "needs-review", intPtr(3)},
-		{"Fix database connection pooling", "Investigate and resolve connection pool issues", "blocked", intPtr(5)},
-		{"Add email notifications", "Implement email notifications for important events", "open", intPtr(3)},
+		{
+			"Implement user authentication",
+			"Add JWT-based authentication to the API",
+			"closed",
+			intPtr(5),
+			[]string{
+				"JWT tokens are generated on successful login",
+				"Tokens expire after 24 hours",
+				"Password is hashed using bcrypt",
+			},
+		},
+		{
+			"Create dashboard UI",
+			"Design and implement the main dashboard interface",
+			"in-progress",
+			intPtr(8),
+			[]string{
+				"Dashboard shows summary of active tickets",
+				"Sprint burndown chart is displayed",
+				"Recent activity feed is visible",
+				"Layout is responsive on mobile devices",
+			},
+		},
+		{
+			"Write API documentation",
+			"Document all API endpoints with examples",
+			"needs-review",
+			intPtr(3),
+			[]string{
+				"All endpoints are documented with request/response examples",
+				"Authentication requirements are clearly stated",
+				"Error responses are documented",
+			},
+		},
+		{
+			"Fix database connection pooling",
+			"Investigate and resolve connection pool issues",
+			"blocked",
+			intPtr(5),
+			[]string{
+				"Connection pool max size is configurable",
+				"Idle connections are properly closed",
+				"Connection timeout is handled gracefully",
+			},
+		},
+		{
+			"Add email notifications",
+			"Implement email notifications for important events",
+			"open",
+			intPtr(3),
+			[]string{
+				"Email is sent when ticket is assigned",
+				"Email is sent when sprint starts/ends",
+				"Email templates are professional and readable",
+			},
+		},
 	}
 
 	ticketsCreated := 0
@@ -389,6 +443,21 @@ func (h *AdminHandler) ReseedDemo(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error":"failed to create demo tickets"}`, http.StatusInternalServerError)
 			return
 		}
+
+		// Create acceptance criteria for each ticket
+		for j, criteriaContent := range demo.acceptanceCriteria {
+			criteria := &model.AcceptanceCriteria{
+				TicketID:  ticket.ID,
+				Content:   criteriaContent,
+				SortOrder: j,
+				Completed: demo.status == "closed", // Mark as completed if ticket is closed
+			}
+			if err := h.acRepo.Create(r.Context(), criteria); err != nil {
+				http.Error(w, `{"error":"failed to create acceptance criteria"}`, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		ticketsCreated++
 	}
 

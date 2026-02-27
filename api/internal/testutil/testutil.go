@@ -190,7 +190,7 @@ func SetupTestRouter(pool *pgxpool.Pool) http.Handler {
 	ticketHandler := handler.NewTicketHandler(ticketRepo, criteriaRepo, updateRepo, pool)
 	sprintHandler := handler.NewSprintHandler(sprintRepo, ticketRepo, pool)
 	retroItemHandler := handler.NewRetroItemHandler(retroItemRepo, userRepo, sprintRepo)
-	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo)
+	adminHandler := handler.NewAdminHandler(userRepo, ticketRepo, sprintRepo, projectRepo, criteriaRepo)
 	leagueHandler := handler.NewLeagueHandler(leagueRepo)
 	teamHandler := handler.NewTeamHandler(teamRepo)
 
